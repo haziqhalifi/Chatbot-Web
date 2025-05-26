@@ -5,7 +5,9 @@ const Header = () => {
   return (
     <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
       <div className="flex items-center">
-        <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
+        <Link to="/" className="flex items-center">
+          <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
+        </Link>
         <nav className="flex space-x-8">
           <Link to="/report-disaster" className="text-base font-semibold text-[#f0f0f0]">
             Report Disaster
@@ -23,9 +25,9 @@ const Header = () => {
           <span className="text-xl text-[#f0f0f0]">English</span>
           <img src="/images/img_image_14.png" alt="Dropdown" className="w-[9px] h-[14px] ml-2" />
         </div>
-        <img 
-          src="/images/img_image_3.png" 
-          alt="User Profile" 
+        <img
+          src="/images/img_image_3.png"
+          alt="User Profile"
           className="w-[50px] h-[50px] rounded-full"
         />
       </div>
