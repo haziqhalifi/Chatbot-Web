@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import '@arcgis/map-components/components/arcgis-map';
 import '@arcgis/map-components/components/arcgis-legend';
 import '@arcgis/map-components/components/arcgis-search';
+import '@arcgis/map-components/components/arcgis-sketch';
 
 const ARCGIS_MAP_SDK_CSS = 'https://js.arcgis.com/4.32/esri/themes/dark/main.css';
 
@@ -31,6 +32,7 @@ const MapView = () => {
         <arcgis-search position="top-right"></arcgis-search>
         <arcgis-legend position="bottom-left"></arcgis-legend>
         <arcgis-sketch position="bottom-right" creation-mode="update"></arcgis-sketch>
+        {/* <arcgis-feature-layer url="https://services.arcgis.com/example/arcgis/rest/services/YourLayer/FeatureServer/0"></arcgis-feature-layer> */}
       </arcgis-map>
     </div>
   );
