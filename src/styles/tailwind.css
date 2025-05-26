@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors */
+    --primary-blue: #0a4974;
+    --primary-dark: #2c2c2c;
+    --primary-gray: #a1a1a1;
+    --primary-light-blue: #d0e8ff;
+    
+    /* Secondary Colors */
+    --secondary-white: #ffffff;
+    --secondary-light-gray: #f0f0f0;
+    --secondary-lighter-gray: #f4f4f4;
+    --secondary-input-bg: #fafafa;
+    
+    /* Text Colors */
+    --text-dark: #000000;
+    --text-light: #f0f0f0;
+    --text-gray: #333333;
+    
+    /* Alert Colors */
+    --alert-red: #ff0000;
+    --alert-yellow: #ffcc00;
+    --alert-green: #00cc00;
+  }
+}
+
+@layer utilities {
+  .chat-bubble-user {
+    @apply bg-[#d0e8ff] text-[#333333] rounded-[15px] p-3;
+  }
+  
+  .chat-bubble-bot {
+    @apply bg-[#f0f0f0] text-[#333333] rounded-[15px] p-3;
+  }
+  
+  .flood-area {
+    @apply fill-red-500 opacity-60;
+  }
+}
