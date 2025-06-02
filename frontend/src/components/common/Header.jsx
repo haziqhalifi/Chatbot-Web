@@ -1,0 +1,202 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+
+const Header = () => {
+  const { t, i18n } = useTranslation();
+  const [language, setLanguage] = React.useState('English');
+  const [dropdownOpen, setDropdownOpen] = React.useState(false);
+
+  // Notification state
+  const [notifOpen, setNotifOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState([
+    { id: 1, text: 'Flood warning in your area', read: false },
+    { id: 2, text: 'Evacuation center opened nearby', read: false },
+  ]);
+  const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+
+  const handleLanguageChange = (lang) => {
+    setLanguage(lang);
+    setDropdownOpen(false);
+  };
+
+  const markAsRead = (id) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  };
+
+  const deleteNotification = (id) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  // Optional: Close dropdowns when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.profile-dropdown') && !event.target.closest('.profile-img')) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close notification dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        !event.target.closest('.notification-dropdown') &&
+        !event.target.closest('.notification-btn')
+      ) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close language dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.language-dropdown') && !event.target.closest('.language-btn')) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
+      <div className="flex items-center">
+        <Link to="/" className="flex items-center">
+          <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
+        </Link>
+        <nav className="flex space-x-8">
+          <Link to="/report-disaster" className="text-base font-semibold text-[#f0f0f0]">
+            {t('reportDisaster')}
+          </Link>
+          <Link to="/emergency-support" className="text-base font-semibold text-[#f0f0f0]">
+            {t('emergencySupport')}
+          </Link>
+        </nav>
+      </div>
+      <div className="flex items-center space-x-4">
+        {/* Notification */}
+        <div className="relative">
+          <button
+            className="flex items-center notification-btn"
+            onClick={() => setNotifOpen((open) => !open)}
+          >
+            <img src="/images/img_image.png" alt="Notification" className="w-[26px] h-[23px]" />
+            {notifications.some((n) => !n.read) && (
+              <span className="absolute top-0 right-0 bg-red-500 rounded-full w-3 h-3"></span>
+            )}
+          </button>
+          {notifOpen && (
+            <div className="notification-dropdown absolute right-0 mt-2 w-80 bg-white rounded shadow-lg z-20 p-4">
+              <h3 className="font-bold mb-2">{t('notifications')}</h3>
+              {notifications.length === 0 ? (
+                <div className="text-gray-500">{t('noNotifications')}</div>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif.id}
+                    className={`flex justify-between items-center mb-2 p-2 rounded ${notif.read ? 'bg-gray-100' : 'bg-blue-50'}`}
+                  >
+                    <span className={notif.read ? 'text-gray-400' : 'font-semibold'}>
+                      {notif.text}
+                    </span>
+                    <div className="flex space-x-2">
+                      {!notif.read && (
+                        <button
+                          className="text-xs text-blue-600 hover:underline"
+                          onClick={() => markAsRead(notif.id)}
+                        >
+                          Mark as Read
+                        </button>
+                      )}
+                      <button
+                        className="text-xs text-red-600 hover:underline"
+                        onClick={() => deleteNotification(notif.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+        {/* Language */}
+        <div className="relative flex items-center">
+          <button
+            className="flex items-center text-xl text-[#f0f0f0] focus:outline-none language-btn"
+            onClick={() => setDropdownOpen((open) => !open)}
+          >
+            {language}
+          </button>
+          {dropdownOpen && (
+            <div className="language-dropdown absolute right-0 mt-2 w-32 bg-white rounded shadow-lg z-10">
+              <button
+                className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                  language === 'English' ? 'font-bold' : ''
+                }`}
+                onClick={() => {
+                  handleLanguageChange('English');
+                  i18n.changeLanguage('en');
+                }}
+              >
+                English
+              </button>
+              <button
+                className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
+                  language === 'Malay' ? 'font-bold' : ''
+                }`}
+                onClick={() => {
+                  handleLanguageChange('Malay');
+                  i18n.changeLanguage('ms');
+                }}
+              >
+                Malay
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Profile */}
+        <div className="relative">
+          <button
+            className="profile-img focus:outline-none"
+            onClick={() => setProfileDropdownOpen((open) => !open)}
+          >
+            <img
+              src="/images/img_image_3.png"
+              alt="User Profile"
+              className="w-[50px] h-[50px] rounded-full"
+            />
+          </button>
+          {profileDropdownOpen && (
+            <div className="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-30">
+              <Link to="/my-account" className="block px-4 py-2 hover:bg-gray-100 text-gray-800">
+                My account
+              </Link>
+              <Link to="/settings" className="block px-4 py-2 hover:bg-gray-100 text-gray-800">
+                Setting
+              </Link>
+              <Link to="/help-faq" className="block px-4 py-2 hover:bg-gray-100 text-gray-800">
+                Help and FAQ
+              </Link>
+              <Link to="/report" className="block px-4 py-2 hover:bg-gray-100 text-gray-800">
+                Report
+              </Link>
+              <button className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
