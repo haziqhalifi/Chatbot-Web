@@ -10,6 +10,7 @@ import {
   Shield,
   Clock,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -27,6 +28,7 @@ const SignUpPage = () => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [countdown, setCountdown] = useState(0);
+  const navigate = useNavigate();
 
   // Countdown timer for resend code
   useEffect(() => {
@@ -172,25 +174,26 @@ const SignUpPage = () => {
     setErrors((prev) => ({ ...prev, general: '' }));
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Simulate random success/failure for demo
-      if (Math.random() > 0.2) {
-        console.log('Sign up successful with:', {
+      const response = await fetch('http://localhost:8000/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           email: formData.email,
-          verificationCode: formData.verificationCode,
-        });
-
-        alert('Account created successfully! Please check your email for further instructions.');
-      } else {
-        throw new Error('Registration failed');
+          password: formData.password,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Registration failed');
       }
+      // Success
+      alert('Account created successfully! Redirecting to dashboard...');
+      navigate('/');
     } catch (error) {
-      console.error('Sign up error:', error);
       setErrors((prev) => ({
         ...prev,
-        general: 'Registration failed. Please check your information and try again.',
+        general:
+          error.message || 'Registration failed. Please check your information and try again.',
       }));
     } finally {
       setIsLoading(false);
