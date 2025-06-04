@@ -52,8 +52,8 @@ const ChatBox = ({ onClose }) => {
       text: 'Hi Haziq! How can I help you today with disaster management?',
     },
   ]);
-
   const [inputValue, setInputValue] = useState('');
+  const [isListening, setIsListening] = useState(false); // Add listening state
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
@@ -71,7 +71,7 @@ const ChatBox = ({ onClose }) => {
       return response.data.response || 'No response from Llama.';
     } catch (error) {
       console.error('Llama API error:', error);
-      return 'Sorry, there was an error contacting the AI.';
+      return 'Sorry, there was an error contacting the Tiara.';
     }
   };
 
@@ -114,6 +114,11 @@ const ChatBox = ({ onClose }) => {
     if (e.key === 'Enter') handleSendMessage();
   };
 
+  const handleVoiceClick = () => {
+    setIsListening((prev) => !prev); // Toggle listening state
+    // Here you would start/stop actual voice recognition logic
+  };
+
   return (
     <div className="bg-[#a1a1a1] rounded-[22px] w-[380px] h-[600px] flex flex-col shadow-2xl">
       {/* Header */}
@@ -149,6 +154,30 @@ const ChatBox = ({ onClose }) => {
 
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Listening indicator */}
+        {isListening && (
+          <div className="flex justify-center mb-2">
+            <div className="flex items-center space-x-2 animate-pulse">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="#0a4974"
+                stroke="#0a4974"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+              <span className="text-[#0a4974] font-semibold">Tiara is listening...</span>
+            </div>
+          </div>
+        )}
         {messages.map((message) => (
           <div
             key={message.id}
@@ -189,8 +218,8 @@ const ChatBox = ({ onClose }) => {
             className="flex-1 bg-transparent text-sm outline-none px-2"
           />
           <button
-            onClick={handleSendMessage}
-            className="p-2 hover:bg-gray-200 rounded-full transition-colors duration-200"
+            onClick={handleVoiceClick}
+            className={`p-2 hover:bg-gray-200 rounded-full transition-colors duration-200 ${isListening ? 'ring-2 ring-[#0a4974]' : ''}`}
             aria-label="Voice input"
           >
             <svg

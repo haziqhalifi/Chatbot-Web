@@ -113,5 +113,5 @@ def verify_api_key(x_api_key: str = Header(None)):
 @app.post("/generate")
 def generate(request: PromptRequest, x_api_key: str = Depends(verify_api_key)):
     API_KEY_CREDITS[x_api_key] -= 1
-    response = ollama.chat(model="llama2", messages=[{"role": "user", "content": request.prompt}])
+    response = ollama.chat(model="tiara", messages=[{"role": "user", "content": request.prompt}])
     return {"response": response["message"]["content"]}
