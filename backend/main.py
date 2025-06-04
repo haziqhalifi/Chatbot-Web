@@ -1,13 +1,12 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
-from typing import Annotated, List
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from database import SessionLocal, engine
-import models
+from typing import Annotated
 from fastapi.middleware.cors import CORSMiddleware
 import ollama
 import os
 from dotenv import load_dotenv
+from passlib.context import CryptContext
+import pyodbc
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -15,6 +14,7 @@ API_KEY_CREDITS = {os.getenv("API_KEY"): 100}
 print(API_KEY_CREDITS)
 
 app = FastAPI()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 origins = [
     "http://localhost:3000",
@@ -29,57 +29,85 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Check if the database tables exist, if not create them
-class TransactionBase(BaseModel):
-    amount: float
-    category: str
-    description: str
-    is_income: bool
-    date: str
+# Database connection helper
+SQL_SERVER = os.getenv("SQL_SERVER")
+SQL_DATABASE = os.getenv("SQL_DATABASE")
+SQL_USER = os.getenv("SQL_USER")
+SQL_PASSWORD = os.getenv("SQL_PASSWORD")
 
-class TransactionModel(TransactionBase):
-    id: int
+conn_str = (
+    f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+    f"SERVER={SQL_SERVER};"
+    f"DATABASE={SQL_DATABASE};"
+    f"UID={SQL_USER};"
+    f"PWD={SQL_PASSWORD}"
+)
 
-    class Config:
-        orm_mode = True
+def get_db_conn():
+    return pyodbc.connect(conn_str)
+
+# --- Pydantic models for request bodies ---
+class AuthRequest(BaseModel):
+    email: str
+    password: str
 
 class PromptRequest(BaseModel):
     prompt: str
 
-def get_db():
-    db = SessionLocal()
+# --- SIGN UP ---
+@app.post("/signup")
+def signup(request: AuthRequest):
+    email = request.email
+    password = request.password
+    hashed_password = pwd_context.hash(password)
     try:
-        yield db
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        # Check if user exists
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        # Insert new user
+        cursor.execute(
+            "INSERT INTO users (email, hashed_password) VALUES (?, ?)",
+            (email, hashed_password)
+        )
+        conn.commit()
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
-        db.close()
+        try:
+            conn.close()
+        except:
+            pass
 
-db_dependency = Annotated[Session, Depends(get_db)]
+# --- SIGN IN ---
+@app.post("/signin")
+def signin(request: AuthRequest):
+    email = request.email
+    password = request.password
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT hashed_password FROM users WHERE email = ?", (email,))
+        row = cursor.fetchone()
+        if not row or not pwd_context.verify(password, row[0]):
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        return {"message": "Login successful"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
 
-models.Base.metadata.create_all(bind=engine)
-
-@app.post("/transactions/", response_model=TransactionModel)
-async def create_transaction(
-    transaction: TransactionBase, db: Session = Depends(get_db)
-):
-    db_transaction = models.Transaction(**transaction.dict())
-    db.add(db_transaction)
-    db.commit()
-    db.refresh(db_transaction)
-    return db_transaction
-
-@app.get("/transactions/", response_model=List[TransactionModel])
-async def read_transactions(
-    db: Session = Depends(get_db), skip: int = 0, limit: int = 100
-):
-    transactions = db.query(models.Transaction).offset(skip).limit(limit).all()
-    return transactions
-
-# Ollama API endpoint
+# --- API KEY & OLLAMA ENDPOINTS (unchanged) ---
 def verify_api_key(x_api_key: str = Header(None)):
     credits = API_KEY_CREDITS.get(x_api_key, 0)
     if credits <= 0:
         raise HTTPException(status_code=401, detail="Invalid API Key, or no credits")
-
     return x_api_key
 
 @app.post("/generate")

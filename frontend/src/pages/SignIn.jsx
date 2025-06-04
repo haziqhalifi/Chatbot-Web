@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SignInPage = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+
+  const navigate = useNavigate();
 
   // Real-time validation functions
   const validateEmail = (email) => {
@@ -26,6 +29,8 @@ const SignInPage = () => {
     if (!/(?=.*[a-z])/.test(password)) return 'Password must contain at least one lowercase letter';
     if (!/(?=.*[A-Z])/.test(password)) return 'Password must contain at least one uppercase letter';
     if (!/(?=.*\d)/.test(password)) return 'Password must contain at least one number';
+    if (!/(?=.*[@$!%*?&])/.test(password))
+      return 'Password must contain at least one special character';
     return '';
   };
 
@@ -77,31 +82,24 @@ const SignInPage = () => {
     setErrors((prev) => ({ ...prev, general: '' }));
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Simulate random success/failure for demo
-      if (Math.random() > 0.3) {
-        console.log('Sign in successful with:', {
+      const response = await fetch('http://localhost:8000/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           email: formData.email,
-          rememberMe: formData.rememberMe,
-        });
-
-        // Store remember me preference
-        if (formData.rememberMe) {
-          // In real app, you'd store a secure token
-          console.log('Remember me enabled - storing session');
-        }
-
-        alert('Sign in successful! Redirecting...');
-      } else {
-        throw new Error('Invalid credentials');
+          password: formData.password,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Invalid email or password. Please try again.');
       }
+      alert('Sign in successful! Redirecting...');
+      navigate('/');
     } catch (error) {
-      console.error('Sign in error:', error);
       setErrors((prev) => ({
         ...prev,
-        general: 'Invalid email or password. Please try again.',
+        general: error.message || 'Invalid email or password. Please try again.',
       }));
     } finally {
       setIsLoading(false);
