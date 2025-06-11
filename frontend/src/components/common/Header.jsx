@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import AccountPage from '../../pages/Account';
 import ReportModal from '../../pages/ReportModal';
+import EmergencySupport from '../../pages/EmergencySupport';
+import ReportDisaster from '../../pages/ReportDisaster';
+import SettingsPage from '../../pages/Settings';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
@@ -19,6 +22,7 @@ const Header = () => {
   const [showAccountModal, setShowAccountModal] = React.useState(false);
   const [showReportModal, setShowReportModal] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = React.useState(false);
+  const [showEmergencySupportModal, setShowEmergencySupportModal] = React.useState(false);
 
   const handleLanguageChange = (lang) => {
     setLanguage(lang);
@@ -88,12 +92,20 @@ const Header = () => {
             <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
           </Link>
           <nav className="flex space-x-8">
-            <Link to="/report-disaster" className="text-base font-semibold text-[#f0f0f0]">
+            <button
+              type="button"
+              className="text-base font-semibold text-[#f0f0f0] focus:outline-none"
+              onClick={() => setShowReportModal(true)}
+            >
               {t('reportDisaster')}
-            </Link>
-            <Link to="/emergency-support" className="text-base font-semibold text-[#f0f0f0]">
+            </button>
+            <button
+              type="button"
+              className="text-base font-semibold text-[#f0f0f0] focus:outline-none"
+              onClick={() => setShowEmergencySupportModal(true)}
+            >
               {t('emergencySupport')}
-            </Link>
+            </button>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
@@ -241,20 +253,22 @@ const Header = () => {
         </div>
       </header>
       {showAccountModal && <AccountPage onClose={() => setShowAccountModal(false)} />}
-      {showReportModal && <ReportModal onClose={() => setShowReportModal(false)} />}
+      {showReportModal && <ReportDisaster onClose={() => setShowReportModal(false)} />}
       {showSettingsModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] relative">
+          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] relative max-w-xl w-full">
             <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
               onClick={() => setShowSettingsModal(false)}
             >
               ✕
             </button>
-            <h2 className="text-xl font-bold mb-4">Settings</h2>
-            <p className="text-gray-700">Settings content goes here.</p>
+            <SettingsPage onClose={() => setShowSettingsModal(false)} />
           </div>
         </div>
+      )}
+      {showEmergencySupportModal && (
+        <EmergencySupport onClose={() => setShowEmergencySupportModal(false)} />
       )}
     </>
   );
