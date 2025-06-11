@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import api from '../../api';
 
 const ChatInterface = () => {
@@ -53,7 +53,34 @@ const ChatBox = ({ onClose }) => {
     },
   ]);
   const [inputValue, setInputValue] = useState('');
-  const [isListening, setIsListening] = useState(false); // Add listening state
+  const [isListening, setIsListening] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0); // For waveform
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const sourceRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll to bottom on new message
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isListening]);
+
+  // Clean up audio context on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
@@ -114,9 +141,119 @@ const ChatBox = ({ onClose }) => {
     if (e.key === 'Enter') handleSendMessage();
   };
 
-  const handleVoiceClick = () => {
-    setIsListening((prev) => !prev); // Toggle listening state
-    // Here you would start/stop actual voice recognition logic
+  const handleVoiceClick = async () => {
+    if (!isListening) {
+      // Start recording
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new window.MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+          audioChunksRef.current = [];
+
+          // Audio context for waveform
+          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+          sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+          analyserRef.current = audioContextRef.current.createAnalyser();
+          sourceRef.current.connect(analyserRef.current);
+          analyserRef.current.fftSize = 32;
+          const bufferLength = analyserRef.current.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+
+          const updateWave = () => {
+            analyserRef.current.getByteTimeDomainData(dataArray);
+            // Calculate average amplitude
+            let sum = 0;
+            for (let i = 0; i < bufferLength; i++) {
+              sum += Math.abs(dataArray[i] - 128);
+            }
+            setAudioLevel(sum / bufferLength);
+            animationFrameRef.current = requestAnimationFrame(updateWave);
+          };
+          updateWave();
+
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              audioChunksRef.current.push(e.data);
+            }
+          };
+
+          mediaRecorder.onstop = async () => {
+            if (audioContextRef.current) {
+              audioContextRef.current.close();
+              audioContextRef.current = null;
+            }
+            if (animationFrameRef.current) {
+              cancelAnimationFrame(animationFrameRef.current);
+            }
+            setAudioLevel(0);
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+            // Send audioBlob to backend for transcription
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'voice.wav');
+            setMessages((prev) => [
+              ...prev,
+              { id: prev.length + 1, sender: 'user', text: '[Voice message: transcribing...]' },
+            ]);
+            try {
+              const res = await api.post('/transcribe', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+              });
+              const transcript = res.data.transcript;
+              setMessages((prev) => prev.slice(0, -1));
+              setInputValue(transcript);
+              handleSendMessageWithText(transcript);
+            } catch (err) {
+              setMessages((prev) => [
+                ...prev.slice(0, -1),
+                { id: prev.length, sender: 'bot', text: 'Voice transcription failed.' },
+              ]);
+            }
+          };
+
+          mediaRecorder.start();
+          setIsListening(true);
+        } catch (err) {
+          alert('Microphone access denied or not available.');
+        }
+      }
+    } else {
+      // Stop recording
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+        setIsListening(false);
+      }
+    }
+  };
+
+  // Helper to send a specific text (used for voice transcript)
+  const handleSendMessageWithText = async (text) => {
+    if (text.trim() === '') return;
+    const newUserMessage = {
+      id: messages.length + 1,
+      sender: 'user',
+      text,
+    };
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      newUserMessage,
+      {
+        id: prevMessages.length + 2,
+        sender: 'bot',
+        text: 'Tiara is typing...',
+      },
+    ]);
+    setInputValue('');
+    const llamaReply = await sendMessageToLlama(text);
+    setMessages((prevMessages) => {
+      const updated = [...prevMessages];
+      updated[updated.length - 1] = {
+        id: updated.length,
+        sender: 'bot',
+        text: llamaReply,
+      };
+      return updated;
+    });
   };
 
   return (
@@ -124,10 +261,12 @@ const ChatBox = ({ onClose }) => {
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <div className="flex items-center">
-          {/* Bot Avatar - Using CSS instead of image */}
-          <div className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-bold text-lg">
-            T
-          </div>
+          {/* Bot Avatar - Using image instead of CSS */}
+          <img
+            src="/images/tiara.png"
+            alt="Tiara Bot Avatar"
+            className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+          />
           <h2 className="text-xl font-bold text-[#0a4974] ml-3">Ask Tiara</h2>
         </div>
         <button
@@ -151,12 +290,11 @@ const ChatBox = ({ onClose }) => {
           </svg>
         </button>
       </div>
-
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Listening indicator */}
+        {/* Listening indicator with waveform */}
         {isListening && (
-          <div className="flex justify-center mb-2">
+          <div className="flex flex-col items-center mb-2">
             <div className="flex items-center space-x-2 animate-pulse">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -176,6 +314,21 @@ const ChatBox = ({ onClose }) => {
               </svg>
               <span className="text-[#0a4974] font-semibold">Tiara is listening...</span>
             </div>
+            {/* Waveform visualization */}
+            <div className="w-full flex justify-center mt-2">
+              <div className="flex items-end h-6 space-x-1">
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-2 rounded bg-[#0a4974] transition-all duration-100"
+                    style={{
+                      height: `${4 + audioLevel * (i % 3 === 0 ? 2 : 1)}px`,
+                      opacity: 0.7 + 0.3 * Math.random(),
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
         {messages.map((message) => (
@@ -184,9 +337,11 @@ const ChatBox = ({ onClose }) => {
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             {message.sender === 'bot' && (
-              <div className="w-[35px] h-[35px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-bold text-sm mr-2 flex-shrink-0">
-                T
-              </div>
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
             )}
             <div
               className={`rounded-[15px] p-3 max-w-[250px] ${
@@ -198,14 +353,16 @@ const ChatBox = ({ onClose }) => {
               <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
             </div>
             {message.sender === 'user' && (
-              <div className="w-[35px] h-[35px] rounded-full bg-[#083757] flex items-center justify-center text-white font-bold text-sm ml-2 flex-shrink-0">
-                H
-              </div>
+              <img
+                src="/images/profile.JPG"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
             )}
           </div>
         ))}
+        <div ref={chatEndRef} />
       </div>
-
       {/* Input area */}
       <div className="p-4 border-t border-gray-300">
         <div className="bg-[#fafafa] rounded-[16px] flex items-center p-2">
