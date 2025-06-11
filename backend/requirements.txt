@@ -1,5 +1,11 @@
 fastapi
-uvicorn
-ollama
 python-dotenv
-requests
+passlib[bcrypt]
+pyodbc
+pydantic
+google-auth
+PyJWT
+openai
+whisper
+ollama
+python-multipart
