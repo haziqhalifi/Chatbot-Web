@@ -9,7 +9,8 @@ const ChatInterface = () => {
   });
   const [chatKey, setChatKey] = useState(0); // To force ChatBox remount on new chat
   const [chatSize, setChatSize] = useState({ width: 380, height: 600 });
-  const [chatPos, setChatPos] = useState({ right: 16, bottom: 16 }); // px from window edge
+  // Fixed position - always anchored to bottom-right
+  const fixedPosition = { right: 16, bottom: 16 };
   const resizingRef = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
@@ -38,8 +39,6 @@ const ChatInterface = () => {
       startY: e.clientY,
       startWidth: chatSize.width,
       startHeight: chatSize.height,
-      startRight: chatPos.right,
-      startBottom: chatPos.bottom,
     };
     document.body.style.userSelect = 'none';
     e.stopPropagation();
@@ -48,45 +47,62 @@ const ChatInterface = () => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!resizingRef.current) return;
-      const dx = resizingRef.current.startX - e.clientX;
-      const dy = resizingRef.current.startY - e.clientY;
+      // Calculate size changes - expanding to top and left
+      const dx = resizingRef.current.startX - e.clientX; // positive when dragging left
+      const dy = resizingRef.current.startY - e.clientY; // positive when dragging up
+
       const newWidth = Math.max(300, resizingRef.current.startWidth + dx);
       const newHeight = Math.max(400, resizingRef.current.startHeight + dy);
-      // Clamp so chat stays in viewport
-      const maxRight = Math.max(0, window.innerWidth - newWidth);
-      const maxBottom = Math.max(0, window.innerHeight - newHeight);
-      setChatSize({ width: newWidth, height: newHeight });
-      setChatPos({
-        right: Math.min(Math.max(0, resizingRef.current.startRight - dx), maxRight),
-        bottom: Math.min(Math.max(0, resizingRef.current.startBottom - dy), maxBottom),
+
+      // Clamp so chat doesn't exceed viewport bounds
+      const maxWidth = window.innerWidth - fixedPosition.right;
+      const maxHeight = window.innerHeight - fixedPosition.bottom;
+
+      setChatSize({
+        width: Math.min(newWidth, maxWidth),
+        height: Math.min(newHeight, maxHeight),
       });
     };
+
     const handleMouseUp = () => {
       resizingRef.current = false;
       document.body.style.userSelect = '';
     };
+
+    // Handle window resize to keep chat in bounds
+    const handleWindowResize = () => {
+      setChatSize((prevSize) => {
+        const maxWidth = window.innerWidth - fixedPosition.right;
+        const maxHeight = window.innerHeight - fixedPosition.bottom;
+        return {
+          width: Math.min(prevSize.width, maxWidth),
+          height: Math.min(prevSize.height, maxHeight),
+        };
+      });
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('resize', handleWindowResize);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('resize', handleWindowResize);
     };
   }, []);
 
   return (
-    <div
-      className="fixed z-50"
-      style={{
-        right: chatPos.right,
-        bottom: chatPos.bottom,
-        // No left/top, so bottom-right stays fixed
-      }}
-    >
+    <>
       {/* Chat interface - Expanded */}
       {isChatOpen && (
         <div
-          className="mb-4 mr-4 transition-all duration-300 ease-in-out relative"
-          style={{ width: chatSize.width, height: chatSize.height }}
+          className="fixed z-50 transition-all duration-300 ease-in-out"
+          style={{
+            right: `${fixedPosition.right}px`,
+            bottom: `${fixedPosition.bottom}px`,
+            width: chatSize.width,
+            height: chatSize.height,
+          }}
         >
           {/* Resize handle (top-left) */}
           <div
@@ -117,11 +133,15 @@ const ChatInterface = () => {
         </div>
       )}
 
-      {/* Chat button - Collapsed */}
+      {/* Chat button - Collapsed - Fixed position */}
       {!isChatOpen && (
         <button
           onClick={handleOpen}
-          className="mb-6 mr-6 bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-4 shadow-lg transition-all duration-200 transform hover:scale-105"
+          className="fixed z-50 bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-4 shadow-lg transition-all duration-200 transform hover:scale-105"
+          style={{
+            right: '16px',
+            bottom: '16px',
+          }}
           aria-label="Open chat"
         >
           <svg
@@ -139,7 +159,7 @@ const ChatInterface = () => {
           </svg>
         </button>
       )}
-    </div>
+    </>
   );
 };
 
