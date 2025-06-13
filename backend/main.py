@@ -12,8 +12,8 @@ import jwt
 from datetime import datetime, timedelta
 import openai
 import whisper
-from database import get_db_conn  # Import the database connection helper
-from users import create_user, verify_user, get_or_create_google_user
+from database import get_db_conn, update_users_table  # Import the database connection helper
+from users import create_user, verify_user, get_or_create_google_user, get_user_profile, update_user_profile
 from chat_utils import verify_api_key, generate_response, transcribe_audio_file
 from auth_utils import google_authenticate  # Import the Google authentication logic
 
@@ -22,11 +22,15 @@ load_dotenv()
 API_KEY_CREDITS = {os.getenv("API_KEY"): 100}
 print(API_KEY_CREDITS)
 
+# Initialize database updates
+update_users_table()
+
 app = FastAPI()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 origins = [
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://localhost:4028",
 ]
 
@@ -56,6 +60,10 @@ class ReportRequest(BaseModel):
     disaster_type: str
     description: str
     timestamp: str  # ISO format string for date and time
+
+class UserProfileRequest(BaseModel):
+    name: str
+    language: str = "English"
 
 # --- SIGN UP ---
 @app.post("/signup")
@@ -95,3 +103,40 @@ def transcribe_audio(file: UploadFile = File(...)):
 def create_report(report: ReportRequest):
     from database import insert_report
     return insert_report(report)
+
+# --- USER PROFILE ENDPOINTS ---
+@app.get("/profile")
+def get_profile(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return get_user_profile(user_id)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.put("/profile")
+def update_profile(request: UserProfileRequest, authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return update_user_profile(user_id, request.name, request.language)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
