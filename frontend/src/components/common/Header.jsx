@@ -15,6 +15,11 @@ const Header = () => {
   const { t, i18n } = useTranslation();
   const [language, setLanguage] = React.useState('English');
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
+  const [userProfile, setUserProfile] = React.useState(() => {
+    // Load profile from localStorage on initialization
+    const savedProfile = localStorage.getItem('tiara_user_profile');
+    return savedProfile ? JSON.parse(savedProfile) : null;
+  });
 
   // Notification state using custom hook
   const {
@@ -41,6 +46,9 @@ const Header = () => {
   };
 
   const handleLogout = () => {
+    // Clear profile cache on logout
+    localStorage.removeItem('tiara_user_profile');
+    localStorage.removeItem('tiara_user_profile_timestamp');
     // Remove token from localStorage/sessionStorage
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
@@ -50,6 +58,25 @@ const Header = () => {
     // Redirect to sign-in page
     window.location.href = '/signin';
   };
+
+  // Listen for profile updates from other components
+  React.useEffect(() => {
+    const handleStorageChange = () => {
+      const savedProfile = localStorage.getItem('tiara_user_profile');
+      setUserProfile(savedProfile ? JSON.parse(savedProfile) : null);
+    };
+
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for custom profile update events
+    window.addEventListener('profileUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('profileUpdated', handleStorageChange);
+    };
+  }, []);
 
   // Demo function to test notifications
   const testNotification = () => {
@@ -76,6 +103,54 @@ const Header = () => {
 
     const randomNotification = notifications[Math.floor(Math.random() * notifications.length)];
     randomNotification();
+  };
+
+  // Profile Avatar Component with fallback
+  const ProfileAvatar = () => {
+    const [imageError, setImageError] = React.useState(false);
+
+    if (userProfile?.profile_picture && !imageError) {
+      return (
+        <img
+          src={userProfile.profile_picture}
+          alt="User Profile"
+          className="w-[50px] h-[50px] rounded-full object-cover border-2 border-gray-300"
+          onError={() => {
+            console.log('Profile picture failed to load, using fallback');
+            setImageError(true);
+          }}
+        />
+      );
+    }
+
+    // Fallback to user initials if available
+    if (userProfile?.name) {
+      const initials = userProfile.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+      return (
+        <div className="w-[50px] h-[50px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-lg border-2 border-gray-300">
+          {initials}
+        </div>
+      );
+    }
+
+    // Ultimate fallback - default profile image
+    return (
+      <img
+        src="/images/profile.JPG"
+        alt="User Profile"
+        className="w-[50px] h-[50px] rounded-full object-cover border-2 border-gray-300"
+        onError={(e) => {
+          // If even the default image fails, show a generic avatar
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
+    );
   };
 
   // Optional: Close dropdowns when clicking outside
@@ -213,11 +288,14 @@ const Header = () => {
               className="profile-img focus:outline-none"
               onClick={() => setProfileDropdownOpen((open) => !open)}
             >
-              <img
-                src="/images/profile.JPG"
-                alt="User Profile"
-                className="w-[50px] h-[50px] rounded-full"
-              />
+              <ProfileAvatar />
+              {/* Fallback div for when default image also fails */}
+              <div
+                className="w-[50px] h-[50px] rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold text-lg border-2 border-gray-300"
+                style={{ display: 'none' }}
+              >
+                👤
+              </div>
             </button>
             {profileDropdownOpen && (
               <div className="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-30">
