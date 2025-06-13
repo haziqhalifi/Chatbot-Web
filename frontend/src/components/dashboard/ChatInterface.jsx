@@ -345,7 +345,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     localStorage.removeItem('tiara_user_profile');
     localStorage.removeItem('tiara_user_profile_timestamp');
     console.log('Profile cache cleared');
-  };  // Export functions
+  }; // Export functions
   const createExportableContent = () => {
     // Create a temporary container with all messages for export
     const exportContainer = document.createElement('div');
@@ -366,7 +366,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       padding-bottom: 15px;
       border-bottom: 2px solid #0a4974;
     `;
-    
+
     const title = document.createElement('h1');
     title.textContent = 'Tiara Chat Conversation';
     title.style.cssText = `
@@ -375,7 +375,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       font-weight: bold;
       margin: 0;
     `;
-    
+
     const timestamp = document.createElement('div');
     timestamp.textContent = `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
     timestamp.style.cssText = `
@@ -383,7 +383,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       font-size: 14px;
       margin-left: auto;
     `;
-    
+
     header.appendChild(title);
     header.appendChild(timestamp);
     exportContainer.appendChild(header);
@@ -406,9 +406,10 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         max-width: 70%;
         padding: 12px 16px;
         border-radius: 18px;
-        ${message.sender === 'user' 
-          ? 'background: linear-gradient(135deg, #0a4974, #083757); color: white; border-bottom-right-radius: 6px;' 
-          : 'background: #f5f5f5; color: #333; border: 1px solid #e0e0e0; border-bottom-left-radius: 6px;'
+        ${
+          message.sender === 'user'
+            ? 'background: linear-gradient(135deg, #0a4974, #083757); color: white; border-bottom-right-radius: 6px;'
+            : 'background: #f5f5f5; color: #333; border: 1px solid #e0e0e0; border-bottom-left-radius: 6px;'
         }
         word-wrap: break-word;
         position: relative;
@@ -443,11 +444,11 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     try {
       setIsExporting(true);
       const html2canvas = (await import('html2canvas')).default;
-      
+
       // Create exportable content
       const exportContent = createExportableContent();
       document.body.appendChild(exportContent);
-      
+
       const canvas = await html2canvas(exportContent, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -456,10 +457,10 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         width: exportContent.offsetWidth,
         height: exportContent.scrollHeight,
       });
-      
+
       // Remove the temporary element
       document.body.removeChild(exportContent);
-      
+
       // Create download link
       const link = document.createElement('a');
       link.download = `tiara-chat-${new Date().toISOString().split('T')[0]}.png`;
@@ -480,11 +481,11 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       setIsExporting(true);
       const { jsPDF } = await import('jspdf');
       const html2canvas = (await import('html2canvas')).default;
-      
+
       // Create exportable content
       const exportContent = createExportableContent();
       document.body.appendChild(exportContent);
-      
+
       const canvas = await html2canvas(exportContent, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -493,28 +494,28 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         width: exportContent.offsetWidth,
         height: exportContent.scrollHeight,
       });
-      
+
       // Remove the temporary element
       document.body.removeChild(exportContent);
-      
+
       const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
       });
-      
+
       const imgWidth = 210; // A4 width in mm
       const pageHeight = 295; // A4 height in mm minus margins
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
-      
+
       let position = 0;
-      
+
       // Add first page
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
-      
+
       // Add additional pages if needed
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
@@ -522,7 +523,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
-      
+
       pdf.save(`tiara-chat-${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('Error exporting to PDF:', error);
@@ -830,7 +831,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                 <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
             </button>
-            
+
             {/* Export Dropdown Menu */}
             {showExportDropdown && (
               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 export-dropdown">
@@ -898,7 +899,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
               </div>
             )}
           </div>
-          
+
           <button
             onClick={handleNewChatClick}
             className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
