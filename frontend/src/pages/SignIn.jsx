@@ -127,7 +127,7 @@ const SignInPage = () => {
   };
 
   const handleSignUp = () => {
-    alert('Redirecting to sign up page...');
+    navigate('/signup');
   };
 
   const getFieldError = (fieldName) => {
