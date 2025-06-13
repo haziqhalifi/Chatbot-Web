@@ -50,6 +50,9 @@ def verify_user(email: str, password: str):
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         
+        # Update last login time
+        update_last_login(row[0])
+        
         return {
             "message": "Login successful",
             "token": token,
@@ -69,20 +72,32 @@ def verify_user(email: str, password: str):
         except:
             pass
 
-def get_or_create_google_user(email: str, name: str):
+def get_or_create_google_user(email: str, name: str, given_name: str = "", family_name: str = "", picture: str = "", locale: str = "en", email_verified: bool = False):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
         row = cursor.fetchone()
         if not row:
+            # Create new user with all Google information
             cursor.execute(
-                "INSERT INTO users (email, name, hashed_password) VALUES (?, ?, ?)",
-                (email, name, None)
+                """INSERT INTO users (email, name, given_name, family_name, profile_picture, 
+                   language, email_verified, hashed_password, auth_provider) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (email, name, given_name, family_name, picture, locale, email_verified, None, "google")
             )
             conn.commit()
             cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
             row = cursor.fetchone()
+        else:
+            # Update existing user with latest Google information
+            cursor.execute(
+                """UPDATE users SET name = ?, given_name = ?, family_name = ?, 
+                   profile_picture = ?, language = ?, email_verified = ?, auth_provider = ? 
+                   WHERE email = ?""",
+                (name, given_name, family_name, picture, locale, email_verified, "google", email)
+            )
+            conn.commit()
         return row[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,7 +113,10 @@ def get_user_profile(user_id: int):
         cursor = conn.cursor()
         print(f"Fetching profile for user_id: {user_id}")
         cursor.execute(
-            "SELECT id, email, name, language, role FROM users WHERE id = ?", 
+            """SELECT id, email, name, given_name, family_name, language, role, 
+               profile_picture, email_verified, auth_provider, phone, address, 
+               city, country, timezone, created_at, updated_at, last_login 
+               FROM users WHERE id = ?""", 
             (user_id,)
         )
         row = cursor.fetchone()
@@ -111,8 +129,21 @@ def get_user_profile(user_id: int):
             "id": row[0],
             "email": row[1],
             "name": row[2] or "",
-            "language": row[3] or "English",
-            "role": row[4] or "Public"
+            "given_name": row[3] or "",
+            "family_name": row[4] or "",
+            "language": row[5] or "English",
+            "role": row[6] or "Public",
+            "profile_picture": row[7] or "",
+            "email_verified": bool(row[8]) if row[8] is not None else False,
+            "auth_provider": row[9] or "local",
+            "phone": row[10] or "",
+            "address": row[11] or "",
+            "city": row[12] or "",
+            "country": row[13] or "",
+            "timezone": row[14] or "",
+            "created_at": row[15].isoformat() if row[15] else None,
+            "updated_at": row[16].isoformat() if row[16] else None,
+            "last_login": row[17].isoformat() if row[17] else None,
         }
         print(f"Returning profile data: {profile_data}")
         return profile_data
@@ -124,14 +155,18 @@ def get_user_profile(user_id: int):
         except:
             pass
 
-def update_user_profile(user_id: int, name: str, language: str):
+def update_user_profile(user_id: int, name: str, language: str, phone: str = "", address: str = "", city: str = "", country: str = "", timezone: str = ""):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        print(f"Updating profile for user_id: {user_id}, name: {name}, language: {language}")
+        print(f"Updating profile for user_id: {user_id}")
+        print(f"New data: name={name}, language={language}, phone={phone}, address={address}, city={city}, country={country}, timezone={timezone}")
+        
         cursor.execute(
-            "UPDATE users SET name = ?, language = ? WHERE id = ?",
-            (name, language, user_id)
+            """UPDATE users SET name = ?, language = ?, phone = ?, address = ?, 
+               city = ?, country = ?, timezone = ?, updated_at = GETDATE() 
+               WHERE id = ?""",
+            (name, language, phone, address, city, country, timezone, user_id)
         )
         print(f"Rows affected: {cursor.rowcount}")
         if cursor.rowcount == 0:
@@ -141,6 +176,25 @@ def update_user_profile(user_id: int, name: str, language: str):
         return {"message": "Profile updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def update_last_login(user_id: int):
+    """Update the last login timestamp for a user"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE users SET last_login = GETDATE() WHERE id = ?",
+            (user_id,)
+        )
+        conn.commit()
+        print(f"Updated last login for user {user_id}")
+    except Exception as e:
+        print(f"Failed to update last login: {e}")
     finally:
         try:
             conn.close()

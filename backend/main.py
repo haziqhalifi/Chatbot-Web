@@ -64,6 +64,11 @@ class ReportRequest(BaseModel):
 class UserProfileRequest(BaseModel):
     name: str
     language: str = "English"
+    phone: str = ""
+    address: str = ""
+    city: str = ""
+    country: str = ""
+    timezone: str = ""
 
 # --- SIGN UP ---
 @app.post("/signup")
@@ -135,7 +140,7 @@ def update_profile(request: UserProfileRequest, authorization: str = Header(None
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        return update_user_profile(user_id, request.name, request.language)
+        return update_user_profile(user_id, request.name, request.language, request.phone, request.address, request.city, request.country, request.timezone)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
