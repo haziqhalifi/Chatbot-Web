@@ -3,11 +3,13 @@ import Header from '../components/common/Header';
 import Button from '../components/ui/Button';
 import InputField from '../components/ui/InputField';
 import Dropdown from '../components/ui/Dropdown';
+import api from '../api';
+import { useAuth } from '../contexts/AuthContext';
 
 const initialForm = {
-  name: '',
+  title: '',
   location: '',
-  type: '',
+  disaster_type: '',
   description: '',
 };
 
@@ -23,6 +25,7 @@ const disasterTypes = [
 const ReportDisaster = ({ onClose }) => {
   const [form, setForm] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
+  const { user } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,13 +33,24 @@ const ReportDisaster = ({ onClose }) => {
   };
 
   const handleTypeSelect = (option) => {
-    setForm((prev) => ({ ...prev, type: option.value }));
+    setForm((prev) => ({ ...prev, disaster_type: option.value }));
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setForm(initialForm);
+    try {
+      await api.post('/report', {
+        user_id: user?.id || 1, // Use authenticated user's ID or fallback to 1
+        title: form.title,
+        location: form.location,
+        disaster_type: form.disaster_type,
+        description: form.description,
+        timestamp: new Date().toISOString(),
+      });
+      setSubmitted(true);
+      setForm(initialForm);
+    } catch (error) {
+      alert('Failed to submit report. Please try again.');
+    }
   };
 
   return (
@@ -56,13 +70,13 @@ const ReportDisaster = ({ onClose }) => {
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-semibold text-[#2c2c2c] mb-1">Your Name</label>
+            <label className="block text-sm font-semibold text-[#2c2c2c] mb-1">Title</label>
             <InputField
               type="text"
-              name="name"
-              value={form.name}
+              name="title"
+              value={form.title}
               onChange={handleChange}
-              placeholder="Enter your name"
+              placeholder="Enter a title for the report"
               required
             />
           </div>
@@ -81,7 +95,7 @@ const ReportDisaster = ({ onClose }) => {
             <label className="block text-sm font-semibold text-[#2c2c2c] mb-1">Disaster Type</label>
             <Dropdown
               options={disasterTypes}
-              selectedOption={disasterTypes.find((d) => d.value === form.type)}
+              selectedOption={disasterTypes.find((d) => d.value === form.disaster_type)}
               onSelect={handleTypeSelect}
               placeholder="Select type"
               required
