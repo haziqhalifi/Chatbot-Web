@@ -8,6 +8,10 @@ const ChatInterface = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [chatKey, setChatKey] = useState(0); // To force ChatBox remount on new chat
+  const [chatSize, setChatSize] = useState({ width: 380, height: 600 });
+  const [chatPos, setChatPos] = useState({ right: 16, bottom: 16 }); // px from window edge
+  const resizingRef = useRef(false);
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   const handleClose = (messages) => {
     setIsChatOpen(false);
@@ -27,16 +31,88 @@ const ChatInterface = () => {
     setChatKey((k) => k + 1); // Force ChatBox remount
   };
 
+  // Mouse event handlers for resizing (top-left, anchored bottom-right)
+  const handleResizeMouseDown = (e) => {
+    resizingRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: chatSize.width,
+      startHeight: chatSize.height,
+      startRight: chatPos.right,
+      startBottom: chatPos.bottom,
+    };
+    document.body.style.userSelect = 'none';
+    e.stopPropagation();
+    e.preventDefault();
+  };
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!resizingRef.current) return;
+      const dx = resizingRef.current.startX - e.clientX;
+      const dy = resizingRef.current.startY - e.clientY;
+      const newWidth = Math.max(300, resizingRef.current.startWidth + dx);
+      const newHeight = Math.max(400, resizingRef.current.startHeight + dy);
+      // Clamp so chat stays in viewport
+      const maxRight = Math.max(0, window.innerWidth - newWidth);
+      const maxBottom = Math.max(0, window.innerHeight - newHeight);
+      setChatSize({ width: newWidth, height: newHeight });
+      setChatPos({
+        right: Math.min(Math.max(0, resizingRef.current.startRight - dx), maxRight),
+        bottom: Math.min(Math.max(0, resizingRef.current.startBottom - dy), maxBottom),
+      });
+    };
+    const handleMouseUp = () => {
+      resizingRef.current = false;
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   return (
-    <div className="fixed bottom-0 right-0 z-50">
+    <div
+      className="fixed z-50"
+      style={{
+        right: chatPos.right,
+        bottom: chatPos.bottom,
+        // No left/top, so bottom-right stays fixed
+      }}
+    >
       {/* Chat interface - Expanded */}
       {isChatOpen && (
-        <div className="mb-4 mr-4 transition-all duration-300 ease-in-out">
+        <div
+          className="mb-4 mr-4 transition-all duration-300 ease-in-out relative"
+          style={{ width: chatSize.width, height: chatSize.height }}
+        >
+          {/* Resize handle (top-left) */}
+          <div
+            onMouseDown={handleResizeMouseDown}
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: 20,
+              height: 20,
+              cursor: 'nwse-resize',
+              zIndex: 10,
+              background: 'transparent',
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20">
+              <polyline points="0,20 20,0" stroke="#0a4974" strokeWidth="2" fill="none" />
+            </svg>
+          </div>
           <ChatBox
             key={chatKey}
             onClose={handleClose}
             onNewChat={handleNewChat}
             savedChat={savedChat}
+            width={chatSize.width}
+            height={chatSize.height}
           />
         </div>
       )}
@@ -68,7 +144,7 @@ const ChatInterface = () => {
 };
 
 // Chat Interface Component
-const ChatBox = ({ onClose, onNewChat, savedChat }) => {
+const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const [messages, setMessages] = useState(
     () =>
       savedChat || [
@@ -297,7 +373,16 @@ const ChatBox = ({ onClose, onNewChat, savedChat }) => {
   };
 
   return (
-    <div className="bg-[#a1a1a1] rounded-[22px] w-[380px] h-[600px] flex flex-col shadow-2xl">
+    <div
+      className="bg-[#a1a1a1] rounded-[22px] flex flex-col shadow-2xl"
+      style={{
+        width: width || 380,
+        height: height || 600,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <div className="flex items-center">
@@ -354,50 +439,21 @@ const ChatBox = ({ onClose, onNewChat, savedChat }) => {
         </div>
       </div>
       {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Listening indicator with waveform */}
-        {isListening && (
-          <div className="flex flex-col items-center mb-2">
-            <div className="flex items-center space-x-2 animate-pulse">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="#0a4974"
-                stroke="#0a4974"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="23"></line>
-                <line x1="8" y1="23" x2="16" y2="23"></line>
-              </svg>
-              <span className="text-[#0a4974] font-semibold">Tiara is listening...</span>
-            </div>
-            {/* Waveform visualization */}
-            <div className="w-full flex justify-center mt-2">
-              <div className="flex items-end h-6 space-x-1">
-                {Array.from({ length: 16 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 rounded bg-[#0a4974] transition-all duration-100"
-                    style={{
-                      height: `${4 + audioLevel * (i % 3 === 0 ? 2 : 1)}px`,
-                      opacity: 0.7 + 0.3 * Math.random(),
-                    }}
-                  ></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        style={{
+          minHeight: 0,
+          maxHeight: height ? height - 170 : 430,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+        }}
+      >
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            style={{ width: '100%' }}
           >
             {message.sender === 'bot' && (
               <img
@@ -407,19 +463,22 @@ const ChatBox = ({ onClose, onNewChat, savedChat }) => {
               />
             )}
             <div
-              className={`rounded-[15px] p-3 max-w-[250px] ${
-                message.sender === 'user'
-                  ? 'bg-[#d0e8ff] text-[#333333]'
-                  : 'bg-[#f0f0f0] text-[#333333]'
-              }`}
+              className={`rounded-[15px] p-3 ${message.sender === 'user' ? 'bg-[#d0e8ff] text-[#333333]' : 'bg-[#f0f0f0] text-[#333333]'}`}
+              style={{ maxWidth: '80%', wordBreak: 'break-word', width: 'fit-content' }}
             >
               {message.sender === 'bot' ? (
                 <p
                   className="text-sm leading-relaxed whitespace-pre-line"
                   dangerouslySetInnerHTML={{ __html: message.text }}
+                  style={{ wordBreak: 'break-word' }}
                 />
               ) : (
-                <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+                <p
+                  className="text-sm leading-relaxed whitespace-pre-line"
+                  style={{ wordBreak: 'break-word' }}
+                >
+                  {message.text}
+                </p>
               )}
             </div>
             {message.sender === 'user' && (
@@ -442,7 +501,8 @@ const ChatBox = ({ onClose, onNewChat, savedChat }) => {
             value={inputValue}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-transparent text-sm outline-none px-2"
+            className="flex-1 bg-transparent text-sm outline-none px-2 min-w-0"
+            style={{ width: '100%' }}
           />
           <button
             onClick={handleVoiceClick}
