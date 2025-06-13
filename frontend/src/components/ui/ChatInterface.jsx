@@ -350,7 +350,14 @@ const ChatBox = ({ onClose }) => {
                   : 'bg-[#f0f0f0] text-[#333333]'
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+              {message.sender === 'bot' ? (
+                <p
+                  className="text-sm leading-relaxed whitespace-pre-line"
+                  dangerouslySetInnerHTML={{ __html: message.text }}
+                />
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+              )}
             </div>
             {message.sender === 'user' && (
               <img
