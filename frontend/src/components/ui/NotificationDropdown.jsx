@@ -12,7 +12,7 @@ const NotificationDropdown = ({
   onClearAll,
 }) => {
   const { t } = useTranslation();
-  
+
   if (!isOpen) return null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;

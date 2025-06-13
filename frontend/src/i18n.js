@@ -17,17 +17,17 @@ i18n
     resources,
     fallbackLng: 'en',
     debug: process.env.NODE_ENV === 'development',
-    
+
     // Language detection options
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],
     },
-    
+
     interpolation: {
       escapeValue: false,
     },
-    
+
     // Namespace and key separator
     keySeparator: '.',
     nsSeparator: false,

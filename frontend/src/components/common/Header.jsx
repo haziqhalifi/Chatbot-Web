@@ -14,7 +14,7 @@ import { useLayerEffects } from '../../hooks/useLayerEffects';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
-  
+
   // Get current language display name based on i18n language
   const getCurrentLanguageDisplay = () => {
     return i18n.language === 'ms' ? 'Malay' : 'English';

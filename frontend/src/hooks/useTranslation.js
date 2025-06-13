@@ -10,7 +10,7 @@ export const useT = () => {
   return {
     // Basic translation
     t,
-    
+
     // Common translations
     common: (key) => t(`common.${key}`),
     nav: (key) => t(`navigation.${key}`),
@@ -18,16 +18,16 @@ export const useT = () => {
     chat: (key) => t(`chat.${key}`),
     disaster: (key) => t(`disaster.${key}`),
     error: (key) => t(`errors.${key}`),
-    
+
     // Language utilities
     currentLanguage: i18n.language,
     isEnglish: i18n.language === 'en',
     isMalay: i18n.language === 'ms',
     changeLanguage: i18n.changeLanguage,
-    
+
     // Formatted translations with parameters
     format: (key, params) => t(key, params),
-    
+
     // Pluralization helper
     plural: (key, count, params = {}) => t(key, { count, ...params }),
   };
