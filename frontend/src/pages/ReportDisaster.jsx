@@ -16,6 +16,7 @@ const initialForm = {
 const disasterTypes = [
   { value: '', label: 'Select type' },
   { value: 'Flood', label: 'Flood' },
+  { value: 'Landslide', label: 'Landslide' },
   { value: 'Earthquake', label: 'Earthquake' },
   { value: 'Fire', label: 'Fire' },
   { value: 'Storm', label: 'Storm' },
