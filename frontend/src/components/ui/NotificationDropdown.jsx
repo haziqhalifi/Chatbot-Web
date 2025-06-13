@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bell, X, Check, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 
 const NotificationDropdown = ({
@@ -10,6 +11,8 @@ const NotificationDropdown = ({
   onDelete,
   onClearAll,
 }) => {
+  const { t } = useTranslation();
+  
   if (!isOpen) return null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -59,7 +62,7 @@ const NotificationDropdown = ({
       <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center space-x-2">
           <Bell className="w-5 h-5 text-gray-600" />
-          <h3 className="font-semibold text-gray-800">Notifications</h3>
+          <h3 className="font-semibold text-gray-800">{t('disaster.notifications')}</h3>
           {unreadCount > 0 && (
             <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               {unreadCount}
@@ -86,7 +89,7 @@ const NotificationDropdown = ({
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-gray-500">
             <Bell className="w-12 h-12 text-gray-300 mb-2" />
-            <p className="text-sm">No notifications yet</p>
+            <p className="text-sm">{t('disaster.noNotifications')}</p>
             <p className="text-xs text-gray-400">
               When you get notifications, they'll show up here
             </p>

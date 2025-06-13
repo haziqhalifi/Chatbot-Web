@@ -5,8 +5,13 @@ const LanguageDropdown = ({ isOpen, language, onLanguageChange, onToggle }) => {
   const { i18n } = useTranslation();
 
   const handleLanguageSelect = (lang, locale) => {
-    onLanguageChange(lang);
     i18n.changeLanguage(locale);
+    onLanguageChange(lang); // This will close the dropdown
+  };
+
+  // Determine if a language is currently selected based on i18n language
+  const isLanguageActive = (targetLocale) => {
+    return i18n.language === targetLocale;
   };
 
   return (
@@ -27,10 +32,9 @@ const LanguageDropdown = ({ isOpen, language, onLanguageChange, onToggle }) => {
       </button>
       {isOpen && (
         <div className="language-dropdown absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-200 z-20 overflow-hidden">
-          <div className="py-1">
-            <button
+          <div className="py-1">            <button
               className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 ${
-                language === 'English' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
+                isLanguageActive('en') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
               }`}
               onClick={() => handleLanguageSelect('English', 'en')}
             >
@@ -41,7 +45,7 @@ const LanguageDropdown = ({ isOpen, language, onLanguageChange, onToggle }) => {
             </button>
             <button
               className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 ${
-                language === 'Malay' ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
+                isLanguageActive('ms') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
               }`}
               onClick={() => handleLanguageSelect('Malay', 'ms')}
             >

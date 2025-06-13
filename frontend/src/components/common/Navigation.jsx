@@ -11,14 +11,14 @@ const Navigation = ({ onOpenReport, onOpenEmergency }) => {
         className="text-base font-semibold text-[#f0f0f0] focus:outline-none"
         onClick={onOpenReport}
       >
-        {t('reportDisaster')}
+        {t('disaster.reportDisaster')}
       </button>
       <button
         type="button"
         className="text-base font-semibold text-[#f0f0f0] focus:outline-none"
         onClick={onOpenEmergency}
       >
-        {t('emergencySupport')}
+        {t('disaster.emergencySupport')}
       </button>
     </nav>
   );

@@ -1,6 +1,68 @@
 {
-  "reportDisaster": "Report Disaster",
-  "emergencySupport": "Emergency Support",
-  "notifications": "Notifications",
-  "noNotifications": "No notifications"
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "selectLanguage": "Select Language"
+  },  "navigation": {
+    "home": "Home",
+    "chat": "Chat",
+    "profile": "My Account",
+    "settings": "Settings",
+    "help": "Help & FAQ",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "loginSuccess": "Login successful",
+    "loginError": "Login failed. Please check your credentials.",
+    "registerSuccess": "Registration successful",
+    "registerError": "Registration failed. Please try again."
+  },
+  "chat": {
+    "sendMessage": "Send Message",
+    "typeMessage": "Type your message...",
+    "noMessages": "No messages yet",
+    "chatbot": "Chatbot",
+    "you": "You",
+    "messageError": "Failed to send message"
+  },
+  "disaster": {
+    "reportDisaster": "Report Disaster",
+    "emergencySupport": "Emergency Support",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications",
+    "disasterType": "Disaster Type",
+    "location": "Location",
+    "description": "Description",
+    "severity": "Severity",
+    "reportSuccess": "Disaster report submitted successfully",
+    "reportError": "Failed to submit disaster report"
+  },
+  "errors": {
+    "networkError": "Network error. Please check your connection.",
+    "serverError": "Server error. Please try again later.",
+    "validationError": "Please fill in all required fields.",
+    "unknownError": "An unknown error occurred."
+  }
 }
