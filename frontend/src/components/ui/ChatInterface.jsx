@@ -356,7 +356,12 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
             formData.append('file', audioBlob, 'voice.wav');
             setMessages((prev) => [
               ...prev,
-              { id: prev.length + 1, sender: 'user', text: '[Voice message: transcribing...]' },
+              {
+                id: prev.length + 1,
+                sender: 'user',
+                text: '🎤 Transcribing voice message...',
+                isTranscribing: true,
+              },
             ]);
             try {
               const res = await api.post('/transcribe', formData, {
@@ -442,7 +447,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         <img
           src={userProfile.profile_picture}
           alt="User Avatar"
-          className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+          className="w-8 h-8 rounded-full object-cover bg-[#0a4974] ring-2 ring-white shadow-sm"
           onError={() => {
             console.log('User profile picture failed to load, using fallback');
             setImageError(true);
@@ -460,7 +465,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         .toUpperCase()
         .slice(0, 2);
       return (
-        <div className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm">
+        <div className="w-8 h-8 rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-xs ring-2 ring-white shadow-sm">
           {initials}
         </div>
       );
@@ -471,7 +476,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       <img
         src="/images/profile.JPG"
         alt="User Avatar"
-        className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+        className="w-8 h-8 rounded-full object-cover bg-[#0a4974] ring-2 ring-white shadow-sm"
         onError={(e) => {
           // If even the default image fails, show a generic avatar
           e.target.style.display = 'none';
@@ -561,65 +566,132 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       </div>
       {/* Chat messages */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        className="flex-1 overflow-y-auto px-4 py-4"
         style={{
           minHeight: 0,
           maxHeight: height ? height - 170 : 430,
           display: 'flex',
           flexDirection: 'column',
-          gap: '1rem',
+          gap: '0.75rem',
+          scrollBehavior: 'smooth'
         }}
       >
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} items-end space-x-2`}
             style={{ width: '100%' }}
           >
             {message.sender === 'bot' && (
-              <div className="flex items-end">
-                <img
-                  src="/images/tiara.png"
-                  alt="Tiara Bot Avatar"
-                  className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
+              <div className="flex items-end mb-1">
+                <div className="relative">
+                  <img
+                    src="/images/tiara.png"
+                    alt="Tiara Bot Avatar"
+                    className={`w-8 h-8 rounded-full object-cover bg-[#0a4974] transition-all duration-300 ${
+                      message.text === 'Tiara is typing...'
+                        ? 'ring-2 ring-blue-300 ring-offset-1'
+                        : ''
+                    }`}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  {message.text === 'Tiara is typing...' && (
+                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
                 <div
-                  className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm"
+                  className="w-8 h-8 rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-xs"
                   style={{ display: 'none' }}
                 >
                   🤖
                 </div>
               </div>
             )}
-            <div
-              className={`rounded-[15px] p-3 ${message.sender === 'user' ? 'bg-[#d0e8ff] text-[#333333]' : 'bg-[#f0f0f0] text-[#333333]'}`}
-              style={{ maxWidth: '80%', wordBreak: 'break-word', width: 'fit-content' }}
-            >
-              {message.sender === 'bot' ? (
-                <p
-                  className="text-sm leading-relaxed whitespace-pre-line"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                  style={{ wordBreak: 'break-word' }}
-                />
-              ) : (
-                <p
-                  className="text-sm leading-relaxed whitespace-pre-line"
-                  style={{ wordBreak: 'break-word' }}
-                >
-                  {message.text}
-                </p>
-              )}
+            
+            <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[75%]`}>
+              <div
+                className={`relative px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
+                  message.sender === 'user' 
+                    ? 'bg-gradient-to-br from-[#0a4974] to-[#083757] text-white rounded-2xl rounded-br-md' 
+                    : 'bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100'
+                }`}
+                style={{ 
+                  wordBreak: 'break-word',
+                  position: 'relative'
+                }}
+              >
+                {/* Message tail */}
+                <div 
+                  className={`absolute ${
+                    message.sender === 'user'
+                      ? 'bottom-0 -right-2 border-l-[10px] border-l-[#083757] border-t-[10px] border-t-transparent'
+                      : 'bottom-0 -left-2 border-r-[10px] border-r-white border-t-[10px] border-t-transparent'
+                  }`}
+                  style={{
+                    bottom: '2px'
+                  }}
+                ></div>
+
+                {message.sender === 'bot' ? (
+                  message.text === 'Tiara is typing...' ? (
+                    // Animated typing indicator
+                    <div className="flex items-center space-x-2 py-1">
+                      <span className="text-sm text-gray-600 font-medium">Tiara is typing</span>
+                      <div className="flex space-x-1">
+                        <div
+                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p
+                      className="text-sm leading-relaxed whitespace-pre-line"
+                      dangerouslySetInnerHTML={{ __html: message.text }}
+                      style={{ wordBreak: 'break-word' }}
+                    />
+                  )
+                ) : message.isTranscribing ? (
+                  // Animated transcription indicator
+                  <div className="flex items-center space-x-2 py-1">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm text-white font-medium italic">
+                      Transcribing...
+                    </span>
+                  </div>
+                ) : (
+                  <p
+                    className="text-sm leading-relaxed whitespace-pre-line font-medium"
+                    style={{ wordBreak: 'break-word' }}
+                  >
+                    {message.text}
+                  </p>
+                )}
+              </div>
+              
+              {/* Timestamp */}
+              <div className={`text-xs text-gray-500 mt-1 px-2 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
+                {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </div>
             </div>
+
             {message.sender === 'user' && (
-              <div className="flex items-end">
+              <div className="flex items-end mb-1">
                 <UserAvatar />
                 {/* Fallback div for when default image also fails */}
                 <div
-                  className="w-[43px] h-[43px] rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold text-sm"
+                  className="w-8 h-8 rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold text-xs"
                   style={{ display: 'none' }}
                 >
                   👤
@@ -632,42 +704,97 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       </div>
       {/* Input area */}
       <div className="p-4 border-t border-gray-300">
+        {/* Voice recording indicator */}
+        {isListening && (
+          <div className="mb-3 flex items-center justify-center p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse"></div>
+                <div className="absolute inset-0 w-4 h-4 bg-red-500 rounded-full animate-ping opacity-75"></div>
+              </div>
+              <span className="text-red-700 font-medium">Recording... Tap to stop</span>
+              <div className="flex space-x-1">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-red-400 rounded-full animate-pulse"
+                    style={{
+                      height: `${Math.max(4, (audioLevel / 10) * 20 + Math.random() * 10)}px`,
+                      animationDelay: `${i * 100}ms`,
+                    }}
+                  ></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-[#fafafa] rounded-[16px] flex items-center p-2">
           <input
             type="text"
-            placeholder="Type your message..."
+            placeholder={
+              isListening ? 'Recording... Tap microphone to stop' : 'Type your message...'
+            }
             value={inputValue}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            className="flex-1 bg-transparent text-sm outline-none px-2 min-w-0"
+            disabled={isListening}
+            className={`flex-1 bg-transparent text-sm outline-none px-2 min-w-0 transition-all duration-200 ${
+              isListening ? 'text-gray-400 cursor-not-allowed' : 'text-gray-800'
+            }`}
             style={{ width: '100%' }}
           />
           <button
             onClick={handleVoiceClick}
-            className={`p-2 hover:bg-gray-200 rounded-full transition-colors duration-200 ${isListening ? 'ring-2 ring-[#0a4974]' : ''}`}
-            aria-label="Voice input"
+            className={`p-2 rounded-full transition-all duration-200 ${
+              isListening
+                ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-300 ring-offset-2 scale-110'
+                : 'hover:bg-gray-200 text-gray-600'
+            }`}
+            aria-label={isListening ? 'Stop recording' : 'Voice input'}
+            title={isListening ? 'Stop recording' : 'Hold to record voice message'}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
+            {isListening ? (
+              // Stop recording icon
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <rect x="6" y="6" width="12" height="12" rx="2" />
+              </svg>
+            ) : (
+              // Microphone icon
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+                <line x1="8" y1="23" x2="16" y2="23"></line>
+              </svg>
+            )}
           </button>
           <button
             onClick={handleSendMessage}
-            className="p-2 ml-1 bg-[#0a4974] hover:bg-[#083757] text-white rounded-full transition-colors duration-200"
+            disabled={isListening || inputValue.trim() === ''}
+            className={`p-2 ml-1 rounded-full transition-all duration-200 ${
+              isListening || inputValue.trim() === ''
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-[#0a4974] hover:bg-[#083757] text-white hover:scale-105'
+            }`}
             aria-label="Send message"
+            title={isListening ? 'Stop recording first' : 'Send message'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
