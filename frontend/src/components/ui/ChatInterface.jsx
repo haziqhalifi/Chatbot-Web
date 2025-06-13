@@ -167,7 +167,11 @@ const ChatInterface = () => {
 // Chat Interface Component
 const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const { token } = useAuth();
-  const [userProfile, setUserProfile] = useState(null);
+  const [userProfile, setUserProfile] = useState(() => {
+    // Load from localStorage on initialization
+    const savedProfile = localStorage.getItem('tiara_user_profile');
+    return savedProfile ? JSON.parse(savedProfile) : null;
+  });
   const [messages, setMessages] = useState(
     () =>
       savedChat || [
@@ -194,18 +198,20 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     const fetchUserProfile = async () => {
       if (!token) return;
 
-      try {
-        const response = await api.get('/profile', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 5000,
-        });
-        setUserProfile(response.data);
+      // Check if we already have fresh profile data in localStorage
+      const savedProfile = localStorage.getItem('tiara_user_profile');
+      const profileTimestamp = localStorage.getItem('tiara_user_profile_timestamp');
+      const now = Date.now();
+      const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-        // Update welcome message with user's name if available and it's the default message
+      // If we have cached data that's less than 24 hours old, use it
+      if (savedProfile && profileTimestamp && now - parseInt(profileTimestamp) < CACHE_DURATION) {
+        const cachedProfile = JSON.parse(savedProfile);
+        setUserProfile(cachedProfile);
+
+        // Update welcome message with cached user's name if it's the default message
         if (
-          response.data.name &&
+          cachedProfile.name &&
           messages.length === 1 &&
           messages[0].sender === 'bot' &&
           messages[0].text.includes('Hi there!')
@@ -214,12 +220,54 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
             {
               id: 1,
               sender: 'bot',
-              text: `Hi ${response.data.name}! How can I help you today with disaster management?`,
+              text: `Hi ${cachedProfile.name}! How can I help you today with disaster management?`,
+            },
+          ]);
+        }
+        return; // Use cached data, don't make API call
+      }
+
+      // If no cached data or it's expired, fetch from API
+      try {
+        console.log('Fetching fresh user profile data...');
+        const response = await api.get('/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 5000,
+        });
+
+        const profileData = response.data;
+        setUserProfile(profileData);
+
+        // Save to localStorage with timestamp
+        localStorage.setItem('tiara_user_profile', JSON.stringify(profileData));
+        localStorage.setItem('tiara_user_profile_timestamp', now.toString());
+        console.log('User profile cached in localStorage');
+
+        // Update welcome message with user's name if available and it's the default message
+        if (
+          profileData.name &&
+          messages.length === 1 &&
+          messages[0].sender === 'bot' &&
+          messages[0].text.includes('Hi there!')
+        ) {
+          setMessages([
+            {
+              id: 1,
+              sender: 'bot',
+              text: `Hi ${profileData.name}! How can I help you today with disaster management?`,
             },
           ]);
         }
       } catch (error) {
         console.error('Failed to fetch user profile for chat:', error);
+        // If API fails but we have old cached data, use it anyway
+        if (savedProfile) {
+          console.log('Using expired cached profile data as fallback');
+          const cachedProfile = JSON.parse(savedProfile);
+          setUserProfile(cachedProfile);
+        }
       }
     };
 
@@ -246,6 +294,13 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   }, []);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
+
+  // Function to clear profile cache (can be called when profile is updated)
+  const clearProfileCache = () => {
+    localStorage.removeItem('tiara_user_profile');
+    localStorage.removeItem('tiara_user_profile_timestamp');
+    console.log('Profile cache cleared');
+  };
 
   const sendMessageToLlama = async (message) => {
     try {
@@ -573,7 +628,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
-          scrollBehavior: 'smooth'
+          scrollBehavior: 'smooth',
         }}
       >
         {messages.map((message) => (
@@ -610,28 +665,30 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                 </div>
               </div>
             )}
-            
-            <div className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[75%]`}>
+
+            <div
+              className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[75%]`}
+            >
               <div
                 className={`relative px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
-                  message.sender === 'user' 
-                    ? 'bg-gradient-to-br from-[#0a4974] to-[#083757] text-white rounded-2xl rounded-br-md' 
+                  message.sender === 'user'
+                    ? 'bg-gradient-to-br from-[#0a4974] to-[#083757] text-white rounded-2xl rounded-br-md'
                     : 'bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100'
                 }`}
-                style={{ 
+                style={{
                   wordBreak: 'break-word',
-                  position: 'relative'
+                  position: 'relative',
                 }}
               >
                 {/* Message tail */}
-                <div 
+                <div
                   className={`absolute ${
                     message.sender === 'user'
                       ? 'bottom-0 -right-2 border-l-[10px] border-l-[#083757] border-t-[10px] border-t-transparent'
                       : 'bottom-0 -left-2 border-r-[10px] border-r-white border-t-[10px] border-t-transparent'
                   }`}
                   style={{
-                    bottom: '2px'
+                    bottom: '2px',
                   }}
                 ></div>
 
@@ -666,9 +723,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                   // Animated transcription indicator
                   <div className="flex items-center space-x-2 py-1">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm text-white font-medium italic">
-                      Transcribing...
-                    </span>
+                    <span className="text-sm text-white font-medium italic">Transcribing...</span>
                   </div>
                 ) : (
                   <p
@@ -679,10 +734,12 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                   </p>
                 )}
               </div>
-              
+
               {/* Timestamp */}
-              <div className={`text-xs text-gray-500 mt-1 px-2 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}>
-                {new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              <div
+                className={`text-xs text-gray-500 mt-1 px-2 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}
+              >
+                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
 
