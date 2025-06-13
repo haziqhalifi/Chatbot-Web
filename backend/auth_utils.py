@@ -28,6 +28,7 @@ def google_authenticate(credential: str, client_id: str, jwt_secret: str, jwt_al
         payload = {
             "user_id": user_id,
             "email": email,
+            "name": name,
             "exp": datetime.utcnow() + timedelta(days=7)
         }
         token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
