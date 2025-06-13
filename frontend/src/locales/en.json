@@ -18,7 +18,8 @@
     "filter": "Filter",
     "clear": "Clear",
     "selectLanguage": "Select Language"
-  },  "navigation": {
+  },
+  "navigation": {
     "home": "Home",
     "chat": "Chat",
     "profile": "My Account",

@@ -32,7 +32,9 @@ const LanguageDropdown = ({ isOpen, language, onLanguageChange, onToggle }) => {
       </button>
       {isOpen && (
         <div className="language-dropdown absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-200 z-20 overflow-hidden">
-          <div className="py-1">            <button
+          <div className="py-1">
+            {' '}
+            <button
               className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 ${
                 isLanguageActive('en') ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-700'
               }`}
