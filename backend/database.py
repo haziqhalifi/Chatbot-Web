@@ -47,3 +47,37 @@ def insert_report(report):
             conn.close()
         except:
             pass
+
+def update_users_table():
+    """Add new columns to users table if they don't exist"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if columns exist first before trying to add them
+        cursor.execute("""
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'users'
+        """)
+        existing_columns = [row[0].lower() for row in cursor.fetchall()]
+        
+        # Only add columns if they don't exist
+        if 'name' not in existing_columns:
+            cursor.execute("ALTER TABLE users ADD name NVARCHAR(255)")
+            
+        if 'language' not in existing_columns:
+            cursor.execute("ALTER TABLE users ADD language NVARCHAR(50) DEFAULT 'English'")
+            
+        if 'role' not in existing_columns:
+            cursor.execute("ALTER TABLE users ADD role NVARCHAR(50) DEFAULT 'Public'")
+            
+        conn.commit()
+        print("Database schema updated successfully")
+    except Exception as e:
+        print(f"Database update error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
