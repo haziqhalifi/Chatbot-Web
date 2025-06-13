@@ -189,6 +189,48 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Handle ESC key to close modals
+  React.useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        if (showAccountModal) setShowAccountModal(false);
+        if (showReportModal) setShowReportModal(false);
+        if (showSettingsModal) setShowSettingsModal(false);
+        if (showEmergencySupportModal) setShowEmergencySupportModal(false);
+        if (profileDropdownOpen) setProfileDropdownOpen(false);
+        if (notifOpen) setNotifOpen(false);
+        if (dropdownOpen) setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [
+    showAccountModal,
+    showReportModal,
+    showSettingsModal,
+    showEmergencySupportModal,
+    profileDropdownOpen,
+    notifOpen,
+    dropdownOpen,
+  ]);
+
+  // Prevent body scroll when modal is open
+  React.useEffect(() => {
+    const anyModalOpen =
+      showAccountModal || showReportModal || showSettingsModal || showEmergencySupportModal;
+    if (anyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showAccountModal, showReportModal, showSettingsModal, showEmergencySupportModal]);
+
   return (
     <>
       <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
@@ -250,42 +292,67 @@ const Header = () => {
           {/* Language */}
           <div className="relative flex items-center">
             <button
-              className="flex items-center text-xl text-[#f0f0f0] focus:outline-none language-btn"
+              className="flex items-center text-xl text-[#f0f0f0] focus:outline-none language-btn px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
               onClick={() => setDropdownOpen((open) => !open)}
             >
               {language}
+              <svg
+                className={`ml-2 w-4 h-4 transform transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </button>
             {dropdownOpen && (
-              <div className="language-dropdown absolute right-0 mt-2 w-32 bg-white rounded shadow-lg z-10">
-                <button
-                  className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                    language === 'English' ? 'font-bold' : ''
-                  }`}
-                  onClick={() => {
-                    handleLanguageChange('English');
-                    i18n.changeLanguage('en');
-                  }}
-                >
-                  English
-                </button>
-                <button
-                  className={`block w-full text-left px-4 py-2 hover:bg-gray-100 ${
-                    language === 'Malay' ? 'font-bold' : ''
-                  }`}
-                  onClick={() => {
-                    handleLanguageChange('Malay');
-                    i18n.changeLanguage('ms');
-                  }}
-                >
-                  Malay
-                </button>
+              <div className="language-dropdown absolute right-0 top-full mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-200 z-20 overflow-hidden">
+                <div className="py-1">
+                  <button
+                    className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 ${
+                      language === 'English'
+                        ? 'bg-blue-50 text-blue-700 font-semibold'
+                        : 'text-gray-700'
+                    }`}
+                    onClick={() => {
+                      handleLanguageChange('English');
+                      i18n.changeLanguage('en');
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-3">🇺🇸</span>
+                      English
+                    </div>
+                  </button>
+                  <button
+                    className={`block w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-150 ${
+                      language === 'Malay'
+                        ? 'bg-blue-50 text-blue-700 font-semibold'
+                        : 'text-gray-700'
+                    }`}
+                    onClick={() => {
+                      handleLanguageChange('Malay');
+                      i18n.changeLanguage('ms');
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-3">🇲🇾</span>
+                      Malay
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
           </div>
           {/* Profile */}
           <div className="relative">
             <button
-              className="profile-img focus:outline-none"
+              className="profile-img focus:outline-none p-1 rounded-lg hover:bg-gray-700 transition-colors duration-200"
               onClick={() => setProfileDropdownOpen((open) => !open)}
             >
               <ProfileAvatar />
@@ -298,71 +365,190 @@ const Header = () => {
               </div>
             </button>
             {profileDropdownOpen && (
-              <div className="profile-dropdown absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-30">
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-800"
-                  onClick={() => {
-                    setShowAccountModal(true);
-                    setProfileDropdownOpen(false);
-                  }}
-                >
-                  My account
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-800"
-                  onClick={() => {
-                    setShowSettingsModal(true);
-                    setProfileDropdownOpen(false);
-                  }}
-                >
-                  Setting
-                </button>
-                <a
-                  href="/help-faq"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block px-4 py-2 hover:bg-gray-100 text-gray-800"
-                  onClick={() => setProfileDropdownOpen(false)}
-                >
-                  Help and FAQ
-                </a>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-gray-800"
-                  onClick={() => {
-                    setShowReportModal(true);
-                    setProfileDropdownOpen(false);
-                  }}
-                >
-                  Report
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
+              <div className="profile-dropdown absolute right-0 top-full mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 z-30 overflow-hidden">
+                <div className="py-1">
+                  <button
+                    className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
+                    onClick={() => {
+                      setShowAccountModal(true);
+                      setProfileDropdownOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      My Account
+                    </div>
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
+                    onClick={() => {
+                      setShowSettingsModal(true);
+                      setProfileDropdownOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      Settings
+                    </div>
+                  </button>
+                  <div className="border-t border-gray-100"></div>
+                  <a
+                    href="/help-faq"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
+                    onClick={() => setProfileDropdownOpen(false)}
+                  >
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Help & FAQ
+                    </div>
+                  </a>
+                  <button
+                    className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
+                    onClick={() => {
+                      setShowReportModal(true);
+                      setProfileDropdownOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
+                      </svg>
+                      Report Disaster
+                    </div>
+                  </button>
+                  <div className="border-t border-gray-100"></div>
+                  <button
+                    className="block w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors duration-150"
+                    onClick={handleLogout}
+                  >
+                    <div className="flex items-center">
+                      <svg
+                        className="w-5 h-5 mr-3 text-red-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      Logout
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       </header>
-      {showAccountModal && <AccountPage onClose={() => setShowAccountModal(false)} />}
-      {showReportModal && <ReportDisaster onClose={() => setShowReportModal(false)} />}
-      {showSettingsModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-8 min-w-[350px] relative max-w-xl w-full">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl"
-              onClick={() => setShowSettingsModal(false)}
-            >
-              ✕
-            </button>
-            <SettingsPage onClose={() => setShowSettingsModal(false)} />
+
+      {/* Account Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="animate-in fade-in duration-200 scale-95 animate-in">
+            <AccountPage onClose={() => setShowAccountModal(false)} />
           </div>
         </div>
       )}
+
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="animate-in fade-in duration-200 scale-95 animate-in">
+            <ReportDisaster onClose={() => setShowReportModal(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="animate-in fade-in duration-200 scale-95 animate-in">
+            <div className="bg-white rounded-xl shadow-2xl p-8 min-w-[400px] max-w-2xl w-full mx-4 border border-gray-100 relative">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100"
+                onClick={() => setShowSettingsModal(false)}
+                aria-label="Close settings"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <SettingsPage onClose={() => setShowSettingsModal(false)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Emergency Support Modal */}
       {showEmergencySupportModal && (
-        <EmergencySupport onClose={() => setShowEmergencySupportModal(false)} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="animate-in fade-in duration-200 scale-95 animate-in">
+            <EmergencySupport onClose={() => setShowEmergencySupportModal(false)} />
+          </div>
+        </div>
       )}
     </>
   );
