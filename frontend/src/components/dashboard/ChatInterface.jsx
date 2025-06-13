@@ -3,6 +3,9 @@ import api from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLayer } from '../../contexts/LayerContext';
 
+// Export functionality - we'll use html2canvas for PNG and jsPDF for PDF
+// These will need to be installed: npm install html2canvas jspdf
+
 const ChatInterface = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [savedChat, setSavedChat] = useState(() => {
@@ -217,6 +220,9 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const sourceRef = useRef(null);
   const animationFrameRef = useRef(null);
   const chatEndRef = useRef(null);
+  const chatContainerRef = useRef(null); // For export functionality
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch user profile for avatar
   useEffect(() => {
@@ -318,6 +324,20 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     };
   }, []);
 
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.export-dropdown')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
+
   const handleInputChange = (e) => setInputValue(e.target.value);
 
   // Function to clear profile cache (can be called when profile is updated)
@@ -325,6 +345,191 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     localStorage.removeItem('tiara_user_profile');
     localStorage.removeItem('tiara_user_profile_timestamp');
     console.log('Profile cache cleared');
+  };  // Export functions
+  const createExportableContent = () => {
+    // Create a temporary container with all messages for export
+    const exportContainer = document.createElement('div');
+    exportContainer.style.cssText = `
+      background: #ffffff;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+    `;
+
+    // Add header
+    const header = document.createElement('div');
+    header.style.cssText = `
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #0a4974;
+    `;
+    
+    const title = document.createElement('h1');
+    title.textContent = 'Tiara Chat Conversation';
+    title.style.cssText = `
+      color: #0a4974;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    `;
+    
+    const timestamp = document.createElement('div');
+    timestamp.textContent = `Exported on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`;
+    timestamp.style.cssText = `
+      color: #666;
+      font-size: 14px;
+      margin-left: auto;
+    `;
+    
+    header.appendChild(title);
+    header.appendChild(timestamp);
+    exportContainer.appendChild(header);
+
+    // Add messages
+    messages.forEach((message, index) => {
+      if (message.text === 'Tiara is typing...' || message.isTranscribing) {
+        return; // Skip temporary messages
+      }
+
+      const messageDiv = document.createElement('div');
+      messageDiv.style.cssText = `
+        display: flex;
+        margin-bottom: 15px;
+        ${message.sender === 'user' ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}
+      `;
+
+      const messageContent = document.createElement('div');
+      messageContent.style.cssText = `
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        ${message.sender === 'user' 
+          ? 'background: linear-gradient(135deg, #0a4974, #083757); color: white; border-bottom-right-radius: 6px;' 
+          : 'background: #f5f5f5; color: #333; border: 1px solid #e0e0e0; border-bottom-left-radius: 6px;'
+        }
+        word-wrap: break-word;
+        position: relative;
+      `;
+
+      const messageText = document.createElement('div');
+      messageText.innerHTML = message.text.replace(/\n/g, '<br>');
+      messageText.style.cssText = `
+        font-size: 14px;
+        line-height: 1.4;
+      `;
+
+      const messageMeta = document.createElement('div');
+      messageMeta.style.cssText = `
+        font-size: 11px;
+        opacity: 0.7;
+        margin-top: 5px;
+        ${message.sender === 'user' ? 'text-align: right;' : 'text-align: left;'}
+      `;
+      messageMeta.textContent = `${message.sender === 'user' ? 'You' : 'Tiara'} • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      messageContent.appendChild(messageText);
+      messageContent.appendChild(messageMeta);
+      messageDiv.appendChild(messageContent);
+      exportContainer.appendChild(messageDiv);
+    });
+
+    return exportContainer;
+  };
+
+  const exportToPNG = async () => {
+    try {
+      setIsExporting(true);
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Create exportable content
+      const exportContent = createExportableContent();
+      document.body.appendChild(exportContent);
+      
+      const canvas = await html2canvas(exportContent, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: exportContent.offsetWidth,
+        height: exportContent.scrollHeight,
+      });
+      
+      // Remove the temporary element
+      document.body.removeChild(exportContent);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `tiara-chat-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error exporting to PNG:', error);
+      alert('Failed to export chat as PNG. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      setIsExporting(true);
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Create exportable content
+      const exportContent = createExportableContent();
+      document.body.appendChild(exportContent);
+      
+      const canvas = await html2canvas(exportContent, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        width: exportContent.offsetWidth,
+        height: exportContent.scrollHeight,
+      });
+      
+      // Remove the temporary element
+      document.body.removeChild(exportContent);
+      
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210; // A4 width in mm
+      const pageHeight = 295; // A4 height in mm minus margins
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      
+      let position = 0;
+      
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      // Add additional pages if needed
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`tiara-chat-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      alert('Failed to export chat as PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const sendMessageToLlama = async (message) => {
@@ -601,6 +806,99 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
           <h2 className="text-xl font-bold text-[#0a4974] ml-3">Ask Tiara</h2>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Export Dropdown */}
+          <div className="relative export-dropdown">
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
+              aria-label="Export Chat"
+              title="Export chat options"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,15 17,10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
+            
+            {/* Export Dropdown Menu */}
+            {showExportDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 export-dropdown">
+                <div className="py-2">
+                  <button
+                    onClick={() => {
+                      exportToPNG();
+                      setShowExportDropdown(false);
+                    }}
+                    disabled={isExporting}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isExporting ? (
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21,15 16,10 5,21"></polyline>
+                      </svg>
+                    )}
+                    <span>{isExporting ? 'Exporting...' : 'Export as PNG'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      exportToPDF();
+                      setShowExportDropdown(false);
+                    }}
+                    disabled={isExporting}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isExporting ? (
+                      <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                        <polyline points="14,2 14,8 20,8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                    )}
+                    <span>{isExporting ? 'Exporting...' : 'Export as PDF'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <button
             onClick={handleNewChatClick}
             className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
@@ -646,6 +944,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       </div>
       {/* Chat messages */}
       <div
+        ref={chatContainerRef}
         className="flex-1 overflow-y-auto px-4 py-4"
         style={{
           minHeight: 0,
