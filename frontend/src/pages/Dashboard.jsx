@@ -1,9 +1,9 @@
 import React from 'react';
-import Header from '../../components/common/Header';
-import MapView from './MapView';
-import ChatInterface from '../../components/ui/ChatInterface';
+import Header from '../components/common/Header';
+import MapView from '../components/dashboard/MapView';
+import ChatInterface from '../components/dashboard/ChatInterface';
 
-const DisasterMap = () => {
+const Dashboard = () => {
   return (
     <div className="flex flex-col h-screen w-screen bg-[#f4f4f4] relative overflow-hidden">
       <Header />
@@ -15,4 +15,4 @@ const DisasterMap = () => {
   );
 };
 
-export default DisasterMap;
+export default Dashboard;

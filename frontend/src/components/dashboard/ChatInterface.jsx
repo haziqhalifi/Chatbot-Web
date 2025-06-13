@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLayer } from '../../contexts/LayerContext';
 
 const ChatInterface = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
@@ -15,6 +16,26 @@ const ChatInterface = () => {
   const resizingRef = useRef(false);
   const lastMousePos = useRef({ x: 0, y: 0 });
 
+  // Layer management
+  const { isLayerActive, closeLayerIfType, activeLayer } = useLayer();
+
+  // Close chat when modals are opened
+  useEffect(() => {
+    if (activeLayer) {
+      const layerType = activeLayer;
+      const isModal = [
+        'ACCOUNT_MODAL',
+        'REPORT_MODAL',
+        'SETTINGS_MODAL',
+        'EMERGENCY_MODAL',
+      ].includes(layerType);
+
+      if (isModal && isChatOpen) {
+        setIsChatOpen(false);
+      }
+    }
+  }, [activeLayer, isChatOpen]);
+
   const handleClose = (messages) => {
     setIsChatOpen(false);
     if (messages) {
@@ -24,6 +45,10 @@ const ChatInterface = () => {
   };
 
   const handleOpen = () => {
+    // Close any open layers when opening chat
+    closeLayerIfType('NOTIFICATION_DROPDOWN');
+    closeLayerIfType('LANGUAGE_DROPDOWN');
+    closeLayerIfType('PROFILE_DROPDOWN');
     setIsChatOpen(true);
   };
 

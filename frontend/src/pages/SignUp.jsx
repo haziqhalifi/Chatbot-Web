@@ -266,7 +266,6 @@ const SignUpPage = () => {
         const data = await res.json();
         throw new Error(data.detail || 'Google sign up failed');
       }
-      alert('Google sign up successful! Redirecting...');
       navigate('/');
     } catch (error) {
       setErrors((prev) => ({ ...prev, general: error.message || 'Google sign up failed.' }));
