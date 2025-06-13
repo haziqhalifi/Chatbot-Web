@@ -37,9 +37,10 @@ const AccountPage = ({ onClose }) => {
           },
           timeout: 5000, // 5 second timeout
         });
-
         const userData = response.data;
         console.log('User profile data received:', userData);
+        console.log('Profile picture URL:', userData.profile_picture);
+
         setFullName(userData.name || '');
         setEmail(userData.email || '');
         setRole(userData.role || 'Public');
@@ -154,20 +155,39 @@ const AccountPage = ({ onClose }) => {
         >
           ×
         </button>
-        <h1 className="text-2xl font-bold mb-6 text-blue-700">My Account</h1>
-
+        <h1 className="text-2xl font-bold mb-6 text-blue-700">My Account</h1>{' '}
         {/* Profile Picture Section */}
-        {profilePicture && (
-          <div className="mb-6 text-center">
-            <img
-              src={profilePicture}
-              alt="Profile"
-              className="w-24 h-24 rounded-full mx-auto mb-2 border-4 border-blue-200"
-            />
-            <p className="text-sm text-gray-600">Profile Picture</p>
-          </div>
-        )}
-
+        <div className="mb-6 text-center">
+          {profilePicture ? (
+            <div>
+              <img
+                src={profilePicture}
+                alt="Profile"
+                className="w-24 h-24 rounded-full mx-auto mb-2 border-4 border-blue-200 object-cover"
+                onError={(e) => {
+                  console.log('Profile picture failed to load:', profilePicture);
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+                onLoad={() => console.log('Profile picture loaded successfully:', profilePicture)}
+              />
+              <div
+                className="w-24 h-24 rounded-full mx-auto mb-2 border-4 border-gray-300 bg-gray-100 flex items-center justify-center text-gray-400 text-2xl"
+                style={{ display: 'none' }}
+              >
+                👤
+              </div>
+              <p className="text-sm text-gray-600">Profile Picture</p>
+            </div>
+          ) : (
+            <div>
+              <div className="w-24 h-24 rounded-full mx-auto mb-2 border-4 border-gray-300 bg-gray-100 flex items-center justify-center text-gray-400 text-2xl">
+                👤
+              </div>
+              <p className="text-sm text-gray-600">No Profile Picture</p>
+            </div>
+          )}
+        </div>
         <form onSubmit={handleProfileSubmit} className="mb-8">
           {/* Basic Information Section */}
           <div className="mb-8">
@@ -379,7 +399,6 @@ const AccountPage = ({ onClose }) => {
             </button>
           </div>
         </form>
-
         <div className="border-t pt-6">
           <button
             onClick={handleLogoutAll}
