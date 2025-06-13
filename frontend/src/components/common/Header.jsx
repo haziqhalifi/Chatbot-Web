@@ -1,23 +1,34 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Bell, Plus } from 'lucide-react';
 import AccountPage from '../../pages/Account';
 import ReportModal from '../../pages/ReportModal';
 import EmergencySupport from '../../pages/EmergencySupport';
 import ReportDisaster from '../../pages/ReportDisaster';
 import SettingsPage from '../../pages/Settings';
+import NotificationDropdown from '../ui/NotificationDropdown';
+import { useNotifications } from '../../hooks/useNotifications';
+import { useNotificationService } from '../../services/notificationService';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
   const [language, setLanguage] = React.useState('English');
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
-  // Notification state
+  // Notification state using custom hook
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAllNotifications,
+  } = useNotifications();
+
+  const notificationService = useNotificationService();
+
   const [notifOpen, setNotifOpen] = React.useState(false);
-  const [notifications, setNotifications] = React.useState([
-    { id: 1, text: 'Flood warning in your area', read: false },
-    { id: 2, text: 'Evacuation center opened nearby', read: false },
-  ]);
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
   const [showAccountModal, setShowAccountModal] = React.useState(false);
   const [showReportModal, setShowReportModal] = React.useState(false);
@@ -29,14 +40,6 @@ const Header = () => {
     setDropdownOpen(false);
   };
 
-  const markAsRead = (id) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-  };
-
-  const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
-
   const handleLogout = () => {
     // Remove token from localStorage/sessionStorage
     localStorage.removeItem('token');
@@ -46,6 +49,33 @@ const Header = () => {
     // sessionStorage.clear();
     // Redirect to sign-in page
     window.location.href = '/signin';
+  };
+
+  // Demo function to test notifications
+  const testNotification = () => {
+    const notifications = [
+      () =>
+        notificationService.showFloodWarning(
+          'Water levels rising rapidly in downtown area',
+          'Downtown District'
+        ),
+      () =>
+        notificationService.showEvacuationNotice(
+          'Immediate evacuation required for Zone A residents',
+          'Zone A'
+        ),
+      () =>
+        notificationService.showWeatherUpdate('Severe thunderstorm warning extended until 6 PM'),
+      () =>
+        notificationService.showShelterAvailable(
+          'Emergency shelter opened at Community Center',
+          'Main Street'
+        ),
+      () => notificationService.showAllClear('Storm warning lifted, safe to return home'),
+    ];
+
+    const randomNotification = notifications[Math.floor(Math.random() * notifications.length)];
+    randomNotification();
   };
 
   // Optional: Close dropdowns when clicking outside
@@ -109,52 +139,38 @@ const Header = () => {
           </nav>
         </div>
         <div className="flex items-center space-x-4">
+          {/* Test Notification Button (for demo purposes) */}
+          <button
+            onClick={testNotification}
+            className="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            title="Test Notification (Demo)"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+
           {/* Notification */}
           <div className="relative">
             <button
-              className="flex items-center notification-btn"
-              onClick={() => setNotifOpen((open) => !open)}
+              className="flex items-center notification-btn relative p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              onClick={() => setNotifOpen(!notifOpen)}
             >
-              <img src="/images/img_image.png" alt="Notification" className="w-[26px] h-[23px]" />
-              {notifications.some((n) => !n.read) && (
-                <span className="absolute top-0 right-0 bg-red-500 rounded-full w-3 h-3"></span>
+              <Bell className="w-6 h-6 text-gray-300" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
               )}
             </button>
-            {notifOpen && (
-              <div className="notification-dropdown absolute right-0 mt-2 w-80 bg-white rounded shadow-lg z-20 p-4">
-                <h3 className="font-bold mb-2">{t('notifications')}</h3>
-                {notifications.length === 0 ? (
-                  <div className="text-gray-500">{t('noNotifications')}</div>
-                ) : (
-                  notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`flex justify-between items-center mb-2 p-2 rounded ${notif.read ? 'bg-gray-100' : 'bg-blue-50'}`}
-                    >
-                      <span className={notif.read ? 'text-gray-400' : 'font-semibold'}>
-                        {notif.text}
-                      </span>
-                      <div className="flex space-x-2">
-                        {!notif.read && (
-                          <button
-                            className="text-xs text-blue-600 hover:underline"
-                            onClick={() => markAsRead(notif.id)}
-                          >
-                            Mark as Read
-                          </button>
-                        )}
-                        <button
-                          className="text-xs text-red-600 hover:underline"
-                          onClick={() => deleteNotification(notif.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+
+            <NotificationDropdown
+              isOpen={notifOpen}
+              notifications={notifications}
+              onClose={() => setNotifOpen(false)}
+              onMarkAsRead={markAsRead}
+              onMarkAllAsRead={markAllAsRead}
+              onDelete={deleteNotification}
+              onClearAll={clearAllNotifications}
+            />
           </div>
           {/* Language */}
           <div className="relative flex items-center">
