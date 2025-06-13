@@ -3,9 +3,28 @@ import api from '../../api';
 
 const ChatInterface = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
+  const [savedChat, setSavedChat] = useState(() => {
+    const saved = localStorage.getItem('tiara_last_chat');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [chatKey, setChatKey] = useState(0); // To force ChatBox remount on new chat
 
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen);
+  const handleClose = (messages) => {
+    setIsChatOpen(false);
+    if (messages) {
+      setSavedChat(messages);
+      localStorage.setItem('tiara_last_chat', JSON.stringify(messages));
+    }
+  };
+
+  const handleOpen = () => {
+    setIsChatOpen(true);
+  };
+
+  const handleNewChat = () => {
+    setSavedChat(null);
+    localStorage.removeItem('tiara_last_chat');
+    setChatKey((k) => k + 1); // Force ChatBox remount
   };
 
   return (
@@ -13,14 +32,19 @@ const ChatInterface = () => {
       {/* Chat interface - Expanded */}
       {isChatOpen && (
         <div className="mb-4 mr-4 transition-all duration-300 ease-in-out">
-          <ChatBox onClose={toggleChat} />
+          <ChatBox
+            key={chatKey}
+            onClose={handleClose}
+            onNewChat={handleNewChat}
+            savedChat={savedChat}
+          />
         </div>
       )}
 
       {/* Chat button - Collapsed */}
       {!isChatOpen && (
         <button
-          onClick={toggleChat}
+          onClick={handleOpen}
           className="mb-6 mr-6 bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-4 shadow-lg transition-all duration-200 transform hover:scale-105"
           aria-label="Open chat"
         >
@@ -44,14 +68,17 @@ const ChatInterface = () => {
 };
 
 // Chat Interface Component
-const ChatBox = ({ onClose }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      text: 'Hi Haziq! How can I help you today with disaster management?',
-    },
-  ]);
+const ChatBox = ({ onClose, onNewChat, savedChat }) => {
+  const [messages, setMessages] = useState(
+    () =>
+      savedChat || [
+        {
+          id: 1,
+          sender: 'bot',
+          text: 'Hi Haziq! How can I help you today with disaster management?',
+        },
+      ]
+  );
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0); // For waveform
@@ -256,6 +283,19 @@ const ChatBox = ({ onClose }) => {
     });
   };
 
+  // New Chat button handler
+  const handleNewChatClick = () => {
+    const newChat = [
+      {
+        id: 1,
+        sender: 'bot',
+        text: 'Hi Haziq! How can I help you today with disaster management?',
+      },
+    ];
+    setMessages(newChat);
+    if (onNewChat) onNewChat();
+  };
+
   return (
     <div className="bg-[#a1a1a1] rounded-[22px] w-[380px] h-[600px] flex flex-col shadow-2xl">
       {/* Header */}
@@ -269,26 +309,49 @@ const ChatBox = ({ onClose }) => {
           />
           <h2 className="text-xl font-bold text-[#0a4974] ml-3">Ask Tiara</h2>
         </div>
-        <button
-          onClick={onClose}
-          className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
-          aria-label="Minimize chat"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleNewChatClick}
+            className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
+            aria-label="New Chat"
+            title="Start a new chat"
           >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          <button
+            onClick={() => onClose(messages)}
+            className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
+            aria-label="Minimize chat"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
       </div>
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
