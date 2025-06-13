@@ -130,8 +130,30 @@ compiled/
 # Cython debug symbols
 cython_debug/
 
-# Node modules
+# Node.js / Frontend
 frontend/node_modules/
+frontend/package-lock.json
+frontend/build/
+frontend/dist/
+frontend/.vite/
+frontend/.tailwind/
+
+# Frontend logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# Testing
+frontend/coverage/
+frontend/jest-test-results.json
+
+# TypeScript
+frontend/*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
 
 # System files
 frontend/desktop.ini
