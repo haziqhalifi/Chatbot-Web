@@ -184,8 +184,42 @@ def verify_api_key(x_api_key: str = Header(None)):
 @app.post("/generate")
 def generate(request: PromptRequest, x_api_key: str = Depends(verify_api_key)):
     API_KEY_CREDITS[x_api_key] -= 1
-    response = ollama.chat(model="tiara", messages=[{"role": "user", "content": request.prompt}])
-    return {"response": response["message"]["content"]}
+    response = ollama.chat(
+        model="tiara",
+        messages=[{"role": "user", "content": request.prompt}],
+        options={"temperature": 0.2}
+    )
+    content = response["message"]["content"]
+    import re
+    # Convert *text* to _text_ (Markdown italics)
+    content = re.sub(r'(?<!\*)\*(\w[^*]+\w)\*(?!\*)', r'_\1_', content)
+    # Convert **text** to <b>text</b> (HTML bold)
+    content = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', content)
+
+    # Convert Markdown tables to HTML tables
+    def md_table_to_html(md):
+        lines = md.strip().split('\n')
+        html = []
+        i = 0
+        while i < len(lines):
+            if '|' in lines[i] and i+1 < len(lines) and set(lines[i+1].replace('|','').strip()) <= set('-: '):
+                # Table header
+                headers = [h.strip() for h in lines[i].split('|')[1:-1]]
+                html.append('<table border="1"><thead><tr>' + ''.join(f'<th>{h}</th>' for h in headers) + '</tr></thead><tbody>')
+                i += 2
+                # Table rows
+                while i < len(lines) and '|' in lines[i]:
+                    cells = [c.strip() for c in lines[i].split('|')[1:-1]]
+                    html.append('<tr>' + ''.join(f'<td>{c}</td>' for c in cells) + '</tr>')
+                    i += 1
+                html.append('</tbody></table>')
+            else:
+                html.append(lines[i])
+                i += 1
+        return '\n'.join(html)
+
+    content = md_table_to_html(content)
+    return {"response": content}
 
 @app.post("/transcribe")
 def transcribe_audio(file: UploadFile = File(...)):
