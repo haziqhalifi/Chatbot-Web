@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../../api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ChatInterface = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
@@ -165,13 +166,15 @@ const ChatInterface = () => {
 
 // Chat Interface Component
 const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
+  const { token } = useAuth();
+  const [userProfile, setUserProfile] = useState(null);
   const [messages, setMessages] = useState(
     () =>
       savedChat || [
         {
           id: 1,
           sender: 'bot',
-          text: 'Hi Haziq! How can I help you today with disaster management?',
+          text: 'Hi there! How can I help you today with disaster management?',
         },
       ]
   );
@@ -185,6 +188,43 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const sourceRef = useRef(null);
   const animationFrameRef = useRef(null);
   const chatEndRef = useRef(null);
+
+  // Fetch user profile for avatar
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!token) return;
+
+      try {
+        const response = await api.get('/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 5000,
+        });
+        setUserProfile(response.data);
+
+        // Update welcome message with user's name if available and it's the default message
+        if (
+          response.data.name &&
+          messages.length === 1 &&
+          messages[0].sender === 'bot' &&
+          messages[0].text.includes('Hi there!')
+        ) {
+          setMessages([
+            {
+              id: 1,
+              sender: 'bot',
+              text: `Hi ${response.data.name}! How can I help you today with disaster management?`,
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile for chat:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, [token]); // Removed messages dependency to avoid infinite loop
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
@@ -381,15 +421,64 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
 
   // New Chat button handler
   const handleNewChatClick = () => {
+    const userName = userProfile?.name || 'there';
     const newChat = [
       {
         id: 1,
         sender: 'bot',
-        text: 'Hi Haziq! How can I help you today with disaster management?',
+        text: `Hi ${userName}! How can I help you today with disaster management?`,
       },
     ];
     setMessages(newChat);
     if (onNewChat) onNewChat();
+  };
+
+  // User Avatar Component with fallback
+  const UserAvatar = () => {
+    const [imageError, setImageError] = useState(false);
+
+    if (userProfile?.profile_picture && !imageError) {
+      return (
+        <img
+          src={userProfile.profile_picture}
+          alt="User Avatar"
+          className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+          onError={() => {
+            console.log('User profile picture failed to load, using fallback');
+            setImageError(true);
+          }}
+        />
+      );
+    }
+
+    // Fallback to default image or user initials
+    if (userProfile?.name) {
+      const initials = userProfile.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+      return (
+        <div className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm">
+          {initials}
+        </div>
+      );
+    }
+
+    // Ultimate fallback - default profile image
+    return (
+      <img
+        src="/images/profile.JPG"
+        alt="User Avatar"
+        className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+        onError={(e) => {
+          // If even the default image fails, show a generic avatar
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
+    );
   };
 
   return (
@@ -407,11 +496,23 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       <div className="flex justify-between items-center p-4 border-b border-gray-300">
         <div className="flex items-center">
           {/* Bot Avatar - Using image instead of CSS */}
-          <img
-            src="/images/tiara.png"
-            alt="Tiara Bot Avatar"
-            className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
-          />
+          <div className="flex items-center">
+            <img
+              src="/images/tiara.png"
+              alt="Tiara Bot Avatar"
+              className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            <div
+              className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm"
+              style={{ display: 'none' }}
+            >
+              🤖
+            </div>
+          </div>
           <h2 className="text-xl font-bold text-[#0a4974] ml-3">Ask Tiara</h2>
         </div>
         <div className="flex items-center space-x-2">
@@ -476,11 +577,23 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
             style={{ width: '100%' }}
           >
             {message.sender === 'bot' && (
-              <img
-                src="/images/tiara.png"
-                alt="Tiara Bot Avatar"
-                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
-              />
+              <div className="flex items-end">
+                <img
+                  src="/images/tiara.png"
+                  alt="Tiara Bot Avatar"
+                  className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div
+                  className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm"
+                  style={{ display: 'none' }}
+                >
+                  🤖
+                </div>
+              </div>
             )}
             <div
               className={`rounded-[15px] p-3 ${message.sender === 'user' ? 'bg-[#d0e8ff] text-[#333333]' : 'bg-[#f0f0f0] text-[#333333]'}`}
@@ -502,11 +615,16 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
               )}
             </div>
             {message.sender === 'user' && (
-              <img
-                src="/images/profile.JPG"
-                alt="Tiara Bot Avatar"
-                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
-              />
+              <div className="flex items-end">
+                <UserAvatar />
+                {/* Fallback div for when default image also fails */}
+                <div
+                  className="w-[43px] h-[43px] rounded-full bg-gray-400 flex items-center justify-center text-white font-semibold text-sm"
+                  style={{ display: 'none' }}
+                >
+                  👤
+                </div>
+              </div>
             )}
           </div>
         ))}
