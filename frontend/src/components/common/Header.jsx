@@ -13,8 +13,12 @@ import { useLayer } from '../../contexts/LayerContext';
 import { useLayerEffects } from '../../hooks/useLayerEffects';
 
 const Header = () => {
-  const { t } = useTranslation();
-  const [language, setLanguage] = React.useState('English');
+  const { t, i18n } = useTranslation();
+  
+  // Get current language display name based on i18n language
+  const getCurrentLanguageDisplay = () => {
+    return i18n.language === 'ms' ? 'Malay' : 'English';
+  };
 
   // Custom hooks
   const { userProfile, logout } = useUserProfile();
@@ -39,7 +43,8 @@ const Header = () => {
 
   // Event handlers
   const handleLanguageChange = (lang) => {
-    setLanguage(lang);
+    // The LanguageDropdown component will handle i18n.changeLanguage
+    // We just need to close the layer
     closeLayer(); // Close language dropdown after selection
   };
 
@@ -99,7 +104,7 @@ const Header = () => {
 
           <LanguageDropdown
             isOpen={isLayerActive('LANGUAGE_DROPDOWN')}
-            language={language}
+            language={getCurrentLanguageDisplay()}
             onLanguageChange={handleLanguageChange}
             onToggle={() => toggleLayer('LANGUAGE_DROPDOWN')}
           />

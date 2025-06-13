@@ -1,6 +1,68 @@
 {
-  "reportDisaster": "Lapor Bencana",
-  "emergencySupport": "Sokongan Kecemasan",
-  "notifications": "Pemberitahuan",
-  "noNotifications": "Tiada pemberitahuan"
+  "common": {
+    "loading": "Memuatkan...",
+    "error": "Ralat",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "submit": "Hantar",
+    "delete": "Padam",
+    "edit": "Edit",
+    "close": "Tutup",
+    "yes": "Ya",
+    "no": "Tidak",
+    "confirm": "Sahkan",
+    "back": "Kembali",
+    "next": "Seterusnya",
+    "previous": "Sebelumnya",
+    "search": "Cari",
+    "filter": "Tapis",
+    "clear": "Kosongkan",
+    "selectLanguage": "Pilih Bahasa"
+  },  "navigation": {
+    "home": "Laman Utama",
+    "chat": "Sembang",
+    "profile": "Akaun Saya",
+    "settings": "Tetapan",
+    "help": "Bantuan & Soalan Lazim",
+    "logout": "Log Keluar"
+  },
+  "auth": {
+    "login": "Log Masuk",
+    "register": "Daftar",
+    "username": "Nama Pengguna",
+    "email": "Emel",
+    "password": "Kata Laluan",
+    "confirmPassword": "Sahkan Kata Laluan",
+    "forgotPassword": "Lupa Kata Laluan?",
+    "loginSuccess": "Log masuk berjaya",
+    "loginError": "Log masuk gagal. Sila semak kelayakan anda.",
+    "registerSuccess": "Pendaftaran berjaya",
+    "registerError": "Pendaftaran gagal. Sila cuba lagi."
+  },
+  "chat": {
+    "sendMessage": "Hantar Mesej",
+    "typeMessage": "Taip mesej anda...",
+    "noMessages": "Tiada mesej lagi",
+    "chatbot": "Chatbot",
+    "you": "Anda",
+    "messageError": "Gagal menghantar mesej"
+  },
+  "disaster": {
+    "reportDisaster": "Lapor Bencana",
+    "emergencySupport": "Sokongan Kecemasan",
+    "notifications": "Pemberitahuan",
+    "noNotifications": "Tiada pemberitahuan",
+    "disasterType": "Jenis Bencana",
+    "location": "Lokasi",
+    "description": "Penerangan",
+    "severity": "Keterukan",
+    "reportSuccess": "Laporan bencana berjaya dihantar",
+    "reportError": "Gagal menghantar laporan bencana"
+  },
+  "errors": {
+    "networkError": "Ralat rangkaian. Sila semak sambungan anda.",
+    "serverError": "Ralat pelayan. Sila cuba lagi kemudian.",
+    "validationError": "Sila isi semua medan yang diperlukan.",
+    "unknownError": "Ralat yang tidak diketahui berlaku."
+  }
 }
