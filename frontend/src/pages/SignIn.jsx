@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const SignInPage = () => {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -80,7 +82,6 @@ const SignInPage = () => {
 
     setIsLoading(true);
     setErrors((prev) => ({ ...prev, general: '' }));
-
     try {
       const response = await fetch('http://localhost:8000/signin', {
         method: 'POST',
@@ -94,7 +95,9 @@ const SignInPage = () => {
         const data = await response.json();
         throw new Error(data.detail || 'Invalid email or password. Please try again.');
       }
-      alert('Sign in successful! Redirecting...');
+
+      const data = await response.json();
+      login(data.token, data.user);
       navigate('/');
     } catch (error) {
       setErrors((prev) => ({
@@ -162,7 +165,9 @@ const SignInPage = () => {
         const data = await res.json();
         throw new Error(data.detail || 'Google sign in failed');
       }
-      alert('Google sign in successful! Redirecting...');
+
+      const data = await res.json();
+      login(data.token, { email: data.email, name: data.name });
       navigate('/');
     } catch (error) {
       setErrors((prev) => ({ ...prev, general: error.message || 'Google sign in failed.' }));

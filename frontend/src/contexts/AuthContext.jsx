@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
           setUser({
             id: decoded.user_id,
             email: decoded.email,
+            name: decoded.name || '',
           });
         } else {
           // Token expired, remove it
