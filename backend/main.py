@@ -16,6 +16,17 @@ from database import get_db_conn, update_users_table  # Import the database conn
 from users import create_user, verify_user, get_or_create_google_user, get_user_profile, update_user_profile
 from chat_utils import verify_api_key, generate_response, transcribe_audio_file
 from auth_utils import google_authenticate  # Import the Google authentication logic
+from rag_utils import initialize_rag
+from performance_utils import get_performance_stats
+
+# --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
+# For better Malay language support, consider using these models with Ollama:
+# 1. qwen2.5:7b (Currently configured - Excellent for Malay and English)
+# 2. ollama pull aya:8b or aya:35b (Multilingual, excellent for Malay)
+# 3. ollama pull gemma2:9b (Better multilingual capabilities)
+# 
+# Current model: "qwen2.5:7b" (Excellent Malay and English support)
+# To change the model, update the model name in chat_utils.py generate_response function
 
 load_dotenv()
 
@@ -24,6 +35,15 @@ print(API_KEY_CREDITS)
 
 # Initialize database updates
 update_users_table()
+
+# Initialize RAG system
+print("Initializing RAG system...")
+try:
+    initialize_rag()
+    print("RAG system initialized successfully!")
+except Exception as e:
+    print(f"Warning: RAG system initialization failed: {str(e)}")
+    print("The application will continue without RAG functionality.")
 
 app = FastAPI()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -49,6 +69,7 @@ class AuthRequest(BaseModel):
 
 class PromptRequest(BaseModel):
     prompt: str
+    rag_enabled: bool = True  # Default to True for backward compatibility
 
 class GoogleAuthRequest(BaseModel):
     credential: str
@@ -145,3 +166,42 @@ def update_profile(request: UserProfileRequest, authorization: str = Header(None
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+# --- RAG MANAGEMENT ENDPOINTS ---
+@app.post("/rebuild-rag")
+def rebuild_rag(x_api_key: str = Header(None)):
+    """Rebuild RAG embeddings (requires API key)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from rag_utils import get_rag_system
+        rag = get_rag_system()
+        rag.initialize_or_update(force_rebuild=True)
+        return {"message": "RAG embeddings rebuilt successfully", "documents_count": len(rag.documents)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to rebuild RAG: {str(e)}")
+
+@app.get("/rag-status")
+def get_rag_status(x_api_key: str = Header(None)):
+    """Get RAG system status (requires API key)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from rag_utils import get_rag_system
+        rag = get_rag_system()
+        
+        return {
+            "documents_count": len(rag.documents) if rag.documents else 0,
+            "embeddings_loaded": rag.embeddings is not None,
+            "documents_path": rag.documents_path,
+            "available_files": [f for f in os.listdir(rag.documents_path) if f.endswith('.pdf')] if os.path.exists(rag.documents_path) else []
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get RAG status: {str(e)}")
+
+@app.get("/performance")
+def get_performance_metrics(x_api_key: str = Header(None)):
+    """Get performance metrics (requires API key)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    return get_performance_stats()
