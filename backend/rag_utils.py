@@ -206,8 +206,7 @@ class RAGSystem:
         similarity_threshold = PERFORMANCE_SETTINGS.get("rag_similarity_threshold", 0.3)
         if max_similarity < similarity_threshold:
             logger.info(f"RAG: Max similarity {max_similarity:.3f} below threshold {similarity_threshold}, returning empty context")
-            return []
-        
+            return []        
         # Get top-k most similar chunks
         top_indices = np.argsort(similarities)[-top_k:][::-1]
         
@@ -222,13 +221,26 @@ class RAGSystem:
             logger.info(f"Chunk {i+1} - Similarity: {chunk['similarity']:.3f}, Source: {chunk.get('source', 'unknown')}")
         
         return relevant_chunks
-    
+
     def get_context_for_query(self, query: str, max_context_length: int = 1500) -> str:
-        """Get formatted context for a query"""
+        """Get formatted context for a query with smart year-based prioritization"""
         relevant_chunks = self.retrieve_relevant_chunks(query, top_k=RAG_SETTINGS.get("top_k_chunks", 3))
         
         if not relevant_chunks:
             return ""
+        
+        # Check if query contains a specific year
+        import re
+        year_match = re.search(r'\b(19|20)\d{2}\b', query)
+        target_year = year_match.group(0) if year_match else None
+        
+        # If a specific year is mentioned, prioritize chunks containing that year
+        if target_year:
+            year_chunks = [chunk for chunk in relevant_chunks if target_year in chunk['text']]
+            other_chunks = [chunk for chunk in relevant_chunks if target_year not in chunk['text']]
+            # Put year-specific chunks first
+            relevant_chunks = year_chunks + other_chunks
+            logger.info(f"Found {len(year_chunks)} chunks containing year {target_year}, prioritizing them")
         
         context_parts = []
         current_length = 0
@@ -244,8 +256,7 @@ class RAGSystem:
         
         context = "\n---\n".join(context_parts)
         return context
-
-# Global RAG instance
+  # Global RAG instance
 rag_system = None
 
 def get_rag_system() -> RAGSystem:
