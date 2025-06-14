@@ -7,7 +7,7 @@ import { useLayer } from '../../contexts/LayerContext';
 // These will need to be installed: npm install html2canvas jspdf
 
 const ChatInterface = () => {
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [savedChat, setSavedChat] = useState(() => {
     const saved = localStorage.getItem('tiara_last_chat');
     return saved ? JSON.parse(saved) : null;
