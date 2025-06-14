@@ -213,6 +213,11 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0); // For waveform
+  const [isRagEnabled, setIsRagEnabled] = useState(() => {
+    // Load RAG preference from localStorage, default to true
+    const savedRagPreference = localStorage.getItem('tiara_rag_enabled');
+    return savedRagPreference !== null ? JSON.parse(savedRagPreference) : true;
+  });
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
@@ -223,6 +228,13 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const chatContainerRef = useRef(null); // For export functionality
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Handle RAG toggle changes
+  const handleRagToggle = () => {
+    const newRagState = !isRagEnabled;
+    setIsRagEnabled(newRagState);
+    localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
+  };
 
   // Fetch user profile for avatar
   useEffect(() => {
@@ -537,7 +549,10 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
     try {
       const response = await api.post(
         '/generate',
-        { prompt: message },
+        {
+          prompt: message,
+          rag_enabled: isRagEnabled,
+        },
         {
           headers: {
             'x-api-key': 'secretkey', // Replace with your actual API key
@@ -898,6 +913,48 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* RAG Toggle Button */}
+          <div className="relative">
+            <button
+              onClick={handleRagToggle}
+              className={`${
+                isRagEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-600'
+              } text-white rounded-full p-2 transition-colors duration-200`}
+              aria-label={`RAG ${isRagEnabled ? 'Enabled' : 'Disabled'}`}
+              title={`RAG (Retrieval-Augmented Generation) is ${isRagEnabled ? 'ON' : 'OFF'}`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {isRagEnabled ? (
+                  // Book icon for RAG enabled
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                ) : (
+                  // Book-X icon for RAG disabled
+                  <>
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    <path d="m14.5 7-5 5" />
+                    <path d="m9.5 7 5 5" />
+                  </>
+                )}
+              </svg>
+            </button>
+            {/* RAG Status Indicator */}
+            <div
+              className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
+                isRagEnabled ? 'bg-green-400' : 'bg-red-400'
+              }`}
+            ></div>
           </div>
 
           <button
