@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, UploadFile, File
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi.middleware.cors import CORSMiddleware
 import ollama
 import os
@@ -12,12 +12,18 @@ import jwt
 from datetime import datetime, timedelta
 import openai
 import whisper
-from database import get_db_conn, update_users_table  # Import the database connection helper
+from database import get_db_conn, update_database_schema  # Import the database connection helper
 from users import create_user, verify_user, get_or_create_google_user, get_user_profile, update_user_profile
 from chat_utils import verify_api_key, generate_response, transcribe_audio_file
 from auth_utils import google_authenticate  # Import the Google authentication logic
 from rag_utils import initialize_rag
 from performance_utils import get_performance_stats
+from notifications import (
+    create_notification, get_user_notifications, get_unread_count,
+    mark_notification_as_read, mark_all_notifications_as_read,
+    delete_notification, clear_all_notifications, create_system_notification,
+    create_welcome_notification, create_report_confirmation_notification
+)
 
 # --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
 # For better Malay language support, consider using these models with Ollama:
@@ -34,7 +40,7 @@ API_KEY_CREDITS = {os.getenv("API_KEY"): 100}
 print(API_KEY_CREDITS)
 
 # Initialize database updates
-update_users_table()
+update_database_schema()
 
 # Initialize RAG system
 print("Initializing RAG system...")
@@ -91,10 +97,36 @@ class UserProfileRequest(BaseModel):
     country: str = ""
     timezone: str = ""
 
+class NotificationRequest(BaseModel):
+    title: str
+    message: str
+    type: str = "info"  # info, warning, danger, success
+
+class SystemNotificationRequest(BaseModel):
+    title: str
+    message: str
+    type: str = "info"
+    user_ids: Optional[list] = None
+
 # --- SIGN UP ---
 @app.post("/signup")
 def signup(request: AuthRequest):
-    return create_user(request.email, request.password)
+    result = create_user(request.email, request.password)
+    
+    # Get the user ID to create welcome notification
+    try:
+        from database import get_db_conn
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ?", (request.email,))
+        user_row = cursor.fetchone()
+        if user_row:
+            create_welcome_notification(user_row[0])
+        conn.close()
+    except Exception as e:
+        print(f"Failed to create welcome notification: {e}")
+    
+    return result
 
 # --- SIGN IN ---
 @app.post("/signin")
@@ -126,9 +158,20 @@ def transcribe_audio(file: UploadFile = File(...)):
     return transcribe_audio_file(file)
 
 @app.post("/report")
-def create_report(report: ReportRequest):
-    from database import insert_report
-    return insert_report(report)
+def submit_report(report: ReportRequest, x_api_key: str = Header(None)):
+    """Submit disaster report with notification"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database import insert_report
+        result = insert_report(report)
+        
+        # Create confirmation notification
+        create_report_confirmation_notification(report.user_id, report.title)
+        
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- USER PROFILE ENDPOINTS ---
 @app.get("/profile")
@@ -205,3 +248,89 @@ def get_performance_metrics(x_api_key: str = Header(None)):
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     return get_performance_stats()
+
+# --- NOTIFICATION ENDPOINTS ---
+
+def get_user_id_from_token(authorization: str):
+    """Helper function to extract user_id from JWT token"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@app.get("/notifications")
+def get_notifications(
+    authorization: str = Header(None),
+    limit: int = 50,
+    offset: int = 0,
+    unread_only: bool = False
+):
+    """Get notifications for the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    return get_user_notifications(user_id, limit, offset, unread_only)
+
+@app.get("/notifications/unread-count")
+def get_notifications_unread_count(authorization: str = Header(None)):
+    """Get count of unread notifications for the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    count = get_unread_count(user_id)
+    return {"unread_count": count}
+
+@app.post("/notifications")
+def create_user_notification(
+    request: NotificationRequest,
+    authorization: str = Header(None)
+):
+    """Create a notification for the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    return create_notification(user_id, request.title, request.message, request.type)
+
+@app.put("/notifications/{notification_id}/read")
+def mark_notification_read(
+    notification_id: int,
+    authorization: str = Header(None)
+):
+    """Mark a specific notification as read"""
+    user_id = get_user_id_from_token(authorization)
+    return mark_notification_as_read(notification_id, user_id)
+
+@app.put("/notifications/mark-all-read")
+def mark_all_notifications_read(authorization: str = Header(None)):
+    """Mark all notifications as read for the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    return mark_all_notifications_as_read(user_id)
+
+@app.delete("/notifications/{notification_id}")
+def delete_user_notification(
+    notification_id: int,
+    authorization: str = Header(None)
+):
+    """Delete a specific notification"""
+    user_id = get_user_id_from_token(authorization)
+    return delete_notification(notification_id, user_id)
+
+@app.delete("/notifications")
+def clear_all_user_notifications(authorization: str = Header(None)):
+    """Clear all notifications for the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    return clear_all_notifications(user_id)
+
+# --- ADMIN NOTIFICATION ENDPOINTS ---
+@app.post("/admin/notifications/system")
+def create_admin_system_notification(
+    request: SystemNotificationRequest,
+    x_api_key: str = Header(None)
+):
+    """Create system notifications (admin only - requires API key)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    return create_system_notification(request.title, request.message, request.type, request.user_ids)

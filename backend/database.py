@@ -122,3 +122,11 @@ def update_users_table():
             conn.close()
         except:
             pass
+
+def update_database_schema():
+    """Update database schema including notifications table"""
+    update_users_table()
+    
+    # Create notifications table
+    from notifications import create_notifications_table
+    create_notifications_table()

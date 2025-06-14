@@ -16,15 +16,6 @@ const NotificationCenter = ({
 }) => {
   return (
     <div className="flex items-center space-x-4">
-      {/* Test Notification Button (for demo purposes) */}
-      <button
-        onClick={onTestNotification}
-        className="p-2 rounded-lg hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
-        title="Test Notification (Demo)"
-      >
-        <Plus className="w-5 h-5" />
-      </button>
-
       {/* Notification */}
       <div className="relative">
         <button
