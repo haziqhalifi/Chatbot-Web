@@ -2,7 +2,7 @@
 # This file contains model settings for better maintainability
 
 # Current AI Model Configuration
-AI_MODEL = "qwen2.5:7b"  # Main model for chat responses
+AI_MODEL = "qwen2.5:3b"  # Main model for chat responses
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # For document embeddings
 
 # Alternative Models (uncomment to use)
@@ -13,7 +13,7 @@ EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2" 
 
 # Model-specific settings
 MODEL_SETTINGS = {
-    "qwen2.5:7b": {
+    "qwen2.5:3b": {
         "temperature": 0.3,  # Slightly higher for more natural responses
         "context_length": 4096,
         "supports_malay": True,
