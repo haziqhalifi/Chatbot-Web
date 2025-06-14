@@ -38,8 +38,8 @@ MODEL_SETTINGS = {
 RAG_SETTINGS = {
     "chunk_size": 500,
     "overlap": 50,
-    "max_context_length": 1500,
-    "top_k_chunks": 3
+    "max_context_length": 4000,  # Significantly increased to capture more chunks
+    "top_k_chunks": 10  # Increased to capture more relevant chunks including the 2020 data
 }
 
 # Performance Settings
