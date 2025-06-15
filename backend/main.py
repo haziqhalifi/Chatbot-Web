@@ -12,7 +12,7 @@ import jwt
 from datetime import datetime, timedelta
 import openai
 import whisper
-from database import get_db_conn, update_database_schema  # Import the database connection helper
+from database import get_db_conn, update_database_schema, get_all_reports, get_report_by_id, get_admin_dashboard_stats, get_system_status  # Import the database connection helper
 from users import create_user, verify_user, get_or_create_google_user, get_user_profile, update_user_profile
 from chat_utils import verify_api_key, generate_response, transcribe_audio_file
 from auth_utils import google_authenticate  # Import the Google authentication logic
@@ -265,6 +265,31 @@ def submit_report(report: ReportRequest, x_api_key: str = Header(None)):
             print(f"Failed to send targeted notifications: {e}")
         
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- GET REPORTS ---
+@app.get("/admin/reports")
+def get_reports(x_api_key: str = Header(None)):
+    """Get all disaster reports for admin dashboard"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        result = get_all_reports()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/reports/{report_id}")
+def get_report(report_id: int, x_api_key: str = Header(None)):
+    """Get specific disaster report by ID"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        report = get_report_by_id(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        return report
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -530,3 +555,25 @@ def test_enhanced_notification(authorization: str = Header(None)):
         "notification": result,
         "note": "Check your notifications to see the disaster type and location tags"
     }
+
+@app.get("/admin/dashboard/stats")
+def get_dashboard_stats(x_api_key: str = Header(None)):
+    """Get dashboard statistics for admin dashboard"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        stats = get_admin_dashboard_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/admin/system/status")
+def get_admin_system_status(x_api_key: str = Header(None)):
+    """Get system status for admin dashboard"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        status = get_system_status()
+        return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -19,14 +19,14 @@ export const AuthProvider = ({ children }) => {
     // Check for existing token on app load
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    
+
     if (savedToken) {
       try {
         const decoded = jwtDecode(savedToken);
         // Check if token is not expired
         if (decoded.exp * 1000 > Date.now()) {
           setToken(savedToken);
-          
+
           // Try to restore user data from localStorage first
           if (savedUser) {
             try {
