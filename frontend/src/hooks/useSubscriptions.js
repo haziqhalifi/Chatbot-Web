@@ -54,7 +54,7 @@ export const useSubscriptions = () => {
         user_id: response.data.user_id,
         is_active: true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       });
       return response.data;
     } catch (err) {
@@ -77,7 +77,7 @@ export const useSubscriptions = () => {
         locations: [],
         notification_methods: ['web'],
         radius_km: 10,
-        is_active: false
+        is_active: false,
       });
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to delete subscription');
@@ -88,21 +88,28 @@ export const useSubscriptions = () => {
   }, []);
 
   // Check if user is subscribed to a specific disaster type
-  const isSubscribedToType = useCallback((disasterType) => {
-    if (!subscription?.disaster_types?.length) return false;
-    return subscription.disaster_types.some(
-      type => type.toLowerCase() === disasterType.toLowerCase()
-    );
-  }, [subscription]);
+  const isSubscribedToType = useCallback(
+    (disasterType) => {
+      if (!subscription?.disaster_types?.length) return false;
+      return subscription.disaster_types.some(
+        (type) => type.toLowerCase() === disasterType.toLowerCase()
+      );
+    },
+    [subscription]
+  );
 
   // Check if user is subscribed to a specific location
-  const isSubscribedToLocation = useCallback((location) => {
-    if (!subscription?.locations?.length) return false;
-    return subscription.locations.some(
-      loc => loc.toLowerCase().includes(location.toLowerCase()) || 
-             location.toLowerCase().includes(loc.toLowerCase())
-    );
-  }, [subscription]);
+  const isSubscribedToLocation = useCallback(
+    (location) => {
+      if (!subscription?.locations?.length) return false;
+      return subscription.locations.some(
+        (loc) =>
+          loc.toLowerCase().includes(location.toLowerCase()) ||
+          location.toLowerCase().includes(loc.toLowerCase())
+      );
+    },
+    [subscription]
+  );
 
   // Initial load
   useEffect(() => {
