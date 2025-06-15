@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminSignInPage = () => {
   const { login } = useAuth();
@@ -23,40 +23,44 @@ const AdminSignInPage = () => {
   const validateEmail = (email) => {
     if (!email) return 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address';
-    
+
     // Check for government, education, or personal emails
     const domain = email.split('@')[1]?.toLowerCase() || '';
-    
+
     // Government domains
-    const isGovernment = (
-      domain.endsWith('.gov') || 
+    const isGovernment =
+      domain.endsWith('.gov') ||
       domain.endsWith('.gov.my') ||
       domain.endsWith('.mil') ||
       domain.includes('government') ||
       domain.includes('emergency') ||
-      domain.includes('disaster')
-    );
-    
+      domain.includes('disaster');
+
     // Education domains
-    const isEducation = (
+    const isEducation =
       domain.endsWith('.edu') ||
       domain.endsWith('.edu.my') ||
       domain.endsWith('.ac.my') ||
       domain.includes('university') ||
-      domain.includes('college')
-    );
-    
+      domain.includes('college');
+
     // Personal email domains
     const personalDomains = [
-      'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
-      'live.com', 'icloud.com', 'protonmail.com', 'tutanota.com'
+      'gmail.com',
+      'yahoo.com',
+      'hotmail.com',
+      'outlook.com',
+      'live.com',
+      'icloud.com',
+      'protonmail.com',
+      'tutanota.com',
     ];
     const isPersonal = personalDomains.includes(domain);
-    
+
     if (!isGovernment && !isEducation && !isPersonal) {
       return 'Please use a government, education, or personal email address';
     }
-    
+
     return '';
   };
 
@@ -74,13 +78,14 @@ const AdminSignInPage = () => {
   const validateAdminCode = (code) => {
     if (!code) return 'Admin verification code is required';
     if (code.length !== 8) return 'Admin code must be 8 characters';
-    if (!/^[A-Z0-9]+$/.test(code)) return 'Admin code must contain only uppercase letters and numbers';
+    if (!/^[A-Z0-9]+$/.test(code))
+      return 'Admin code must contain only uppercase letters and numbers';
     return '';
   };
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     let fieldValue = type === 'checkbox' ? checked : value;
-    
+
     // Auto-convert admin code to uppercase
     if (name === 'adminCode') {
       fieldValue = value.toUpperCase();
@@ -133,7 +138,7 @@ const AdminSignInPage = () => {
 
     setIsLoading(true);
     setErrors((prev) => ({ ...prev, general: '' }));
-    
+
     try {
       const response = await fetch('http://localhost:8000/admin/signin', {
         method: 'POST',
@@ -144,10 +149,12 @@ const AdminSignInPage = () => {
           adminCode: formData.adminCode,
         }),
       });
-      
+
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.detail || 'Invalid admin credentials. Please verify your information.');
+        throw new Error(
+          data.detail || 'Invalid admin credentials. Please verify your information.'
+        );
       }
 
       const data = await response.json();
@@ -183,9 +190,10 @@ const AdminSignInPage = () => {
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-red-600 rounded-full flex items-center justify-center mb-4">
             <Shield className="h-6 w-6 text-white" />
-          </div>          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Portal</h1>
+          </div>{' '}
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Portal</h1>
           <p className="text-sm text-gray-600">
-            Authorized Personnel Only - Use Government, Education, or Personal Email
+            Authorized Personnel Only - Use Government Email Only
           </p>
         </div>
 
@@ -197,8 +205,8 @@ const AdminSignInPage = () => {
               <div>
                 <h3 className="text-sm font-medium text-yellow-800">Security Notice</h3>
                 <p className="text-sm text-yellow-700 mt-1">
-                  This portal is restricted to authorized emergency management personnel only. 
-                  All access attempts are logged and monitored.
+                  This portal is restricted to authorized emergency management personnel only. All
+                  access attempts are logged and monitored.
                 </p>
               </div>
             </div>
@@ -212,10 +220,10 @@ const AdminSignInPage = () => {
                 <p className="text-red-700 text-sm">{errors.general}</p>
               </div>
             )}
-
-            {/* Email Field */}            <div>
+            {/* Email Field */}{' '}
+            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Government, Education, or Personal Email
+                Government Email Only
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -235,7 +243,7 @@ const AdminSignInPage = () => {
                         ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
                         : 'border-gray-300'
                   }`}
-                  placeholder="user@gmail.com or admin@university.edu"
+                  placeholder="Enter your government email address"
                 />
                 {isFieldValid('email') && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -250,7 +258,6 @@ const AdminSignInPage = () => {
                 </p>
               )}
             </div>
-
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -295,7 +302,6 @@ const AdminSignInPage = () => {
                 </p>
               )}
             </div>
-
             {/* Admin Code Field */}
             <div>
               <label htmlFor="adminCode" className="block text-sm font-medium text-gray-700 mb-2">
@@ -344,7 +350,6 @@ const AdminSignInPage = () => {
                 8-character code provided by your system administrator
               </p>
             </div>
-
             {/* Remember Me */}
             <div className="flex items-center">
               <input
@@ -359,7 +364,6 @@ const AdminSignInPage = () => {
                 Keep me signed in on this device
               </label>
             </div>
-
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
@@ -382,7 +386,6 @@ const AdminSignInPage = () => {
                 </div>
               )}
             </button>
-
             {/* Back to Regular Sign In */}
             <div className="text-center">
               <button
@@ -398,9 +401,7 @@ const AdminSignInPage = () => {
 
         {/* Emergency Contact */}
         <div className="text-center">
-          <div className="text-xs text-gray-500 mb-2">
-            For technical support or account issues:
-          </div>
+          <div className="text-xs text-gray-500 mb-2">For technical support or account issues:</div>
           <button
             onClick={() => alert('Emergency IT Support: +1-800-DISASTER')}
             className="text-sm text-red-600 hover:text-red-500 underline font-medium"

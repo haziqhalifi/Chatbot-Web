@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Shield, 
-  Users, 
-  AlertTriangle, 
-  Activity, 
-  Settings, 
-  FileText, 
+import {
+  Shield,
+  Users,
+  AlertTriangle,
+  Activity,
+  Settings,
+  FileText,
   Bell,
   Eye,
   MapPin,
   Clock,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  
+
   const [activeAlerts, setActiveAlerts] = useState(12);
   const [totalUsers, setTotalUsers] = useState(1547);
   const [responseTeams, setResponseTeams] = useState(8);
@@ -29,7 +29,7 @@ const AdminDashboard = () => {
       location: 'Downtown District',
       severity: 'High',
       time: '2 minutes ago',
-      status: 'Active'
+      status: 'Active',
     },
     {
       id: 2,
@@ -37,7 +37,7 @@ const AdminDashboard = () => {
       location: 'Residential Area B',
       severity: 'Critical',
       time: '15 minutes ago',
-      status: 'Responding'
+      status: 'Responding',
     },
     {
       id: 3,
@@ -45,8 +45,8 @@ const AdminDashboard = () => {
       location: 'City Center',
       severity: 'Medium',
       time: '1 hour ago',
-      status: 'Monitoring'
-    }
+      status: 'Monitoring',
+    },
   ]);
 
   // Redirect if not admin
@@ -63,21 +63,31 @@ const AdminDashboard = () => {
 
   const getSeverityColor = (severity) => {
     switch (severity) {
-      case 'Critical': return 'text-red-600 bg-red-100';
-      case 'High': return 'text-orange-600 bg-orange-100';
-      case 'Medium': return 'text-yellow-600 bg-yellow-100';
-      case 'Low': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'Critical':
+        return 'text-red-600 bg-red-100';
+      case 'High':
+        return 'text-orange-600 bg-orange-100';
+      case 'Medium':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'Low':
+        return 'text-green-600 bg-green-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Active': return 'text-red-600 bg-red-100';
-      case 'Responding': return 'text-blue-600 bg-blue-100';
-      case 'Monitoring': return 'text-yellow-600 bg-yellow-100';
-      case 'Resolved': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'Active':
+        return 'text-red-600 bg-red-100';
+      case 'Responding':
+        return 'text-blue-600 bg-blue-100';
+      case 'Monitoring':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'Resolved':
+        return 'text-green-600 bg-green-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -121,7 +131,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
@@ -131,7 +141,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Activity className="h-8 w-8 text-green-600" />
@@ -141,7 +151,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-purple-600" />
@@ -162,7 +172,10 @@ const AdminDashboard = () => {
             <div className="p-6">
               <div className="space-y-4">
                 {recentReports.map((report) => (
-                  <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div
+                    key={report.id}
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                  >
                     <div className="flex items-center space-x-3">
                       <MapPin className="h-5 w-5 text-gray-400" />
                       <div>
@@ -171,7 +184,9 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(report.severity)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(report.severity)}`}
+                      >
                         {report.severity}
                       </span>
                       <p className="text-xs text-gray-500 mt-1">{report.time}</p>
@@ -196,17 +211,17 @@ const AdminDashboard = () => {
                   <Bell className="h-8 w-8 text-orange-600 mb-2" />
                   <span className="text-sm font-medium">Send Alert</span>
                 </button>
-                
+
                 <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <Users className="h-8 w-8 text-blue-600 mb-2" />
                   <span className="text-sm font-medium">Manage Users</span>
                 </button>
-                
+
                 <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <FileText className="h-8 w-8 text-green-600 mb-2" />
                   <span className="text-sm font-medium">View Reports</span>
                 </button>
-                
+
                 <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <Settings className="h-8 w-8 text-gray-600 mb-2" />
                   <span className="text-sm font-medium">Settings</span>
@@ -230,7 +245,7 @@ const AdminDashboard = () => {
                 <p className="text-sm font-medium text-gray-900">API Status</p>
                 <p className="text-sm text-green-600">Operational</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
                   <Eye className="h-6 w-6 text-green-600" />
@@ -238,7 +253,7 @@ const AdminDashboard = () => {
                 <p className="text-sm font-medium text-gray-900">Monitoring</p>
                 <p className="text-sm text-green-600">Active</p>
               </div>
-              
+
               <div className="text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-2">
                   <Clock className="h-6 w-6 text-green-600" />
