@@ -189,7 +189,6 @@ const SignInPage = () => {
             Only login via government email, education email or personal email
           </p> */}
         </div>
-
         <div className="bg-white shadow-xl rounded-lg p-8">
           {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
@@ -368,7 +367,8 @@ const SignInPage = () => {
               </button>
             </div>
           </div>
-        </div>        {/* Contact Us */}
+        </div>{' '}
+        {/* Contact Us */}
         <div className="text-center space-y-2">
           <button
             onClick={() => alert('Contact us clicked')}
