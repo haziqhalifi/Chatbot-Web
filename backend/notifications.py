@@ -17,11 +17,14 @@ def create_notifications_table():
             SELECT * FROM INFORMATION_SCHEMA.TABLES 
             WHERE TABLE_NAME = 'notifications'
         """)
+        
         if cursor.fetchone():
             print("Notifications table already exists")
+            # Check if we need to add new columns
+            update_notifications_table_schema()
             return
             
-        # Create notifications table
+        # Create notifications table with enhanced schema
         cursor.execute("""
             CREATE TABLE notifications (
                 id INT IDENTITY(1,1) PRIMARY KEY,
@@ -29,6 +32,8 @@ def create_notifications_table():
                 title NVARCHAR(255) NOT NULL,
                 message NVARCHAR(1000) NOT NULL,
                 type NVARCHAR(50) DEFAULT 'info', -- info, warning, danger, success
+                disaster_type NVARCHAR(100) NULL, -- Type of disaster (flood, earthquake, etc.)
+                location NVARCHAR(255) NULL, -- Location of the disaster/event
                 read_status BIT DEFAULT 0,
                 created_at DATETIME DEFAULT GETDATE(),
                 updated_at DATETIME DEFAULT GETDATE(),
@@ -46,9 +51,15 @@ def create_notifications_table():
         cursor.execute("""
             CREATE INDEX IX_notifications_created_at ON notifications(created_at)
         """)
+        cursor.execute("""
+            CREATE INDEX IX_notifications_disaster_type ON notifications(disaster_type)
+        """)
+        cursor.execute("""
+            CREATE INDEX IX_notifications_location ON notifications(location)
+        """)
         
         conn.commit()
-        print("Notifications table created successfully")
+        print("Notifications table created successfully with enhanced schema")
         
     except Exception as e:
         print(f"Error creating notifications table: {e}")
@@ -58,16 +69,70 @@ def create_notifications_table():
         except:
             pass
 
-def create_notification(user_id: int, title: str, message: str, notification_type: str = "info"):
+def update_notifications_table_schema():
+    """Update existing notifications table to add disaster_type and location columns"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if disaster_type column exists
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'notifications' AND COLUMN_NAME = 'disaster_type'
+        """)
+        
+        if cursor.fetchone()[0] == 0:
+            print("Adding disaster_type column to notifications table...")
+            cursor.execute("""
+                ALTER TABLE notifications 
+                ADD disaster_type NVARCHAR(100) NULL
+            """)
+            
+            # Create index for disaster_type
+            cursor.execute("""
+                CREATE INDEX IX_notifications_disaster_type ON notifications(disaster_type)
+            """)
+        
+        # Check if location column exists
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'notifications' AND COLUMN_NAME = 'location'
+        """)
+        
+        if cursor.fetchone()[0] == 0:
+            print("Adding location column to notifications table...")
+            cursor.execute("""
+                ALTER TABLE notifications 
+                ADD location NVARCHAR(255) NULL
+            """)
+            
+            # Create index for location
+            cursor.execute("""
+                CREATE INDEX IX_notifications_location ON notifications(location)
+            """)
+        
+        conn.commit()
+        print("Notifications table schema updated successfully")
+        
+    except Exception as e:
+        print(f"Error updating notifications table schema: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def create_notification(user_id: int, title: str, message: str, notification_type: str = "info", 
+                      disaster_type: str = None, location: str = None):
     """Create a new notification for a user"""
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO notifications (user_id, title, message, type, created_at, updated_at)
-            VALUES (?, ?, ?, ?, GETDATE(), GETDATE())
-        """, (user_id, title, message, notification_type))
+            INSERT INTO notifications (user_id, title, message, type, disaster_type, location, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
+        """, (user_id, title, message, notification_type, disaster_type, location))
         
         # Get the inserted notification ID
         cursor.execute("SELECT @@IDENTITY")
@@ -98,7 +163,7 @@ def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unrea
             where_clause += " AND read_status = 0"
         
         query = f"""
-            SELECT id, user_id, title, message, type, read_status, created_at, updated_at
+            SELECT id, user_id, title, message, type, disaster_type, location, read_status, created_at, updated_at
             FROM notifications
             {where_clause}
             ORDER BY created_at DESC
@@ -117,14 +182,16 @@ def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unrea
                 "title": row[2],
                 "message": row[3],
                 "type": row[4],
-                "read": bool(row[5]),
-                "timestamp": row[6].isoformat() if row[6] else None,
-                "updated_at": row[7].isoformat() if row[7] else None
+                "disaster_type": row[5],
+                "location": row[6],
+                "read": bool(row[7]),
+                "timestamp": row[8].isoformat() if row[8] else None,
+                "updated_at": row[9].isoformat() if row[9] else None
             })
         
         # Get total count for pagination
         count_query = f"""
-            SELECT COUNT(*) FROM notifications {where_clause.replace('OFFSET ? ROWS FETCH NEXT ? ROWS ONLY', '')}
+            SELECT COUNT(*) FROM notifications {where_clause}
         """
         cursor.execute(count_query, params[:-2])  # Remove offset and limit params
         total_count = cursor.fetchone()[0]

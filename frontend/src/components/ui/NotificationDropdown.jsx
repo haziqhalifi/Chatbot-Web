@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bell, X, Check, AlertTriangle, Info, CheckCircle } from 'lucide-react';
+import { Bell, X, Check, AlertTriangle, Info, CheckCircle, MapPin } from 'lucide-react';
 
 const NotificationDropdown = ({
   isOpen,
@@ -202,9 +202,27 @@ const NotificationDropdown = ({
                                 className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
                                 title="Unread"
                               ></span>
-                            )}
-                          </div>
+                            )}                          </div>
                           <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                          
+                          {/* Disaster Type and Location Info */}
+                          {(notification.disaster_type || notification.location) && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {notification.disaster_type && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  {notification.disaster_type}
+                                </span>
+                              )}
+                              {notification.location && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {notification.location}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
                           <p className="text-xs text-gray-400 mt-2">
                             {formatTimestamp(notification.timestamp)}
                           </p>
@@ -237,7 +255,9 @@ const NotificationDropdown = ({
       </div>{' '}
       {/* Footer */}
       {notifications.length > 0 && (
-        <div className="p-3 border-t border-gray-100 bg-gray-50">          <button
+        <div className="p-3 border-t border-gray-100 bg-gray-50">
+          {' '}
+          <button
             onClick={(e) => {
               console.log('Clear all button clicked');
               e.stopPropagation();

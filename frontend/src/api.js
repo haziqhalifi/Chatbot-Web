@@ -32,10 +32,14 @@ export const notificationAPI = {
   getUnreadCount: () => {
     return api.get('/notifications/unread-count');
   },
-
   // Create a notification
   createNotification: (data) => {
     return api.post('/notifications', data);
+  },
+
+  // Create a test enhanced notification (development)
+  createTestEnhancedNotification: () => {
+    return api.post('/dev/test-enhanced-notification');
   },
 
   // Mark notification as read
@@ -70,6 +74,43 @@ export const adminNotificationAPI = {
         'X-API-KEY': apiKey,
       },
     });
+  },
+
+  // Create targeted notification (admin only)
+  createTargetedNotification: (data, apiKey) => {
+    return api.post('/admin/notifications/targeted', data, {
+      headers: {
+        'X-API-KEY': apiKey,
+      },
+    });
+  },
+};
+
+// Subscription API endpoints
+export const subscriptionAPI = {
+  // Get user's subscription preferences
+  getSubscription: () => {
+    return api.get('/subscriptions');
+  },
+
+  // Create or update subscription
+  updateSubscription: (data) => {
+    return api.post('/subscriptions', data);
+  },
+
+  // Delete subscription
+  deleteSubscription: () => {
+    return api.delete('/subscriptions');
+  },
+
+  // Get available disaster types
+  getDisasterTypes: () => {
+    return api.get('/subscriptions/disaster-types');
+  },
+
+  // Get popular locations
+  getLocations: () => {
+    return api.get('/subscriptions/locations');
   },
 };
 

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, UploadFile, File
-from typing import Annotated, Optional
+from typing import Annotated, Optional, List, List
 from fastapi.middleware.cors import CORSMiddleware
 import ollama
 import os
@@ -24,6 +24,11 @@ from notifications import (
     delete_notification, clear_all_notifications, create_system_notification,
     create_welcome_notification, create_report_confirmation_notification
 )
+from subscriptions import (
+    create_subscriptions_table, get_user_subscription, create_or_update_subscription,
+    delete_subscription, get_available_disaster_types, get_popular_locations,
+    create_targeted_disaster_notification, create_subscription_confirmation_notification
+)
 
 # --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
 # For better Malay language support, consider using these models with Ollama:
@@ -41,6 +46,10 @@ print(API_KEY_CREDITS)
 
 # Initialize database updates
 update_database_schema()
+
+# Initialize subscription tables
+from subscriptions import create_subscriptions_table
+create_subscriptions_table()
 
 # Initialize RAG system
 print("Initializing RAG system...")
@@ -101,12 +110,27 @@ class NotificationRequest(BaseModel):
     title: str
     message: str
     type: str = "info"  # info, warning, danger, success
+    disaster_type: Optional[str] = None  # Optional disaster type
+    location: Optional[str] = None  # Optional location
 
 class SystemNotificationRequest(BaseModel):
     title: str
     message: str
     type: str = "info"
     user_ids: Optional[list] = None
+
+class SubscriptionRequest(BaseModel):
+    disaster_types: List[str] = []  # List of disaster types to subscribe to
+    locations: List[str] = []  # List of locations to subscribe to
+    notification_methods: List[str] = ["web"]  # web, email, sms (future)
+    radius_km: int = 10  # Alert radius in kilometers
+
+class TargetedNotificationRequest(BaseModel):
+    disaster_type: str
+    location: str
+    title: str
+    message: str
+    type: str = "warning"
 
 # --- SIGN UP ---
 @app.post("/signup")
@@ -166,8 +190,21 @@ def submit_report(report: ReportRequest, x_api_key: str = Header(None)):
         from database import insert_report
         result = insert_report(report)
         
-        # Create confirmation notification
+        # Create confirmation notification for the reporter
         create_report_confirmation_notification(report.user_id, report.title)
+        
+        # Create targeted notifications for subscribed users
+        try:
+            from subscriptions import create_targeted_disaster_notification
+            create_targeted_disaster_notification(
+                disaster_type=report.disaster_type,
+                location=report.location,
+                title=f"Disaster Report: {report.disaster_type}",
+                message=f"A {report.disaster_type} has been reported in {report.location}. {report.title}",
+                notification_type="warning"
+            )
+        except Exception as e:
+            print(f"Failed to send targeted notifications: {e}")
         
         return result
     except Exception as e:
@@ -293,7 +330,8 @@ def create_user_notification(
 ):
     """Create a notification for the authenticated user"""
     user_id = get_user_id_from_token(authorization)
-    return create_notification(user_id, request.title, request.message, request.type)
+    return create_notification(user_id, request.title, request.message, request.type, 
+                             request.disaster_type, request.location)
 
 @app.put("/notifications/{notification_id}/read")
 def mark_notification_read(
@@ -334,3 +372,103 @@ def create_admin_system_notification(
     """Create system notifications (admin only - requires API key)"""
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     return create_system_notification(request.title, request.message, request.type, request.user_ids)
+
+@app.post("/admin/notifications/targeted")
+def create_admin_targeted_notification(
+    request: TargetedNotificationRequest,
+    x_api_key: str = Header(None)
+):
+    """Create targeted notifications based on disaster type and location (admin only)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    return create_targeted_disaster_notification(
+        request.disaster_type, 
+        request.location, 
+        request.title, 
+        request.message, 
+        request.type
+    )
+
+# --- SUBSCRIPTION ENDPOINTS ---
+@app.get("/subscriptions")
+def get_user_subscription_preferences(authorization: str = Header(None)):
+    """Get user's notification subscription preferences"""
+    user_id = get_user_id_from_token(authorization)
+    return get_user_subscription(user_id)
+
+@app.post("/subscriptions")
+def create_or_update_user_subscription(
+    request: SubscriptionRequest,
+    authorization: str = Header(None)
+):
+    """Create or update user's notification subscription preferences"""
+    user_id = get_user_id_from_token(authorization)
+    result = create_or_update_subscription(
+        user_id, 
+        request.disaster_types, 
+        request.locations, 
+        request.notification_methods, 
+        request.radius_km
+    )
+    
+    # Create confirmation notification
+    create_subscription_confirmation_notification(
+        user_id, 
+        request.disaster_types, 
+        request.locations
+    )
+    
+    return result
+
+@app.delete("/subscriptions")
+def delete_user_subscription(authorization: str = Header(None)):
+    """Delete user's notification subscription"""
+    user_id = get_user_id_from_token(authorization)
+    return delete_subscription(user_id)
+
+@app.get("/subscriptions/disaster-types")
+def get_disaster_types():
+    """Get available disaster types for subscription"""
+    return {"disaster_types": get_available_disaster_types()}
+
+@app.get("/subscriptions/locations")
+def get_locations():
+    """Get popular locations for subscription"""
+    return {"locations": get_popular_locations()}
+
+# --- DEVELOPMENT ENDPOINTS ---
+@app.get("/dev/api-key")
+def get_api_key_info():
+    """Get API key information for development (should be removed in production)"""
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    return {
+        "api_key": os.getenv("API_KEY", "not_set"),
+        "note": "This endpoint should only be used in development mode",
+        "env_file": "backend/.env",
+        "usage": "Use this key in the X-API-KEY header for admin endpoints"
+    }
+
+@app.post("/dev/test-enhanced-notification")
+def test_enhanced_notification(authorization: str = Header(None)):
+    """Test the enhanced notification system (development only)"""
+    if os.getenv("ENVIRONMENT", "development") == "production":
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    user_id = get_user_id_from_token(authorization)
+    
+    # Create a test notification with disaster type and location
+    result = create_notification(
+        user_id=user_id,
+        title="Test Enhanced Notification",
+        message="This is a test notification with disaster type and location information.",
+        notification_type="info",
+        disaster_type="Flood",
+        location="Kuala Lumpur"
+    )
+    
+    return {
+        "message": "Enhanced notification created successfully",
+        "notification": result,
+        "note": "Check your notifications to see the disaster type and location tags"
+    }
