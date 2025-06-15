@@ -160,7 +160,7 @@ const AdminSignInPage = () => {
       const data = await response.json();
       // Set admin role in login
       login(data.token, { ...data.user, role: 'admin' });
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } catch (error) {
       setErrors((prev) => ({
         ...prev,

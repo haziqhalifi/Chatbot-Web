@@ -24,111 +24,10 @@ import { useAuth } from '../../contexts/AuthContext';
 const AdminReports = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
   // State for reports data
-  const [reports, setReports] = useState([
-    {
-      id: 1,
-      title: 'Severe Flooding in Downtown Area',
-      type: 'Flood',
-      location: 'Downtown District, Main Street',
-      coordinates: '3.1390, 101.6869',
-      severity: 'Critical',
-      status: 'Active',
-      reportedBy: 'John Doe',
-      reporterEmail: 'john.doe@email.com',
-      reporterPhone: '+60123456789',
-      timestamp: '2025-06-15T14:30:00Z',
-      description:
-        'Heavy rainfall has caused severe flooding in the downtown area. Water levels are rising rapidly, affecting multiple buildings and blocking major roads.',
-      affectedPeople: 150,
-      estimatedDamage: 'RM 500,000',
-      responseTeam: 'Emergency Response Team Alpha',
-      images: ['flood1.jpg', 'flood2.jpg'],
-      updates: [
-        { time: '2025-06-15T14:35:00Z', message: 'Emergency team dispatched', by: 'Admin' },
-        { time: '2025-06-15T14:40:00Z', message: 'Evacuation in progress', by: 'Field Team' },
-      ],
-    },
-    {
-      id: 2,
-      title: 'Forest Fire Near Residential Area',
-      type: 'Fire',
-      location: 'Residential Area B, Forest Edge',
-      coordinates: '3.2000, 101.7000',
-      severity: 'High',
-      status: 'Responding',
-      reportedBy: 'Sarah Chen',
-      reporterEmail: 'sarah.chen@email.com',
-      reporterPhone: '+60198765432',
-      timestamp: '2025-06-15T13:15:00Z',
-      description:
-        'Forest fire spotted near residential area. Smoke visible from multiple locations. Fire appears to be spreading towards homes.',
-      affectedPeople: 75,
-      estimatedDamage: 'RM 200,000',
-      responseTeam: 'Fire Department Unit 2',
-      images: ['fire1.jpg'],
-      updates: [
-        { time: '2025-06-15T13:20:00Z', message: 'Fire department notified', by: 'Admin' },
-        { time: '2025-06-15T13:25:00Z', message: 'Firefighters on scene', by: 'Fire Chief' },
-      ],
-    },
-    {
-      id: 3,
-      title: 'Minor Earthquake Tremors',
-      type: 'Earthquake',
-      location: 'City Center, Business District',
-      coordinates: '3.1500, 101.6900',
-      severity: 'Medium',
-      status: 'Monitoring',
-      reportedBy: 'Mike Rahman',
-      reporterEmail: 'mike.rahman@email.com',
-      reporterPhone: '+60176543210',
-      timestamp: '2025-06-15T12:00:00Z',
-      description:
-        'Minor earthquake tremors felt in the city center. Buildings shook for approximately 10 seconds. No visible damage reported yet.',
-      affectedPeople: 30,
-      estimatedDamage: 'Minimal',
-      responseTeam: 'Geological Survey Team',
-      images: [],
-      updates: [
-        { time: '2025-06-15T12:05:00Z', message: 'Geological team alerted', by: 'Admin' },
-        {
-          time: '2025-06-15T12:15:00Z',
-          message: 'Building inspections initiated',
-          by: 'Survey Team',
-        },
-      ],
-    },
-    {
-      id: 4,
-      title: 'Landslide Warning - Hillside Road',
-      type: 'Landslide',
-      location: 'Hillside Road, Slope Area',
-      coordinates: '3.1800, 101.7200',
-      severity: 'High',
-      status: 'Resolved',
-      reportedBy: 'Lisa Wong',
-      reporterEmail: 'lisa.wong@email.com',
-      reporterPhone: '+60123987654',
-      timestamp: '2025-06-14T16:20:00Z',
-      description:
-        'Cracks observed on hillside near residential area. Potential landslide risk identified after recent heavy rains.',
-      affectedPeople: 25,
-      estimatedDamage: 'RM 50,000',
-      responseTeam: 'Geological Emergency Unit',
-      images: ['landslide1.jpg', 'landslide2.jpg'],
-      updates: [
-        { time: '2025-06-14T16:25:00Z', message: 'Area cordoned off', by: 'Admin' },
-        {
-          time: '2025-06-14T18:00:00Z',
-          message: 'Stabilization work completed',
-          by: 'Engineering Team',
-        },
-        { time: '2025-06-15T08:00:00Z', message: 'Area declared safe', by: 'Chief Engineer' },
-      ],
-    },
-  ]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Filter and search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,11 +42,11 @@ const AdminReports = () => {
   const reportsPerPage = 5;
 
   // Selected report for detailed view
-  const [selectedReport, setSelectedReport] = useState(null);  // Redirect if not authenticated
+  const [selectedReport, setSelectedReport] = useState(null); // Redirect if not authenticated
   useEffect(() => {
     // Check if user is authenticated
     const token = localStorage.getItem('token');
-    
+
     if (!token && !user) {
       // No token and no user, redirect to signin
       navigate('/signin');
@@ -168,13 +67,96 @@ const AdminReports = () => {
     }
   }, [user, navigate]);
 
+  // Fetch reports from API
+  const fetchReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      const response = await fetch('http://localhost:8000/admin/reports', {
+        method: 'GET',
+        headers: {
+          'X-API-Key': 'secretkey', // Use the correct API key from backend
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token might be expired, redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/signin');
+          return;
+        }
+        throw new Error(`Failed to fetch reports: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setReports(data.reports || []);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      setError(error.message);
+      // If it's a network error or API key issue, show fallback message
+      if (error.message.includes('Failed to fetch') || error.message.includes('API')) {
+        setError('Unable to connect to the server. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Load reports when component mounts
+  useEffect(() => {
+    if (user || localStorage.getItem('token')) {
+      fetchReports();
+    }
+  }, [user]);
+
+  // Function to refresh reports data
+  const refreshReports = () => {
+    fetchReports();
+  };
+
+  // Function to fetch individual report details
+  const fetchReportDetails = async (reportId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`http://localhost:8000/admin/reports/${reportId}`, {
+        method: 'GET',
+        headers: {
+          'X-API-Key': 'secretkey',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch report details: ${response.status}`);
+      }
+
+      const report = await response.json();
+      setSelectedReport(report);
+    } catch (error) {
+      console.error('Error fetching report details:', error);
+      setError('Failed to load report details');
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/signin');
   };
-
   const handleBackToDashboard = () => {
-    navigate('/admin/dashboard');
+    navigate('/admin');
   };
 
   // Filter reports based on search and filters
@@ -260,6 +242,68 @@ const AdminReports = () => {
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <button
+                  onClick={handleBackToDashboard}
+                  className="mr-4 p-2 rounded-md hover:bg-gray-100"
+                >
+                  <ChevronLeft className="h-5 w-5 text-gray-600" />
+                </button>
+                <Shield className="h-8 w-8 text-red-600 mr-3" />
+                <h1 className="text-xl font-semibold text-gray-900">Disaster Reports</h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-700">Welcome, {user?.name || user?.email}</span>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Error Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Reports</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button
+              onClick={fetchReports}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+              disabled={loading}
+            >
+              {loading ? 'Retrying...' : 'Try Again'}
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show loading state for initial load
+  if (loading && reports.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -277,7 +321,9 @@ const AdminReports = () => {
               <h1 className="text-xl font-semibold text-gray-900">Disaster Reports</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Welcome, {user.name || user.email}</span>
+              <span className="text-sm text-gray-700">
+                Welcome, {user?.name || user?.email || 'Admin'}
+              </span>
               <button
                 onClick={handleLogout}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
@@ -374,13 +420,14 @@ const AdminReports = () => {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Export
-                </button>
+                </button>{' '}
                 <button
-                  onClick={() => window.location.reload()}
+                  onClick={fetchReports}
                   className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  disabled={loading}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  {loading ? 'Loading...' : 'Refresh'}
                 </button>
               </div>
             </div>
@@ -481,56 +528,72 @@ const AdminReports = () => {
                     Actions
                   </th>
                 </tr>
-              </thead>
+              </thead>{' '}
               <tbody className="bg-white divide-y divide-gray-200">
-                {currentReports.map((report) => (
-                  <tr key={report.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">{report.title}</div>
-                        <div className="text-sm text-gray-500">{report.type}</div>
+                {currentReports.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-12 text-center">
+                      <div className="text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg font-medium mb-2">No reports found</p>
+                        <p className="text-sm">
+                          {filteredReports.length === 0 && reports.length > 0
+                            ? 'Try adjusting your search or filter criteria.'
+                            : 'No disaster reports have been submitted yet.'}
+                        </p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                        {report.location}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
-                      >
-                        {report.severity}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(report.status)}`}
-                      >
-                        {report.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {report.reportedBy}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                        {formatDate(report.timestamp)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedReport(report)}
-                        className="text-red-600 hover:text-red-900 flex items-center"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </button>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  currentReports.map((report) => (
+                    <tr key={report.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{report.title}</div>
+                          <div className="text-sm text-gray-500">{report.type}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-900">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                          {report.location}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
+                        >
+                          {report.severity}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(report.status)}`}
+                        >
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {report.reportedBy}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center text-sm text-gray-900">
+                          <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                          {formatDate(report.timestamp)}
+                        </div>
+                      </td>{' '}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => fetchReportDetails(report.id)}
+                          className="text-red-600 hover:text-red-900 flex items-center"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
