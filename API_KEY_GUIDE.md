@@ -20,6 +20,7 @@ curl http://localhost:8000/dev/api-key
 ```
 
 This will return:
+
 ```json
 {
   "api_key": "secretkey",
@@ -75,25 +76,30 @@ curl -X POST http://localhost:8000/admin/notifications/system \
 ### In JavaScript/Frontend Code
 
 ```javascript
-import { adminNotificationAPI } from '../api';
+import { adminNotificationAPI } from "../api";
 
 // Send targeted notification
-const response = await adminNotificationAPI.createTargetedNotification({
-  disaster_type: "Earthquake",
-  location: "Selangor",
-  title: "Earthquake Alert",
-  message: "Minor earthquake detected. Stay alert.",
-  type: "warning"
-}, "secretkey"); // API key as second parameter
+const response = await adminNotificationAPI.createTargetedNotification(
+  {
+    disaster_type: "Earthquake",
+    location: "Selangor",
+    title: "Earthquake Alert",
+    message: "Minor earthquake detected. Stay alert.",
+    type: "warning",
+  },
+  "secretkey"
+); // API key as second parameter
 ```
 
 ## Security Notes
 
 ### Development Environment
+
 - The default API key `"secretkey"` is fine for local development
 - The `/dev/api-key` endpoint only works in development mode
 
 ### Production Environment
+
 - **NEVER** use `"secretkey"` in production
 - Generate a strong, unique API key
 - Store it securely in environment variables
@@ -109,25 +115,28 @@ const response = await adminNotificationAPI.createTargetedNotification({
 
 ## Available Admin Endpoints
 
-| Endpoint | Method | Description |
-|----------|---------|-------------|
-| `/admin/notifications/system` | POST | Send notifications to all users or specific user IDs |
-| `/admin/notifications/targeted` | POST | Send notifications to users subscribed to specific disaster types/locations |
-| `/dev/api-key` | GET | Get API key information (development only) |
+| Endpoint                        | Method | Description                                                                 |
+| ------------------------------- | ------ | --------------------------------------------------------------------------- |
+| `/admin/notifications/system`   | POST   | Send notifications to all users or specific user IDs                        |
+| `/admin/notifications/targeted` | POST   | Send notifications to users subscribed to specific disaster types/locations |
+| `/dev/api-key`                  | GET    | Get API key information (development only)                                  |
 
 ## Troubleshooting
 
 ### "Invalid API Key" Error
+
 - Check that your API key matches the one in `backend/.env`
 - Ensure there are no extra spaces or quotes when copying the key
 - Restart the backend server after changing the API key
 
 ### "Not Found" Error on `/dev/api-key`
+
 - This endpoint only works in development mode
 - Check your environment settings
 - Use Method 1 (check .env file) instead
 
 ### No Users Notified
+
 - Check that users have subscribed to the disaster type and location you're targeting
 - Users need to set up their notification preferences first
 - Try sending a system notification to all users for testing

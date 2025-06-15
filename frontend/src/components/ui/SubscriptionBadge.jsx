@@ -14,7 +14,8 @@ const SubscriptionBadge = ({ onClick }) => {
     );
   }
 
-  const isSubscribed = subscription?.is_active && 
+  const isSubscribed =
+    subscription?.is_active &&
     (subscription.disaster_types?.length > 0 || subscription.locations?.length > 0);
 
   return (
@@ -25,16 +26,12 @@ const SubscriptionBadge = ({ onClick }) => {
           ? 'bg-green-100 text-green-800 hover:bg-green-200'
           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
       }`}
-      title={isSubscribed ? 'Subscription active - Click to manage' : 'No subscription - Click to set up'}
+      title={
+        isSubscribed ? 'Subscription active - Click to manage' : 'No subscription - Click to set up'
+      }
     >
-      {isSubscribed ? (
-        <BellRing className="w-3 h-3" />
-      ) : (
-        <Bell className="w-3 h-3" />
-      )}
-      <span>
-        {isSubscribed ? 'Subscribed' : 'Not subscribed'}
-      </span>
+      {isSubscribed ? <BellRing className="w-3 h-3" /> : <Bell className="w-3 h-3" />}
+      <span>{isSubscribed ? 'Subscribed' : 'Not subscribed'}</span>
       <Settings className="w-3 h-3 opacity-60" />
     </button>
   );

@@ -94,11 +94,11 @@ const NotificationSystem = () => {
       const response = await fetch('http://localhost:8000/dev/test-enhanced-notification', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (response.ok) {
         // Refresh notifications to show the new one
         await fetchNotifications();
@@ -121,7 +121,8 @@ const NotificationSystem = () => {
             </button>
           </div>
         </div>
-      )}      {/* Subscription Badge */}
+      )}{' '}
+      {/* Subscription Badge */}
       <div className="mb-2">
         <SubscriptionBadge
           onClick={() => {
@@ -130,7 +131,6 @@ const NotificationSystem = () => {
           }}
         />
       </div>
-
       {/* Notification Bell Icon */}
       <button
         onClick={(e) => {
@@ -146,7 +146,6 @@ const NotificationSystem = () => {
           </span>
         )}
       </button>
-
       {/* Notification Dropdown */}
       <NotificationDropdown
         isOpen={isDropdownOpen}
@@ -157,7 +156,8 @@ const NotificationSystem = () => {
         onMarkAllAsRead={handleMarkAllAsRead}
         onDelete={handleDelete}
         onClearAll={handleClearAll}
-      />      {/* Development/Testing Controls */}
+      />{' '}
+      {/* Development/Testing Controls */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50">
           <h3 className="text-sm font-semibold mb-2">Notification Testing</h3>

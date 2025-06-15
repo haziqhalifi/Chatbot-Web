@@ -100,6 +100,7 @@ CREATE TABLE user_subscriptions (
 #### Admin Endpoints (Require API Key)
 
 - **POST /admin/notifications/system** - Create system notifications
+
   - Header: `X-API-KEY: your_api_key`
   - Body: `{title: string, message: string, type: string, user_ids?: number[]}`
 
@@ -110,14 +111,17 @@ CREATE TABLE user_subscriptions (
 #### Subscription Endpoints (Require Bearer Token)
 
 - **GET /subscriptions** - Get user's notification subscription preferences
+
   - Returns: `{id: number, disaster_types: string[], locations: string[], notification_methods: string[], radius_km: number, is_active: boolean}`
 
 - **POST /subscriptions** - Create or update subscription preferences
+
   - Body: `{disaster_types: string[], locations: string[], notification_methods: string[], radius_km: number}`
 
 - **DELETE /subscriptions** - Delete user's subscription preferences
 
 - **GET /subscriptions/disaster-types** - Get available disaster types
+
   - Returns: `{disaster_types: string[]}`
 
 - **GET /subscriptions/locations** - Get popular locations
