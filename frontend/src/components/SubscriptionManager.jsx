@@ -11,14 +11,14 @@ const SubscriptionManager = () => {
     error,
     updateSubscription,
     deleteSubscription,
-    clearError
+    clearError,
   } = useSubscriptions();
 
   const [formData, setFormData] = useState({
     disaster_types: [],
     locations: [],
     notification_methods: ['web'],
-    radius_km: 10
+    radius_km: 10,
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -32,43 +32,43 @@ const SubscriptionManager = () => {
         disaster_types: subscription.disaster_types || [],
         locations: subscription.locations || [],
         notification_methods: subscription.notification_methods || ['web'],
-        radius_km: subscription.radius_km || 10
+        radius_km: subscription.radius_km || 10,
       });
     }
   }, [subscription]);
 
   const handleDisasterTypeChange = (type) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       disaster_types: prev.disaster_types.includes(type)
-        ? prev.disaster_types.filter(t => t !== type)
-        : [...prev.disaster_types, type]
+        ? prev.disaster_types.filter((t) => t !== type)
+        : [...prev.disaster_types, type],
     }));
   };
 
   const handleLocationChange = (location) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       locations: prev.locations.includes(location)
-        ? prev.locations.filter(l => l !== location)
-        : [...prev.locations, location]
+        ? prev.locations.filter((l) => l !== location)
+        : [...prev.locations, location],
     }));
   };
 
   const handleAddCustomLocation = () => {
     if (customLocation.trim() && !formData.locations.includes(customLocation.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        locations: [...prev.locations, customLocation.trim()]
+        locations: [...prev.locations, customLocation.trim()],
       }));
       setCustomLocation('');
     }
   };
 
   const handleRemoveLocation = (location) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      locations: prev.locations.filter(l => l !== location)
+      locations: prev.locations.filter((l) => l !== location),
     }));
   };
 
@@ -85,7 +85,11 @@ const SubscriptionManager = () => {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete your notification preferences? You will stop receiving disaster alerts.')) {
+    if (
+      window.confirm(
+        'Are you sure you want to delete your notification preferences? You will stop receiving disaster alerts.'
+      )
+    ) {
       try {
         setSaving(true);
         await deleteSubscription();
@@ -166,7 +170,7 @@ const SubscriptionManager = () => {
           </span>
         </div>
         <p className="text-gray-600 text-sm">
-          {subscription?.is_active 
+          {subscription?.is_active
             ? 'You will receive notifications based on your preferences below.'
             : 'Set up your notification preferences to receive disaster alerts.'}
         </p>
@@ -179,11 +183,12 @@ const SubscriptionManager = () => {
           <h3 className="text-lg font-semibold text-gray-800">Disaster Types</h3>
         </div>
         <p className="text-gray-600 text-sm mb-4">
-          Select the types of disasters you want to receive alerts for. Leave empty to receive alerts for all types.
+          Select the types of disasters you want to receive alerts for. Leave empty to receive
+          alerts for all types.
         </p>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {disasterTypes.map(type => (
+          {disasterTypes.map((type) => (
             <label key={type} className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -202,7 +207,8 @@ const SubscriptionManager = () => {
         {formData.disaster_types.length === 0 && (
           <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800 text-sm">
-              <strong>No specific types selected:</strong> You will receive alerts for all disaster types.
+              <strong>No specific types selected:</strong> You will receive alerts for all disaster
+              types.
             </p>
           </div>
         )}
@@ -215,14 +221,15 @@ const SubscriptionManager = () => {
           <h3 className="text-lg font-semibold text-gray-800">Locations</h3>
         </div>
         <p className="text-gray-600 text-sm mb-4">
-          Select locations you want to receive alerts for. Leave empty to receive alerts for all locations.
+          Select locations you want to receive alerts for. Leave empty to receive alerts for all
+          locations.
         </p>
 
         {/* Popular Locations */}
         <div className="mb-4">
           <h4 className="font-medium text-gray-700 mb-2">Popular Locations</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {locations.map(location => (
+            {locations.map((location) => (
               <label key={location} className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -267,7 +274,7 @@ const SubscriptionManager = () => {
           <div className="mb-4">
             <h4 className="font-medium text-gray-700 mb-2">Selected Locations</h4>
             <div className="flex flex-wrap gap-2">
-              {formData.locations.map(location => (
+              {formData.locations.map((location) => (
                 <span
                   key={location}
                   className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
@@ -290,7 +297,8 @@ const SubscriptionManager = () => {
         {formData.locations.length === 0 && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800 text-sm">
-              <strong>No specific locations selected:</strong> You will receive alerts for all locations.
+              <strong>No specific locations selected:</strong> You will receive alerts for all
+              locations.
             </p>
           </div>
         )}
@@ -305,20 +313,20 @@ const SubscriptionManager = () => {
         <p className="text-gray-600 text-sm mb-4">
           Set the radius (in kilometers) for location-based alerts.
         </p>
-        
+
         <div className="flex items-center space-x-4">
           <input
             type="range"
             min="1"
             max="100"
             value={formData.radius_km}
-            onChange={(e) => setFormData(prev => ({ ...prev, radius_km: parseInt(e.target.value) }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, radius_km: parseInt(e.target.value) }))
+            }
             disabled={!isEditing}
             className="flex-1"
           />
-          <span className="font-medium text-gray-700 min-w-[60px]">
-            {formData.radius_km} km
-          </span>
+          <span className="font-medium text-gray-700 min-w-[60px]">{formData.radius_km} km</span>
         </div>
       </div>
 
@@ -328,10 +336,8 @@ const SubscriptionManager = () => {
           <Bell className="w-5 h-5 text-indigo-600" />
           <h3 className="text-lg font-semibold text-gray-800">Notification Methods</h3>
         </div>
-        <p className="text-gray-600 text-sm mb-4">
-          Choose how you want to receive notifications.
-        </p>
-        
+        <p className="text-gray-600 text-sm mb-4">Choose how you want to receive notifications.</p>
+
         <div className="space-y-2">
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -339,14 +345,14 @@ const SubscriptionManager = () => {
               checked={formData.notification_methods.includes('web')}
               onChange={(e) => {
                 if (e.target.checked) {
-                  setFormData(prev => ({
+                  setFormData((prev) => ({
                     ...prev,
-                    notification_methods: [...prev.notification_methods, 'web']
+                    notification_methods: [...prev.notification_methods, 'web'],
                   }));
                 } else {
-                  setFormData(prev => ({
+                  setFormData((prev) => ({
                     ...prev,
-                    notification_methods: prev.notification_methods.filter(m => m !== 'web')
+                    notification_methods: prev.notification_methods.filter((m) => m !== 'web'),
                   }));
                 }
               }}
@@ -357,7 +363,7 @@ const SubscriptionManager = () => {
               Web Notifications (In-app)
             </span>
           </label>
-          
+
           <div className="text-sm text-gray-500 pl-6">
             <p>Email and SMS notifications coming soon!</p>
           </div>

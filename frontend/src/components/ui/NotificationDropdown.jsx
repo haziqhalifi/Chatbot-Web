@@ -202,9 +202,10 @@ const NotificationDropdown = ({
                                 className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"
                                 title="Unread"
                               ></span>
-                            )}                          </div>
+                            )}{' '}
+                          </div>
                           <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                          
+
                           {/* Disaster Type and Location Info */}
                           {(notification.disaster_type || notification.location) && (
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -222,7 +223,7 @@ const NotificationDropdown = ({
                               )}
                             </div>
                           )}
-                          
+
                           <p className="text-xs text-gray-400 mt-2">
                             {formatTimestamp(notification.timestamp)}
                           </p>
