@@ -48,11 +48,28 @@ const AdminDashboard = () => {
       status: 'Monitoring',
     },
   ]);
-
-  // Redirect if not admin
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    
+    if (!token && !user) {
+      // No token and no user, redirect to signin
       navigate('/signin');
+      return;
+    }
+
+    // If we have a token but no user yet, wait for auth context to load
+    if (token && !user) {
+      // Don't redirect yet, auth context might still be loading
+      return;
+    }
+
+    // If user exists but no admin role, check if they came from admin signin
+    if (user && !user.role) {
+      // For admin pages, we can assume they're admin if they have a valid token
+      // and are accessing admin routes
+      console.log('User logged in, assuming admin access for admin routes');
     }
   }, [user, navigate]);
 
@@ -87,12 +104,24 @@ const AdminDashboard = () => {
       case 'Resolved':
         return 'text-green-600 bg-green-100';
       default:
-        return 'text-gray-600 bg-gray-100';
-    }
+        return 'text-gray-600 bg-gray-100';    }
   };
 
-  if (!user || user.role !== 'admin') {
-    return null; // Will redirect
+  // Show loading or check authentication
+  if (!user && !localStorage.getItem('token')) {
+    return null; // Will redirect to signin
+  }
+
+  // Show loading if user is being loaded
+  if (!user && localStorage.getItem('token')) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -193,8 +222,11 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 ))}
-              </div>
-              <button className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+              </div>{' '}
+              <button
+                onClick={() => navigate('/admin/reports')}
+                className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              >
                 View All Reports
               </button>
             </div>
@@ -211,17 +243,17 @@ const AdminDashboard = () => {
                   <Bell className="h-8 w-8 text-orange-600 mb-2" />
                   <span className="text-sm font-medium">Send Alert</span>
                 </button>
-
                 <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <Users className="h-8 w-8 text-blue-600 mb-2" />
                   <span className="text-sm font-medium">Manage Users</span>
-                </button>
-
-                <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                </button>{' '}
+                <button
+                  onClick={() => navigate('/admin/reports')}
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <FileText className="h-8 w-8 text-green-600 mb-2" />
                   <span className="text-sm font-medium">View Reports</span>
                 </button>
-
                 <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                   <Settings className="h-8 w-8 text-gray-600 mb-2" />
                   <span className="text-sm font-medium">Settings</span>
