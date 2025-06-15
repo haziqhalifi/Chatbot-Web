@@ -2,11 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import NotificationDropdown from '../components/ui/NotificationDropdown';
+import SubscriptionBadge from '../components/ui/SubscriptionBadge';
 
 const NotificationSystem = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const notificationRef = useRef(null);
-
   const {
     notifications,
     unreadCount,
@@ -17,6 +17,7 @@ const NotificationSystem = () => {
     deleteNotification,
     clearAll,
     createNotification,
+    fetchNotifications,
     clearError,
   } = useNotifications();
   // Handle clicks outside the notification dropdown
@@ -86,6 +87,28 @@ const NotificationSystem = () => {
       console.error('Error creating test notification:', error);
     }
   };
+
+  // Test enhanced notification with disaster type and location
+  const handleCreateEnhancedTestNotification = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/dev/test-enhanced-notification', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        // Refresh notifications to show the new one
+        await fetchNotifications();
+      } else {
+        console.error('Failed to create enhanced test notification');
+      }
+    } catch (error) {
+      console.error('Error creating enhanced test notification:', error);
+    }
+  };
   return (
     <div className="relative" ref={notificationRef}>
       {/* Error Display */}
@@ -98,7 +121,15 @@ const NotificationSystem = () => {
             </button>
           </div>
         </div>
-      )}
+      )}      {/* Subscription Badge */}
+      <div className="mb-2">
+        <SubscriptionBadge
+          onClick={() => {
+            // Navigate to subscription settings page
+            window.location.href = '/notification-settings';
+          }}
+        />
+      </div>
 
       {/* Notification Bell Icon */}
       <button
@@ -126,18 +157,24 @@ const NotificationSystem = () => {
         onMarkAllAsRead={handleMarkAllAsRead}
         onDelete={handleDelete}
         onClearAll={handleClearAll}
-      />
-
-      {/* Development/Testing Controls */}
+      />      {/* Development/Testing Controls */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 z-50">
           <h3 className="text-sm font-semibold mb-2">Notification Testing</h3>
-          <button
-            onClick={handleCreateTestNotification}
-            className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-          >
-            Create Test Notification
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={handleCreateTestNotification}
+              className="w-full bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+            >
+              Create Basic Test
+            </button>
+            <button
+              onClick={handleCreateEnhancedTestNotification}
+              className="w-full bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600"
+            >
+              Create Enhanced Test
+            </button>
+          </div>
         </div>
       )}
     </div>
