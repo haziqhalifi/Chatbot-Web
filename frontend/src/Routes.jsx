@@ -6,15 +6,15 @@ import Dashboard from './pages/Dashboard';
 import ReportDisaster from './pages/ReportDisaster';
 import EmergencySupport from './pages/EmergencySupport';
 import SignIn from './pages/SignIn';
-import AdminSignIn from './pages/AdminSignIn';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminSignIn from './pages/AdminPage/AdminSignIn';
+import AdminDashboard from './pages/AdminPage/AdminDashboard';
 import SignUp from './pages/SignUp';
 import Account from './pages/Account';
 import Settings from './pages/Settings';
 import HelpFAQ from './pages/HelpFAQ';
 import Report from './pages/Report';
 import NotificationSettings from './pages/NotificationSettings';
-import AdminNotifications from './pages/AdminNotifications';
+import AdminNotifications from './pages/AdminPage/AdminNotifications';
 
 const AppRoutes = () => {
   return (
