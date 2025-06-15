@@ -368,16 +368,22 @@ const SignInPage = () => {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Contact Us */}
-        <div className="text-center">
+        </div>        {/* Contact Us */}
+        <div className="text-center space-y-2">
           <button
             onClick={() => alert('Contact us clicked')}
             className="text-sm text-gray-600 hover:text-gray-500 underline"
           >
             Contact us
           </button>
+          <div className="text-xs text-gray-400">
+            <button
+              onClick={() => navigate('/admin/signin')}
+              className="text-gray-400 hover:text-gray-600 underline"
+            >
+              Emergency Management Access
+            </button>
+          </div>
         </div>
       </div>
     </div>

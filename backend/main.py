@@ -82,6 +82,11 @@ class AuthRequest(BaseModel):
     email: str
     password: str
 
+class AdminAuthRequest(BaseModel):
+    email: str
+    password: str
+    adminCode: str
+
 class PromptRequest(BaseModel):
     prompt: str
     rag_enabled: bool = True  # Default to True for backward compatibility
@@ -156,6 +161,59 @@ def signup(request: AuthRequest):
 @app.post("/signin")
 def signin(request: AuthRequest):
     return verify_user(request.email, request.password)
+
+# --- ADMIN SIGN IN ---
+@app.post("/admin/signin")
+def admin_signin(request: AdminAuthRequest):
+    # Validate admin code (in production, this should be stored securely)
+    valid_admin_codes = ["ADMIN123", "EMRG2024", "DSTWCH01"]  # Example admin codes
+    
+    if request.adminCode not in valid_admin_codes:
+        raise HTTPException(status_code=401, detail="Invalid admin verification code")
+      # Validate admin email domain - allow government, education, or personal emails
+    email_domain = request.email.split("@")[1].lower() if "@" in request.email else ""
+    
+    # Check for government domains
+    is_government = (
+        email_domain.endswith('.gov') or 
+        email_domain.endswith('.gov.my') or
+        email_domain.endswith('.mil') or
+        'government' in email_domain or
+        'emergency' in email_domain or
+        'disaster' in email_domain
+    )
+    
+    # Check for education domains
+    is_education = (
+        email_domain.endswith('.edu') or
+        email_domain.endswith('.edu.my') or
+        email_domain.endswith('.ac.my') or
+        'university' in email_domain or
+        'college' in email_domain
+    )
+    
+    # Check for common personal email domains
+    personal_domains = [
+        'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
+        'live.com', 'icloud.com', 'protonmail.com', 'tutanota.com'
+    ]
+    is_personal = email_domain in personal_domains
+    
+    if not (is_government or is_education or is_personal):
+        raise HTTPException(
+            status_code=401, 
+            detail="Admin access requires government, education, or personal email address"
+        )
+      # Verify user credentials (this will raise HTTPException if invalid)
+    try:
+        user_result = verify_user(request.email, request.password)
+    except HTTPException as e:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+    
+    # Add admin role to user data
+    user_result["user"]["role"] = "admin"
+    
+    return user_result
 
 # --- GOOGLE AUTHENTICATION ---
 JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
