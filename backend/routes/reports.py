@@ -15,7 +15,6 @@ JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
 JWT_ALGORITHM = "HS256"
 
 class ReportRequest(BaseModel):
-    user_id: int
     title: str
     location: str
     disaster_type: str
@@ -40,16 +39,26 @@ def get_user_id_from_token(authorization: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 @router.post("/report")
-def submit_report(report: ReportRequest, x_api_key: str = Header(None)):
+def submit_report(report: ReportRequest, authorization: str = Header(None)):
     """Submit disaster report with notification"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    user_id = get_user_id_from_token(authorization)
     
     try:
-        result = insert_report(report)
+        # Create a complete report object with the authenticated user_id
+        from types import SimpleNamespace
+        complete_report = SimpleNamespace(
+            user_id=user_id,
+            title=report.title,
+            location=report.location,
+            disaster_type=report.disaster_type,
+            description=report.description,
+            timestamp=report.timestamp
+        )
+        
+        result = insert_report(complete_report)
         
         # Create confirmation notification for the reporter
-        create_report_confirmation_notification(report.user_id, report.title)
+        create_report_confirmation_notification(user_id, report.title)
         
         # Create targeted notifications for subscribed users
         try:
