@@ -40,9 +40,7 @@ const ReportDisaster = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      await api.post('/report', {
-        user_id: user?.id || 1, // Use authenticated user's ID or fallback to 1
+    try {      await api.post('/report', {
         title: form.title,
         location: form.location,
         disaster_type: form.disaster_type,
