@@ -12,7 +12,12 @@ import jwt
 from datetime import datetime, timedelta
 import openai
 import whisper
-from database import get_db_conn, update_database_schema, get_all_reports, get_report_by_id, get_admin_dashboard_stats, get_system_status  # Import the database connection helper
+from database import (
+    get_db_conn, update_database_schema, get_all_reports, get_report_by_id, 
+    get_admin_dashboard_stats, get_system_status, create_faq_table, 
+    insert_default_faqs, get_all_faqs, get_faq_by_id, add_faq, 
+    update_faq, delete_faq
+)  # Import the database connection helper
 from users import create_user, verify_user, get_or_create_google_user, get_user_profile, update_user_profile
 from chat_utils import verify_api_key, generate_response, transcribe_audio_file
 from auth_utils import google_authenticate  # Import the Google authentication logic
@@ -50,6 +55,10 @@ update_database_schema()
 # Initialize subscription tables
 from subscriptions import create_subscriptions_table
 create_subscriptions_table()
+
+# Initialize FAQ table and data
+create_faq_table()
+insert_default_faqs()
 
 # Initialize RAG system
 print("Initializing RAG system...")
@@ -575,5 +584,86 @@ def get_admin_system_status(x_api_key: str = Header(None)):
     try:
         status = get_system_status()
         return status
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# FAQ API endpoints
+@app.get("/faqs")
+def get_faqs():
+    """Get all active FAQs"""
+    try:
+        faqs = get_all_faqs()
+        return {"faqs": faqs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/faqs/{faq_id}")
+def get_faq(faq_id: int):
+    """Get a specific FAQ by ID"""
+    try:
+        faq = get_faq_by_id(faq_id)
+        if not faq:
+            raise HTTPException(status_code=404, detail="FAQ not found")
+        return faq
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class FAQCreate(BaseModel):
+    question: str
+    answer: str
+    category: Optional[str] = None
+    order_index: Optional[int] = 0
+
+class FAQUpdate(BaseModel):
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    category: Optional[str] = None
+    order_index: Optional[int] = None
+
+@app.post("/admin/faqs")
+def create_faq(faq: FAQCreate, x_api_key: str = Header(None)):
+    """Create a new FAQ (Admin only)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        faq_id = add_faq(faq.question, faq.answer, faq.category, faq.order_index)
+        if faq_id:
+            return {"message": "FAQ created successfully", "faq_id": faq_id}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to create FAQ")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/admin/faqs/{faq_id}")
+def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(None)):
+    """Update an existing FAQ (Admin only)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        success = update_faq(
+            faq_id, 
+            faq.question, 
+            faq.answer, 
+            faq.category, 
+            faq.order_index
+        )
+        if success:
+            return {"message": "FAQ updated successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="FAQ not found or failed to update")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/admin/faqs/{faq_id}")
+def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None)):
+    """Delete an FAQ (Admin only)"""
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        success = delete_faq(faq_id)
+        if success:
+            return {"message": "FAQ deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="FAQ not found or failed to delete")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
