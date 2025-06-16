@@ -13,7 +13,7 @@ import AdminReports from './pages/AdminPage/AdminReports';
 import SignUp from './pages/SignUp';
 import Account from './pages/Account';
 import Settings from './pages/Settings';
-import HelpFAQ from './pages/HelpFAQ';
+import FAQ from './pages/FAQ';
 import Report from './pages/Report';
 import NotificationSettings from './pages/NotificationSettings';
 import AdminNotifications from './pages/AdminPage/AdminNotifications';
@@ -34,7 +34,7 @@ const AppRoutes = () => {
         <Route path="/emergency-support" element={<EmergencySupport />} />
         <Route path="/my-account" element={<Account />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/help-faq" element={<HelpFAQ />} />
+        <Route path="/help-faq" element={<FAQ />} />
         <Route path="/report" element={<Report />} />
         <Route path="/notification-settings" element={<NotificationSettings />} />
         <Route path="/admin/notifications" element={<AdminNotifications />} />
