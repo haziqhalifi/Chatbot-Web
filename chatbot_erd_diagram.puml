@@ -1,0 +1,109 @@
+@startuml Chatbot_ERD
+!define TABLE(name,desc) class name as "desc" << (T,#FFAAAA) >>
+!define PK(x) <b><color:#b8860b><&key></color> x</b>
+!define FK(x) <color:#aaaaaa><&key></color> x
+!define ATTR(x) x
+
+' Define entities
+entity "users" {
+  PK(id : INT) 
+  --
+  ATTR(username : VARCHAR(255))
+  ATTR(email : VARCHAR(255))
+  ATTR(password : VARCHAR(255))
+  ATTR(name : VARCHAR(255))
+  ATTR(given_name : VARCHAR(255))
+  ATTR(family_name : VARCHAR(255))
+  ATTR(profile_picture : VARCHAR(1000))
+  ATTR(language : VARCHAR(50))
+  ATTR(role : VARCHAR(50))
+  ATTR(phone : VARCHAR(20))
+  ATTR(address : VARCHAR(500))
+  ATTR(city : VARCHAR(100))
+  ATTR(country : VARCHAR(100))
+  ATTR(timezone : VARCHAR(50))
+  ATTR(email_verified : BIT)
+  ATTR(auth_provider : VARCHAR(50))
+  ATTR(created_at : DATETIME)
+  ATTR(updated_at : DATETIME)
+  ATTR(last_login : DATETIME)
+}
+
+entity "reports" {
+  PK(id : INT)
+  --
+  FK(user_id : INT)
+  ATTR(title : VARCHAR(255))
+  ATTR(location : VARCHAR(255))
+  ATTR(disaster_type : VARCHAR(100))
+  ATTR(description : TEXT)
+  ATTR(timestamp : DATETIME)
+  ATTR(severity : VARCHAR(50))
+  ATTR(status : VARCHAR(50))
+  ATTR(coordinates : VARCHAR(100))
+  ATTR(affected_people : INT)
+  ATTR(estimated_damage : VARCHAR(255))
+  ATTR(response_team : VARCHAR(255))
+}
+
+entity "notifications" {
+  PK(id : INT)
+  --
+  FK(user_id : INT)
+  ATTR(title : VARCHAR(255))
+  ATTR(message : VARCHAR(1000))
+  ATTR(type : VARCHAR(50))
+  ATTR(disaster_type : VARCHAR(100))
+  ATTR(location : VARCHAR(255))
+  ATTR(read_status : BIT)
+  ATTR(created_at : DATETIME)
+  ATTR(updated_at : DATETIME)
+}
+
+entity "user_subscriptions" {
+  PK(id : INT)
+  --
+  FK(user_id : INT)
+  ATTR(disaster_types : VARCHAR(500))
+  ATTR(locations : VARCHAR(500))
+  ATTR(notification_methods : VARCHAR(200))
+  ATTR(radius_km : INT)
+  ATTR(is_active : BIT)
+  ATTR(created_at : DATETIME)
+  ATTR(updated_at : DATETIME)
+}
+
+entity "faqs" {
+  PK(id : INT)
+  --
+  ATTR(question : VARCHAR(500))
+  ATTR(answer : TEXT)
+  ATTR(category : VARCHAR(100))
+  ATTR(order_index : INT)
+  ATTR(is_active : BIT)
+  ATTR(created_at : DATETIME)
+  ATTR(updated_at : DATETIME)
+}
+
+' Define relationships
+users ||--o{ reports : "creates"
+users ||--o{ notifications : "receives"
+users ||--o{ user_subscriptions : "has"
+
+' Add relationship labels
+users::id ||--o{ reports::user_id
+users::id ||--o{ notifications::user_id  
+users::id ||--o{ user_subscriptions::user_id
+
+' Notes about the system
+note right of users : "Stores user account information\nSupports multiple auth providers\n(local, Google, etc.)"
+
+note right of reports : "Disaster/incident reports\nsubmitted by users\nwith location and type info"
+
+note right of notifications : "Push notifications sent\nto users based on their\nsubscription preferences"
+
+note right of user_subscriptions : "User preferences for\nreceiving notifications\nabout specific disasters/locations"
+
+note right of faqs : "Knowledge base of\nfrequently asked questions\nfor the chatbot"
+
+@enduml
