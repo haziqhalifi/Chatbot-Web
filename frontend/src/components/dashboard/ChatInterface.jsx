@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import api from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLayer } from '../../contexts/LayerContext';
+import { useChat } from '../../hooks/useChat';
 
 // Export functionality - we'll use html2canvas for PNG and jsPDF for PDF
 // These will need to be installed: npm install html2canvas jspdf
@@ -195,21 +196,24 @@ const ChatInterface = () => {
 // Chat Interface Component
 const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const { token } = useAuth();
+  const {
+    currentSession,
+    messages,
+    loading,
+    error,
+    sendMessageWithSessionHandling,
+    startNewChat,
+    clearError,
+    isSending,
+    isCreatingSession,
+    canSendMessage,
+  } = useChat();
+
   const [userProfile, setUserProfile] = useState(() => {
     // Load from localStorage on initialization
     const savedProfile = localStorage.getItem('tiara_user_profile');
     return savedProfile ? JSON.parse(savedProfile) : null;
   });
-  const [messages, setMessages] = useState(
-    () =>
-      savedChat || [
-        {
-          id: 1,
-          sender: 'bot',
-          text: 'Hi there! How can I help you today with disaster management?',
-        },
-      ]
-  );
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0); // For waveform
@@ -229,11 +233,75 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Computed messages with personalized welcome message
+  const displayMessages = useMemo(() => {
+    if (messages.length === 0) return messages;
+
+    // Check if the first message is the welcome message
+    const firstMessage = messages[0];
+    if (firstMessage.sender === 'bot' && firstMessage.text.includes('Greetings! I am Tiara.')) {
+      // If we have user profile with name, personalize the welcome message
+      if (userProfile?.name) {
+        return [
+          {
+            ...firstMessage,
+            text: `Greetings ${userProfile.name}! I am Tiara. 👋 How may I assist you today?`,
+          },
+          ...messages.slice(1),
+        ];
+      }
+    }
+
+    return messages;
+  }, [messages, userProfile]);
+
   // Handle RAG toggle changes
   const handleRagToggle = () => {
     const newRagState = !isRagEnabled;
     setIsRagEnabled(newRagState);
     localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
+  };
+
+  // Handle new chat button
+  const handleNewChatClick = async () => {
+    try {
+      await startNewChat();
+      onNewChat && onNewChat();
+    } catch (error) {
+      console.error('Failed to start new chat:', error);
+    }
+  };
+
+  // Handle sending message
+  const handleSendMessage = async () => {
+    if (inputValue.trim() === '' || !canSendMessage) return;
+
+    const messageToSend = inputValue.trim();
+    setInputValue(''); // Clear input immediately
+
+    try {
+      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Restore message if sending failed
+      setInputValue(messageToSend);
+    }
+  };
+
+  // Handle voice message with text
+  const handleSendMessageWithText = async (text) => {
+    if (text.trim() === '' || !canSendMessage) return;
+
+    const messageToSend = text.trim();
+    setInputValue(''); // Clear input immediately
+
+    try {
+      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+    } catch (error) {
+      console.error('Failed to send voice message:', error);
+      // Restore message if sending failed
+      setInputValue(messageToSend);
+    }
   };
 
   // Fetch user profile for avatar
@@ -245,28 +313,10 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       const savedProfile = localStorage.getItem('tiara_user_profile');
       const profileTimestamp = localStorage.getItem('tiara_user_profile_timestamp');
       const now = Date.now();
-      const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-
-      // If we have cached data that's less than 24 hours old, use it
+      const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds      // If we have cached data that's less than 24 hours old, use it
       if (savedProfile && profileTimestamp && now - parseInt(profileTimestamp) < CACHE_DURATION) {
         const cachedProfile = JSON.parse(savedProfile);
         setUserProfile(cachedProfile);
-
-        // Update welcome message with cached user's name if it's the default message
-        if (
-          cachedProfile.name &&
-          messages.length === 1 &&
-          messages[0].sender === 'bot' &&
-          messages[0].text.includes('Hi there!')
-        ) {
-          setMessages([
-            {
-              id: 1,
-              sender: 'bot',
-              text: `Hi ${cachedProfile.name}! How can I help you today with disaster management?`,
-            },
-          ]);
-        }
         return; // Use cached data, don't make API call
       }
 
@@ -281,28 +331,10 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         });
 
         const profileData = response.data;
-        setUserProfile(profileData);
-
-        // Save to localStorage with timestamp
+        setUserProfile(profileData); // Save to localStorage with timestamp
         localStorage.setItem('tiara_user_profile', JSON.stringify(profileData));
         localStorage.setItem('tiara_user_profile_timestamp', now.toString());
         console.log('User profile cached in localStorage');
-
-        // Update welcome message with user's name if available and it's the default message
-        if (
-          profileData.name &&
-          messages.length === 1 &&
-          messages[0].sender === 'bot' &&
-          messages[0].text.includes('Hi there!')
-        ) {
-          setMessages([
-            {
-              id: 1,
-              sender: 'bot',
-              text: `Hi ${profileData.name}! How can I help you today with disaster management?`,
-            },
-          ]);
-        }
       } catch (error) {
         console.error('Failed to fetch user profile for chat:', error);
         // If API fails but we have old cached data, use it anyway
@@ -316,13 +348,12 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
 
     fetchUserProfile();
   }, [token]); // Removed messages dependency to avoid infinite loop
-
   // Auto-scroll to bottom on new message
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isListening]);
+  }, [displayMessages, isListening]);
 
   // Clean up audio context on unmount
   useEffect(() => {
@@ -544,8 +575,9 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       setIsExporting(false);
     }
   };
-
   const sendMessageToLlama = async (message) => {
+    // This function is now handled by the useChat hook
+    // Keeping for compatibility, but it's not used anymore
     try {
       const response = await api.post(
         '/generate',
@@ -555,7 +587,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         },
         {
           headers: {
-            'x-api-key': 'secretkey', // Replace with your actual API key
+            'x-api-key': 'secretkey',
           },
         }
       );
@@ -565,44 +597,8 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
       return 'Sorry, there was an error contacting the Tiara.';
     }
   };
-
-  const handleSendMessage = async () => {
-    if (inputValue.trim() === '') return;
-
-    const newUserMessage = {
-      id: messages.length + 1,
-      sender: 'user',
-      text: inputValue,
-    };
-
-    // Add user message and a temporary typing indicator
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      newUserMessage,
-      {
-        id: prevMessages.length + 2,
-        sender: 'bot',
-        text: 'Tiara is typing...',
-      },
-    ]);
-    setInputValue('');
-
-    // Get Llama AI response from backend
-    const llamaReply = await sendMessageToLlama(inputValue);
-    setMessages((prevMessages) => {
-      // Replace the last message (typing indicator) with the real reply
-      const updated = [...prevMessages];
-      updated[updated.length - 1] = {
-        id: updated.length,
-        sender: 'bot',
-        text: llamaReply,
-      };
-      return updated;
-    });
-  };
-
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') handleSendMessage();
+    if (e.key === 'Enter' && canSendMessage) handleSendMessage();
   };
 
   const handleVoiceClick = async () => {
@@ -652,31 +648,25 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
             }
             setAudioLevel(0);
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+
             // Send audioBlob to backend for transcription
             const formData = new FormData();
             formData.append('file', audioBlob, 'voice.wav');
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: prev.length + 1,
-                sender: 'user',
-                text: '🎤 Transcribing voice message...',
-                isTranscribing: true,
-              },
-            ]);
+
             try {
               const res = await api.post('/transcribe', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
               });
               const transcript = res.data.transcript;
-              setMessages((prev) => prev.slice(0, -1));
               setInputValue(transcript);
-              handleSendMessageWithText(transcript);
+
+              // Auto-send the transcribed message
+              if (transcript.trim()) {
+                handleSendMessageWithText(transcript);
+              }
             } catch (err) {
-              setMessages((prev) => [
-                ...prev.slice(0, -1),
-                { id: prev.length, sender: 'bot', text: 'Voice transcription failed.' },
-              ]);
+              console.error('Voice transcription failed:', err);
+              alert('Voice transcription failed. Please try again.');
             }
           };
 
@@ -693,50 +683,6 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         setIsListening(false);
       }
     }
-  };
-
-  // Helper to send a specific text (used for voice transcript)
-  const handleSendMessageWithText = async (text) => {
-    if (text.trim() === '') return;
-    const newUserMessage = {
-      id: messages.length + 1,
-      sender: 'user',
-      text,
-    };
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      newUserMessage,
-      {
-        id: prevMessages.length + 2,
-        sender: 'bot',
-        text: 'Tiara is typing...',
-      },
-    ]);
-    setInputValue('');
-    const llamaReply = await sendMessageToLlama(text);
-    setMessages((prevMessages) => {
-      const updated = [...prevMessages];
-      updated[updated.length - 1] = {
-        id: updated.length,
-        sender: 'bot',
-        text: llamaReply,
-      };
-      return updated;
-    });
-  };
-
-  // New Chat button handler
-  const handleNewChatClick = () => {
-    const userName = userProfile?.name || 'there';
-    const newChat = [
-      {
-        id: 1,
-        sender: 'bot',
-        text: `Hi ${userName}! How can I help you today with disaster management?`,
-      },
-    ];
-    setMessages(newChat);
-    if (onNewChat) onNewChat();
   };
 
   // User Avatar Component with fallback
@@ -1013,7 +959,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
           scrollBehavior: 'smooth',
         }}
       >
-        {messages.map((message) => (
+        {displayMessages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} items-end space-x-2`}
@@ -1166,32 +1112,50 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
               </div>
             </div>
           </div>
-        )}
-
+        )}{' '}
         <div className="bg-[#fafafa] rounded-[16px] flex items-center p-2">
           <input
             type="text"
             placeholder={
-              isListening ? 'Recording... Tap microphone to stop' : 'Type your message...'
+              !canSendMessage
+                ? 'Sending message...'
+                : isListening
+                  ? 'Recording... Tap microphone to stop'
+                  : 'Type your message...'
             }
             value={inputValue}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            disabled={isListening}
+            disabled={isListening || !canSendMessage}
             className={`flex-1 bg-transparent text-sm outline-none px-2 min-w-0 transition-all duration-200 ${
-              isListening ? 'text-gray-400 cursor-not-allowed' : 'text-gray-800'
+              isListening || !canSendMessage ? 'text-gray-400 cursor-not-allowed' : 'text-gray-800'
             }`}
             style={{ width: '100%' }}
-          />
+          />{' '}
           <button
             onClick={handleVoiceClick}
+            disabled={!canSendMessage}
             className={`p-2 rounded-full transition-all duration-200 ${
-              isListening
-                ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-300 ring-offset-2 scale-110'
-                : 'hover:bg-gray-200 text-gray-600'
+              !canSendMessage
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : isListening
+                  ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-300 ring-offset-2 scale-110'
+                  : 'hover:bg-gray-200 text-gray-600'
             }`}
-            aria-label={isListening ? 'Stop recording' : 'Voice input'}
-            title={isListening ? 'Stop recording' : 'Hold to record voice message'}
+            aria-label={
+              !canSendMessage
+                ? 'Sending message...'
+                : isListening
+                  ? 'Stop recording'
+                  : 'Voice input'
+            }
+            title={
+              !canSendMessage
+                ? 'Sending message...'
+                : isListening
+                  ? 'Stop recording'
+                  : 'Hold to record voice message'
+            }
           >
             {isListening ? (
               // Stop recording icon
@@ -1223,33 +1187,62 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
                 <line x1="8" y1="23" x2="16" y2="23"></line>
               </svg>
             )}
-          </button>
+          </button>{' '}
           <button
             onClick={handleSendMessage}
-            disabled={isListening || inputValue.trim() === ''}
+            disabled={isListening || inputValue.trim() === '' || !canSendMessage}
             className={`p-2 ml-1 rounded-full transition-all duration-200 ${
-              isListening || inputValue.trim() === ''
+              isListening || inputValue.trim() === '' || !canSendMessage
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-[#0a4974] hover:bg-[#083757] text-white hover:scale-105'
             }`}
             aria-label="Send message"
-            title={isListening ? 'Stop recording first' : 'Send message'}
+            title={
+              !canSendMessage
+                ? 'Sending message...'
+                : isListening
+                  ? 'Stop recording first'
+                  : 'Send message'
+            }
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
-            </svg>
+            {!canSendMessage ? (
+              // Loading spinner when sending
+              <svg
+                className="animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 12a9 9 0 11-6.219-8.56" />
+              </svg>
+            ) : (
+              // Send icon when not sending
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+              </svg>
+            )}
           </button>
+        </div>
+        {/* Disclaimer message */}
+        <div className="mt-2 text-center">
+          <p className="text-xs text-gray-500">Tiara can make mistakes, so double-check it.</p>
         </div>
       </div>
     </div>
