@@ -24,6 +24,14 @@ class FAQUpdate(BaseModel):
     category: Optional[str] = None
     order_index: Optional[int] = None
 
+class AdminNotificationRequest(BaseModel):
+    title: str
+    message: str
+    report_id: Optional[int] = None
+    type: str = "disaster_alert"
+    target_area: Optional[str] = None
+    disaster_type: Optional[str] = None  # Add disaster_type field
+
 # Dashboard endpoints
 @router.get("/admin/dashboard/stats")
 def get_dashboard_stats(x_api_key: str = Header(None)):
@@ -160,3 +168,64 @@ def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None)):
             raise HTTPException(status_code=404, detail="FAQ not found or failed to delete")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Admin notification endpoint
+@router.post("/admin/notifications/send")
+def send_admin_notification(notification: AdminNotificationRequest, x_api_key: str = Header(None)):
+    """Send custom notification to users (Admin only)"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        # Import notification services
+        from services.notification_service import create_system_notification
+        from services.subscription_service import create_targeted_disaster_notification        # Send notification to all users or targeted users based on target_area
+        if notification.target_area:
+            # Use the actual disaster type from the notification, or extract from report
+            disaster_type = notification.disaster_type or "alert"
+            
+            # Send targeted notification based on location and disaster type
+            result = create_targeted_disaster_notification(
+                disaster_type=disaster_type,
+                location=notification.target_area,
+                title=notification.title,
+                message=notification.message,
+                notification_type=notification.type
+            )
+            
+            # If no targeted users found, fall back to system-wide notification
+            if result.get('users_notified', 0) == 0:
+                print(f"No subscribers found for {disaster_type} in {notification.target_area}, sending system-wide notification")
+                result = create_system_notification(
+                    title=notification.title,
+                    message=notification.message,
+                    notification_type=notification.type,
+                    user_ids=None  # Send to all users
+                )
+                # Update the result to indicate it was sent system-wide
+                if isinstance(result, dict) and 'message' in result:
+                    result['message'] += " (sent to all users - no specific subscribers found)"
+        else:
+            # Send system-wide notification
+            result = create_system_notification(
+                title=notification.title,
+                message=notification.message,
+                notification_type=notification.type,
+                user_ids=None  # Send to all users
+            )
+          # Return success response with recipient count
+        if isinstance(result, dict):
+            recipients_count = result.get('users_notified', 0) or result.get('notifications_sent', 0) or 1
+        else:
+            recipients_count = 1
+        
+        return {
+            "message": "Notification sent successfully",
+            "recipients_count": recipients_count,
+            "report_id": notification.report_id,
+            "type": notification.type,
+            "details": result.get('message', '') if isinstance(result, dict) else str(result)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send notification: {str(e)}")
