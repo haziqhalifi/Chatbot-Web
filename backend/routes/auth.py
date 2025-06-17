@@ -47,7 +47,7 @@ def admin_signin(request: AdminAuthRequest):
     # Validate admin code (in production, this should be stored securely)
     valid_admin_codes = ["ADMIN123", "EMRG2024", "DSTWCH01"]  # Example admin codes
     
-    if request.adminCode not in valid_admin_codes:
+    if request.admin_code not in valid_admin_codes:
         raise HTTPException(status_code=401, detail="Invalid admin verification code")
     
     # Validate admin email domain - allow government, education, or personal emails
