@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from typing import Optional
 import jwt
 import os
-from chat_service import ChatService
-from chat_utils import verify_api_key
+from services.chat_service import ChatService
+from utils.chat import verify_api_key
 
 router = APIRouter()
 
@@ -101,7 +101,7 @@ def generate_chat_response(
     authorization: str = Header(None)
 ):
     """Generate AI response with chat session context"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     user_id = get_user_id_from_token(authorization)
     

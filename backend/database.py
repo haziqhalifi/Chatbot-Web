@@ -566,7 +566,7 @@ def update_database_schema():
     update_users_table()
     
     # Create notifications table
-    from notifications import create_notifications_table
+    from services.notification_service import create_notifications_table
     create_notifications_table()
     
     # Create chat tables

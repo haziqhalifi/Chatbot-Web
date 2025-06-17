@@ -39,7 +39,7 @@ class UserProfile(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     display_name: Optional[str] = Field(None, max_length=100)
-    phone: Optional[str] = Field(None, regex=r'^\+?[\d\s\-\(\)]+$')
+    phone: Optional[str] = Field(None, pattern=r'^\+?[\d\s\-\(\)]+$')
 
 # ========== Chat Models ==========
 class MessageType(str, Enum):
