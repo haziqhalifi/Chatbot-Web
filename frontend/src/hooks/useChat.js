@@ -22,8 +22,8 @@ export const useChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSending, setIsSending] = useState(false);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);  const [pendingMessage, setPendingMessage] = useState(null);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
 
   // Save current session to localStorage whenever it changes
   useEffect(() => {
@@ -32,7 +32,43 @@ export const useChat = () => {
     } else {
       localStorage.removeItem('tiara_current_session');
     }
-  }, [currentSession]); // Create a new chat session
+  }, [currentSession]);
+
+  // Validate current session when user is authenticated
+  const validateSession = useCallback(async () => {
+    if (!currentSession || sessionInitialized) return;
+    
+    try {
+      // Try to fetch the session to see if it's valid
+      await chatAPI.getSession(currentSession.id);
+      setSessionInitialized(true);
+    } catch (error) {
+      console.log('Stored session is invalid, clearing and will create new one when needed');
+      setCurrentSession(null);
+      setMessages([
+        {
+          id: 1,
+          sender: 'bot',
+          text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      setSessionInitialized(true);
+    }
+  }, [currentSession, sessionInitialized]);
+
+  // Initialize session validation when component mounts or when user signs in
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !sessionInitialized) {
+      validateSession();
+    } else if (!token) {
+      // Clear session if user is not authenticated
+      setCurrentSession(null);
+      setSessionInitialized(false);
+    }  }, [validateSession, sessionInitialized]);
+
+  // Create a new chat session
   const createSession = useCallback(async (title = null) => {
     try {
       setLoading(true);
@@ -43,6 +79,7 @@ export const useChat = () => {
 
       setCurrentSession(newSession);
       setSessions((prev) => [newSession, ...prev]);
+      setSessionInitialized(true);
 
       // Add hardcoded welcome message for new sessions
       setMessages([
@@ -339,13 +376,48 @@ export const useChat = () => {
           throw error;
         }
         return;
+      }      // Session exists and ready, send immediately
+      try {
+        return await sendMessage(messageText, ragEnabled);
+      } catch (error) {
+        // If we get a 404 "Chat session not found", clear the invalid session and retry
+        if (error.response?.status === 404 && error.response?.data?.detail === "Chat session not found") {
+          console.log('Session became invalid, creating new session and retrying...');
+          setCurrentSession(null);
+          setSessionInitialized(false);
+          
+          // Queue the message and create new session
+          setPendingMessage({ text: messageText, ragEnabled });
+          try {
+            await createSession();
+            // The message will be sent automatically via the useEffect above
+            return;
+          } catch (createError) {
+            setPendingMessage(null);
+            throw createError;
+          }
+        }
+        throw error;
       }
-
-      // Session exists and ready, send immediately
-      return await sendMessage(messageText, ragEnabled);
     },
     [currentSession, isCreatingSession, createSession, sendMessage]
-  );
+  );  // Clear all chat data (useful for logout)
+  const clearChatSession = useCallback(() => {
+    setCurrentSession(null);
+    setSessions([]);
+    setMessages([
+      {
+        id: 1,
+        sender: 'bot',
+        text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+    setSessionInitialized(false);
+    setPendingMessage(null);
+    setError(null);
+  }, []);
+
   return {
     // State
     currentSession,
@@ -356,6 +428,7 @@ export const useChat = () => {
     isSending,
     isCreatingSession,
     pendingMessage,
+    sessionInitialized,
 
     // Actions
     createSession,
@@ -365,9 +438,10 @@ export const useChat = () => {
     sendMessageWithSessionHandling,
     updateSessionTitle,
     deleteSession,
-    startNewChat,
-    initializeChat,
+    startNewChat,    initializeChat,
     clearError,
+    validateSession,
+    clearChatSession,
 
     // Computed
     hasActiveSession: !!currentSession,

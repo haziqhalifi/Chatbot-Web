@@ -4,13 +4,15 @@ const api = axios.create({
   baseURL: 'http://localhost:8000',
 });
 
-// Add request interceptor to include auth token
+// Add request interceptor to include auth token and API key
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Add API key for backend endpoints
+    config.headers['x-api-key'] = 'secretkey';
     return config;
   },
   (error) => {
@@ -186,22 +188,40 @@ export const chatAPI = {
   deleteSession: (sessionId) => {
     return api.delete(`/chat/sessions/${sessionId}`);
   },
-
   // Generate AI response with session context
   generateResponse: (sessionId, prompt, ragEnabled = true) => {
-    return api.post(
-      '/chat/generate',
-      {
-        session_id: sessionId,
-        prompt: prompt,
-        rag_enabled: ragEnabled,
-      },
-      {
-        headers: {
-          'x-api-key': 'secretkey', // Your API key
-        },
-      }
-    );
+    return api.post('/chat/generate', {
+      session_id: sessionId,
+      prompt: prompt,
+      rag_enabled: ragEnabled,
+    });
+  },
+};
+
+// Authentication API endpoints
+export const authAPI = {
+  // Sign up a new user
+  signup: (email, password) => {
+    return api.post('/signup', { email, password });
+  },
+
+  // Sign in user
+  signin: (email, password) => {
+    return api.post('/signin', { email, password });
+  },
+
+  // Google authentication
+  googleAuth: (credential) => {
+    return api.post('/auth/google', { credential });
+  },
+
+  // Admin signin
+  adminSignin: (email, password, adminCode) => {
+    return api.post('/admin/signin', {
+      email,
+      password,
+      adminCode,
+    });
   },
 };
 

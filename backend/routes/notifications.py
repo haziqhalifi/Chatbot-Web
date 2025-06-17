@@ -3,13 +3,13 @@ from pydantic import BaseModel
 from typing import Optional, List
 import jwt
 import os
-from notifications import (
+from services.notification_service import (
     create_notification, get_user_notifications, get_unread_count,
     mark_notification_as_read, mark_all_notifications_as_read,
     delete_notification, clear_all_notifications, create_system_notification
 )
-from subscriptions import create_targeted_disaster_notification
-from chat_utils import verify_api_key
+from services.subscription_service import create_targeted_disaster_notification
+from utils.chat import verify_api_key
 
 router = APIRouter()
 
@@ -120,7 +120,7 @@ def create_admin_system_notification(
     x_api_key: str = Header(None)
 ):
     """Create system notifications (admin only - requires API key)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     return create_system_notification(request.title, request.message, request.type, request.user_ids)
 
@@ -130,7 +130,7 @@ def create_admin_targeted_notification(
     x_api_key: str = Header(None)
 ):
     """Create targeted notifications based on disaster type and location (admin only)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     return create_targeted_disaster_notification(
         request.disaster_type, 
