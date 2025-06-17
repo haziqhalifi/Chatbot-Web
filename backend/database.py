@@ -159,11 +159,11 @@ def get_all_reports():
                 u.phone as reporter_phone
             FROM reports r
             LEFT JOIN users u ON r.user_id = u.id
-            ORDER BY r.timestamp DESC
-        """)
+            ORDER BY r.timestamp DESC        """)
         
         reports = []
-        for row in cursor.fetchall():            report = {
+        for row in cursor.fetchall():
+            report = {
                 "id": row[0],
                 "title": row[1],
                 "location": row[2],
@@ -184,7 +184,7 @@ def get_all_reports():
                 "images": [],         # Not implemented yet
                 "updates": []         # Not implemented yet
             }
-        reports.append(report)
+            reports.append(report)
         
         return {"reports": reports}
     except Exception as e:

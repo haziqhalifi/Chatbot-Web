@@ -346,8 +346,7 @@ def create_system_notification(title: str, message: str, notification_type: str 
         if user_ids is None:
             cursor.execute("SELECT id FROM users")
             user_ids = [row[0] for row in cursor.fetchall()]
-        
-        # Create notifications for each user
+          # Create notifications for each user
         created_count = 0
         for user_id in user_ids:
             try:
@@ -361,7 +360,11 @@ def create_system_notification(title: str, message: str, notification_type: str 
                 continue
         
         conn.commit()
-        return {"message": f"System notification sent to {created_count} users"}
+        return {
+            "message": f"System notification sent to {created_count} users",
+            "users_notified": created_count,
+            "notifications_sent": created_count
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")

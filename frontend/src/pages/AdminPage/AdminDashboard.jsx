@@ -26,13 +26,13 @@ const AdminDashboard = () => {
     active_alerts: 0,
     total_users: 0,
     response_teams: 8,
-    recent_reports: []
+    recent_reports: [],
   });
   const [systemStatus, setSystemStatus] = useState({
     database: 'loading',
     monitoring: 'loading',
     api: 'loading',
-    uptime: '0%'
+    uptime: '0%',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -180,18 +180,18 @@ const AdminDashboard = () => {
   // Format timestamp to relative time
   const formatRelativeTime = (timestamp) => {
     if (!timestamp) return 'Unknown time';
-    
+
     try {
       const date = new Date(timestamp);
       const now = new Date();
       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-      
+
       if (diffInMinutes < 1) return 'Just now';
       if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-      
+
       const diffInHours = Math.floor(diffInMinutes / 60);
       if (diffInHours < 24) return `${diffInHours} hours ago`;
-      
+
       const diffInDays = Math.floor(diffInHours / 24);
       return `${diffInDays} days ago`;
     } catch {
@@ -248,38 +248,44 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">            <div className="flex items-center">
-              <button
-                onClick={() => navigate('/admin')}
-                className="mr-4 text-gray-600 hover:text-gray-800 flex items-center"
-              >
-                ← Back to Admin Home
-              </button>
-              <Shield className="h-8 w-8 text-red-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-            </div>            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => {
-                  fetchDashboardStats();
-                  fetchSystemStatus();
-                }}
-                className="text-gray-600 hover:text-gray-800 flex items-center"
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                {loading ? 'Loading...' : 'Refresh'}
-              </button>
-              <span className="text-sm text-gray-700">Welcome, {user?.name || user?.email || 'Admin'}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Sign Out
-              </button>
+      <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
+        <div className="flex items-center">
+          <div className="flex items-center">
+            <Shield className="h-8 w-8 text-red-500 mr-3" />
+            <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch Admin</h1>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          {/* Refresh Button */}
+          <button
+            onClick={() => {
+              fetchDashboardStats();
+              fetchSystemStatus();
+            }}
+            className="text-gray-300 hover:text-white flex items-center px-3 py-2 rounded-md transition-colors"
+            disabled={loading}
+            title="Refresh Dashboard"
+          >
+            <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Loading...' : 'Refresh'}
+          </button>
+
+          {/* Admin Profile Info */}
+          <div className="text-right">
+            <div className="text-sm text-gray-300">Welcome back,</div>
+            <div className="text-sm font-medium text-[#f0f0f0]">
+              {user?.name || user?.email || 'Admin'}
             </div>
           </div>
+
+          {/* Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Sign Out
+          </button>
         </div>
       </header>
 
@@ -296,17 +302,17 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardStats.total_users.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {dashboardStats.total_users.toLocaleString()}
+                </p>
               </div>
             </div>
           </div>
-
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <Activity className="h-8 w-8 text-green-600" />
@@ -315,7 +321,8 @@ const AdminDashboard = () => {
                 <p className="text-2xl font-bold text-gray-900">{dashboardStats.response_teams}</p>
               </div>
             </div>
-          </div>          <div className="bg-white p-6 rounded-lg shadow">
+          </div>{' '}
+          <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
@@ -332,7 +339,9 @@ const AdminDashboard = () => {
             <div className="px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-medium text-gray-900">Recent Disaster Reports</h2>
             </div>
-            <div className="p-6">              <div className="space-y-4">
+            <div className="p-6">
+              {' '}
+              <div className="space-y-4">
                 {dashboardStats.recent_reports.length > 0 ? (
                   dashboardStats.recent_reports.map((report) => (
                     <div
@@ -353,7 +362,9 @@ const AdminDashboard = () => {
                         >
                           {report.severity}
                         </span>
-                        <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(report.timestamp)}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {formatRelativeTime(report.timestamp)}
+                        </p>
                       </div>
                     </div>
                   ))
@@ -408,10 +419,13 @@ const AdminDashboard = () => {
         <div className="mt-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-medium text-gray-900">System Status</h2>
-          </div>          <div className="p-6">
+          </div>{' '}
+          <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.api).bg} rounded-full mb-2`}>
+                <div
+                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.api).bg} rounded-full mb-2`}
+                >
                   <Activity className={`h-6 w-6 ${getSystemStatusColor(systemStatus.api).text}`} />
                 </div>
                 <p className="text-sm font-medium text-gray-900">API Status</p>
@@ -421,8 +435,12 @@ const AdminDashboard = () => {
               </div>
 
               <div className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.database).bg} rounded-full mb-2`}>
-                  <Activity className={`h-6 w-6 ${getSystemStatusColor(systemStatus.database).text}`} />
+                <div
+                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.database).bg} rounded-full mb-2`}
+                >
+                  <Activity
+                    className={`h-6 w-6 ${getSystemStatusColor(systemStatus.database).text}`}
+                  />
                 </div>
                 <p className="text-sm font-medium text-gray-900">Database</p>
                 <p className={`text-sm ${getSystemStatusColor(systemStatus.database).text}`}>
@@ -431,8 +449,12 @@ const AdminDashboard = () => {
               </div>
 
               <div className="text-center">
-                <div className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.monitoring).bg} rounded-full mb-2`}>
-                  <Eye className={`h-6 w-6 ${getSystemStatusColor(systemStatus.monitoring).text}`} />
+                <div
+                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.monitoring).bg} rounded-full mb-2`}
+                >
+                  <Eye
+                    className={`h-6 w-6 ${getSystemStatusColor(systemStatus.monitoring).text}`}
+                  />
                 </div>
                 <p className="text-sm font-medium text-gray-900">Monitoring</p>
                 <p className={`text-sm ${getSystemStatusColor(systemStatus.monitoring).text}`}>
