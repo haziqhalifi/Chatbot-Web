@@ -146,7 +146,7 @@ const AdminSignInPage = () => {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          adminCode: formData.adminCode,
+          admin_code: formData.adminCode,
         }),
       });
 
