@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header
-from notifications import create_notification
+from services.notification_service import create_notification
 from .utils import get_user_id_from_token
 import os
 

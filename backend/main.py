@@ -1,10 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import os
-from dotenv import load_dotenv
+from fastapi.exceptions import RequestValidationError
+from config.settings import API_KEY_CREDITS
+
+# Import database and services
 from database import update_database_schema, create_faq_table, insert_default_faqs
-from subscriptions import create_subscriptions_table
-from rag_utils import initialize_rag
+from services.subscription_service import create_subscriptions_table
+from utils.rag import initialize_rag
 
 # Import route modules
 from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev
@@ -17,12 +19,6 @@ from routes import auth, ai, reports, profile, notifications, subscriptions, cha
 # 
 # Current model: "qwen2.5:7b" (Excellent Malay and English support)
 # To change the model, update the model name in chat_utils.py generate_response function
-
-load_dotenv()
-
-# Global configuration - make this accessible to route modules
-API_KEY_CREDITS = {os.getenv("API_KEY"): 100}
-print(API_KEY_CREDITS)
 
 # Initialize database updates
 print("Updating database schema...")

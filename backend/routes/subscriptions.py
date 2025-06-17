@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List
 import jwt
 import os
-from subscriptions import (
+from services.subscription_service import (
     get_user_subscription, create_or_update_subscription,
     delete_subscription, get_available_disaster_types, get_popular_locations,
     create_subscription_confirmation_notification

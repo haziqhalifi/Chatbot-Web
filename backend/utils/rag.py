@@ -6,7 +6,7 @@ import PyPDF2
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-from config import EMBEDDING_MODEL, RAG_SETTINGS, PERFORMANCE_SETTINGS
+from config.models import EMBEDDING_MODEL, RAG_SETTINGS, PERFORMANCE_SETTINGS
 import logging
 
 # Configure logging

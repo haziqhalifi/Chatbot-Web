@@ -273,7 +273,7 @@ def create_targeted_disaster_notification(disaster_type: str, location: str,
                                         title: str, message: str, 
                                         notification_type: str = "warning"):
     """Create notifications for users subscribed to specific disaster type and location"""
-    from notifications import create_notification
+    from services.notification_service import create_notification
     
     # Get users who should receive this notification
     subscribed_users = get_subscribed_users_for_alert(disaster_type, location)
@@ -300,7 +300,7 @@ def create_targeted_disaster_notification(disaster_type: str, location: str,
 
 def create_subscription_confirmation_notification(user_id: int, disaster_types: List[str], locations: List[str]):
     """Create a notification when user updates their subscription"""
-    from notifications import create_notification
+    from services.notification_service import create_notification
     
     types_str = ", ".join(disaster_types) if disaster_types else "All types"
     locations_str = ", ".join(locations) if locations else "All locations"

@@ -4,7 +4,7 @@ from database import (
     save_chat_message, get_chat_messages, update_chat_session_title,
     delete_chat_session
 )
-from chat_utils import generate_response
+from utils.chat import generate_response
 import logging
 
 logger = logging.getLogger(__name__)

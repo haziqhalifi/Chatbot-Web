@@ -4,9 +4,9 @@ from typing import Optional, List
 import jwt
 import os
 from database import insert_report, get_all_reports, get_report_by_id
-from chat_utils import verify_api_key
-from notifications import create_report_confirmation_notification
-from subscriptions import create_targeted_disaster_notification
+from utils.chat import verify_api_key
+from services.notification_service import create_report_confirmation_notification
+from services.subscription_service import create_targeted_disaster_notification
 
 router = APIRouter()
 
@@ -79,7 +79,7 @@ def submit_report(report: ReportRequest, authorization: str = Header(None)):
 @router.get("/admin/reports")
 def get_reports(x_api_key: str = Header(None)):
     """Get all disaster reports for admin dashboard"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -91,7 +91,7 @@ def get_reports(x_api_key: str = Header(None)):
 @router.get("/admin/reports/{report_id}")
 def get_report(report_id: int, x_api_key: str = Header(None)):
     """Get specific disaster report by ID"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:

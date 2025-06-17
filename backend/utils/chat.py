@@ -4,10 +4,10 @@ import whisper
 import os
 import re
 import time
-from rag_utils import retrieve_context
-from config import AI_MODEL, MODEL_SETTINGS
-from language_utils import detect_language, get_language_instruction
-from performance_utils import should_use_rag, perf_monitor, is_general_question
+from .rag import retrieve_context
+from config.models import AI_MODEL, MODEL_SETTINGS
+from .language import detect_language, get_language_instruction
+from .performance import should_use_rag, perf_monitor, is_general_question
 import logging
 
 logger = logging.getLogger(__name__)

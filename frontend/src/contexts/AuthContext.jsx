@@ -70,10 +70,10 @@ export const AuthProvider = ({ children }) => {
     setToken(token);
     setUser(userData);
   };
-
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('tiara_current_session'); // Clear chat session on logout
     setToken(null);
     setUser(null);
   };

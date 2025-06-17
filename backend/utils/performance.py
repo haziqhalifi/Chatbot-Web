@@ -1,7 +1,7 @@
 import time
 import logging
 from typing import Optional
-from config import GENERAL_QUESTION_KEYWORDS, PERFORMANCE_SETTINGS
+from config.models import GENERAL_QUESTION_KEYWORDS, PERFORMANCE_SETTINGS
 
 logger = logging.getLogger(__name__)
 
