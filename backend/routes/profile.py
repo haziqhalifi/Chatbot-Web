@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 import jwt
 import os
-from users import get_user_profile, update_user_profile
+from services.user_service import get_user_profile, update_user_profile
 
 router = APIRouter()
 

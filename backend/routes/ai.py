@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel
-from chat_utils import verify_api_key, generate_response, transcribe_audio_file
+from utils.chat import verify_api_key, generate_response, transcribe_audio_file
 
 router = APIRouter()
 
@@ -10,7 +10,7 @@ class PromptRequest(BaseModel):
 
 @router.post("/generate")
 def generate(request: PromptRequest, x_api_key: str = Header(None)):
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     return generate_response(request, x_api_key, API_KEY_CREDITS)
 

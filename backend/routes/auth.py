@@ -1,26 +1,19 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
-from pydantic import BaseModel
 import jwt
 import os
-from users import create_user, verify_user
-from auth_utils import google_authenticate
-from notifications import create_welcome_notification
+
+# Import from new organized structure
+from services.user_service import create_user, verify_user
+from utils.auth import google_authenticate
+from services.notification_service import create_welcome_notification
 from database import get_db_conn
 
+# Import new models and utilities
+from models import AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse
+from utils.security import validate_password, hash_password, verify_password
+from middleware.error_handler import CustomException, ErrorCode
+
 router = APIRouter()
-
-# Pydantic models
-class AuthRequest(BaseModel):
-    email: str
-    password: str
-
-class AdminAuthRequest(BaseModel):
-    email: str
-    password: str
-    adminCode: str
-
-class GoogleAuthRequest(BaseModel):
-    credential: str
 
 # Configuration
 JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
@@ -54,7 +47,7 @@ def admin_signin(request: AdminAuthRequest):
     # Validate admin code (in production, this should be stored securely)
     valid_admin_codes = ["ADMIN123", "EMRG2024", "DSTWCH01"]  # Example admin codes
     
-    if request.adminCode not in valid_admin_codes:
+    if request.admin_code not in valid_admin_codes:
         raise HTTPException(status_code=401, detail="Invalid admin verification code")
     
     # Validate admin email domain - allow government, education, or personal emails

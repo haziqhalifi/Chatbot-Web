@@ -3,7 +3,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 import jwt
 from datetime import datetime, timedelta
-from users import get_or_create_google_user
+from services.user_service import get_or_create_google_user
 import os
 
 def google_authenticate(credential: str, client_id: str, jwt_secret: str, jwt_algorithm: str):
@@ -46,7 +46,7 @@ def google_authenticate(credential: str, client_id: str, jwt_secret: str, jwt_al
         user_id = get_or_create_google_user(email, name, given_name, family_name, picture, locale, email_verified)
         
         # Update last login time
-        from users import update_last_login
+        from services.user_service import update_last_login
         update_last_login(user_id)
         
         payload = {

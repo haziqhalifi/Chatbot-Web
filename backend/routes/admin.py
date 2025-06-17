@@ -6,9 +6,9 @@ from database import (
     get_admin_dashboard_stats, get_system_status, get_all_faqs, 
     get_faq_by_id, add_faq, update_faq, delete_faq
 )
-from chat_utils import verify_api_key
-from rag_utils import get_rag_system
-from performance_utils import get_performance_stats
+from utils.chat import verify_api_key
+from utils.rag import get_rag_system
+from utils.performance import get_performance_stats
 
 router = APIRouter()
 
@@ -28,7 +28,7 @@ class FAQUpdate(BaseModel):
 @router.get("/admin/dashboard/stats")
 def get_dashboard_stats(x_api_key: str = Header(None)):
     """Get dashboard statistics for admin dashboard"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -40,7 +40,7 @@ def get_dashboard_stats(x_api_key: str = Header(None)):
 @router.get("/admin/system/status")
 def get_admin_system_status(x_api_key: str = Header(None)):
     """Get system status for admin dashboard"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -53,7 +53,7 @@ def get_admin_system_status(x_api_key: str = Header(None)):
 @router.post("/rebuild-rag")
 def rebuild_rag(x_api_key: str = Header(None)):
     """Rebuild RAG embeddings (requires API key)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -66,7 +66,7 @@ def rebuild_rag(x_api_key: str = Header(None)):
 @router.get("/rag-status")
 def get_rag_status(x_api_key: str = Header(None)):
     """Get RAG system status (requires API key)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -84,7 +84,7 @@ def get_rag_status(x_api_key: str = Header(None)):
 @router.get("/performance")
 def get_performance_metrics(x_api_key: str = Header(None)):
     """Get performance metrics (requires API key)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     return get_performance_stats()
@@ -113,7 +113,7 @@ def get_faq(faq_id: int):
 @router.post("/admin/faqs")
 def create_faq(faq: FAQCreate, x_api_key: str = Header(None)):
     """Create a new FAQ (Admin only)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -128,7 +128,7 @@ def create_faq(faq: FAQCreate, x_api_key: str = Header(None)):
 @router.put("/admin/faqs/{faq_id}")
 def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(None)):
     """Update an existing FAQ (Admin only)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
@@ -149,7 +149,7 @@ def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(Non
 @router.delete("/admin/faqs/{faq_id}")
 def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None)):
     """Delete an FAQ (Admin only)"""
-    from main import API_KEY_CREDITS  # Import from main to avoid circular imports
+    from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
     try:
