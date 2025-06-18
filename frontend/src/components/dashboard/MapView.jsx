@@ -14,8 +14,10 @@ import {
   X,
   Map as MapIcon,
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-const MapView = () => {
+const MapView = ({ onMapViewReady }) => {
   // NOTE: This component now uses official ArcGIS widgets:
   // - LayerList widget (top-left corner) - for layer visibility and opacity controls
   // - BasemapGallery widget (top-right corner) - for basemap selection
@@ -123,6 +125,8 @@ const MapView = () => {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const mapRef = useRef(null);
+  const [showScreenshotDropdown, setShowScreenshotDropdown] = useState(false);
+  const screenshotBtnRef = useRef();
 
   // Malaysia cities bookmarks
   const malaysiaBookmarks = [
@@ -292,6 +296,11 @@ const MapView = () => {
       console.log('Map view created successfully');
       setMapView(view);
       setLoadingMessage('Map view ready, initializing layers...');
+
+      // Notify parent component that mapView is ready
+      if (onMapViewReady) {
+        onMapViewReady(view);
+      }
 
       // Wait for view to be ready
       await view.when();
@@ -599,10 +608,12 @@ const MapView = () => {
         expanded: false,
         expandIconClass: 'esri-icon-bookmark',
         expandTooltip: 'Bookmarks',
+        mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-right corner of the view
-      view.ui.add(bkExpand, 'top-right');
+      // Add the widget to the top-left corner of the view
+      view.ui.add(bkExpand, 'top-left');
 
       console.log('Bookmarks widget initialized successfully');
 
@@ -693,9 +704,10 @@ const MapView = () => {
         expandIconClass: 'esri-icon-layers',
         expandTooltip: 'Layer List',
         mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-left corner of the view
+      // Add the widget to the top-left corner of the view (below bookmarks)
       view.ui.add(layerListExpand, 'top-left');
 
       console.log('LayerList widget initialized successfully');
@@ -735,10 +747,11 @@ const MapView = () => {
         expandIconClass: 'esri-icon-basemap',
         expandTooltip: 'Basemap Gallery',
         mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-right corner of the view (below bookmarks)
-      view.ui.add(basemapExpand, 'top-right');
+      // Add the widget to the top-left corner of the view (below layer list)
+      view.ui.add(basemapExpand, 'top-left');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {
@@ -796,8 +809,72 @@ const MapView = () => {
     setShowOpacityControl(showOpacityControl === layerId ? null : layerId);
   };
 
+  // Screenshot handler
+  const handleScreenshot = async (format = 'png') => {
+    if (!mapRef.current) return;
+    const canvas = await html2canvas(mapRef.current, { backgroundColor: '#fff', scale: 2 });
+    if (format === 'png') {
+      const link = document.createElement('a');
+      link.download = `map-screenshot-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+    } else if (format === 'pdf') {
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+      });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`map-screenshot-${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+    setShowScreenshotDropdown(false);
+  };
+
   return (
     <div className="relative w-full h-full">
+      {/* Screenshot Button (top right) */}
+      <div className="absolute top-4 right-4 z-30">
+        <div className="relative">
+          <button
+            onClick={() => setShowScreenshotDropdown((v) => !v)}
+            className="bg-white text-blue-600 rounded-full shadow-lg p-2 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            title="Share or export map screenshot"
+            aria-label="Share or export map screenshot"
+          >
+            {/* Share Icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          </button>
+          {showScreenshotDropdown && (
+            <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+              <button
+                onClick={() => handleScreenshot('png')}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 rounded-t-lg"
+              >
+                Save as PNG
+              </button>
+              <button
+                onClick={() => handleScreenshot('pdf')}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 rounded-b-lg"
+              >
+                Save as PDF
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full"></div>
       {/* Fallback Map Container */}
