@@ -571,6 +571,9 @@ def update_database_schema():
     
     # Create chat tables
     create_chat_tables()
+    
+    # Create system reports table
+    create_system_reports_table()
 
 def get_admin_dashboard_stats():
     """Get dashboard statistics for admin"""
@@ -882,12 +885,39 @@ def delete_faq(faq_id):
         if 'conn' in locals():
             conn.close()
 
-def migrate_reports_tables():
-    """Migrate the reports table structure - rename reports to disaster_reports and create system_reports"""
+def create_system_reports_table():
+    """Create system_reports table if it doesn't exist"""
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
+
+        cursor.execute("""
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='system_reports' AND xtype='U')
+            CREATE TABLE system_reports (
+                id INT IDENTITY(1,1) PRIMARY KEY,
+                user_id INT NOT NULL,
+                issue_type NVARCHAR(100) NOT NULL,
+                subject NVARCHAR(255) NOT NULL,
+                description NVARCHAR(MAX) NOT NULL,
+                status NVARCHAR(50) DEFAULT 'Open',
+                created_at DATETIME DEFAULT GETDATE(),
+                updated_at DATETIME DEFAULT GETDATE(),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
         
+        conn.commit()
+        print("System reports table created successfully")
+    except Exception as e:
+        print(f"Error creating system reports table: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def insert_system_report(report):
+
         # Check if the reports table exists and disaster_reports doesn't
         cursor.execute("""
             SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
@@ -951,6 +981,35 @@ def insert_system_report(user_id, subject, message):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
+        
+        cursor.execute(
+            """
+            INSERT INTO system_reports (user_id, issue_type, subject, description, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                report.user_id,
+                report.issue_type,
+                report.subject,
+                report.description,
+                report.timestamp
+            )
+        )
+        conn.commit()
+        
+        # Get the inserted report ID
+        cursor.execute("SELECT SCOPE_IDENTITY()")
+        report_id = cursor.fetchone()[0]
+        
+        return {"message": "System report submitted successfully", "report_id": report_id}
+    except Exception as e:
+        raise Exception(f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
         cursor.execute(
             """
             INSERT INTO system_reports (user_id, subject, message, status, created_at)
@@ -973,6 +1032,123 @@ def get_all_system_reports():
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                sr.id,
+                sr.issue_type,
+                sr.subject,
+                sr.description,
+                sr.status,
+                sr.created_at,
+                sr.updated_at,
+                sr.user_id,
+                u.name as reporter_name,
+                u.email as reporter_email
+            FROM system_reports sr
+            LEFT JOIN users u ON sr.user_id = u.id
+            ORDER BY sr.created_at DESC
+        """)
+        
+        reports = []
+        for row in cursor.fetchall():
+            report = {
+                "id": row[0],
+                "issue_type": row[1],
+                "subject": row[2],
+                "description": row[3],
+                "status": row[4],
+                "created_at": format_timestamp(row[5]),
+                "updated_at": format_timestamp(row[6]),
+                "user_id": row[7],
+                "reporter_name": row[8] or "Unknown User",
+                "reporter_email": row[9] or ""
+            }
+            reports.append(report)
+        
+        return {"system_reports": reports}
+    except Exception as e:
+        raise Exception(f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def get_system_report_by_id(report_id):
+    """Fetch a specific system report by ID"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                sr.id,
+                sr.issue_type,
+                sr.subject,
+                sr.description,
+                sr.status,
+                sr.created_at,
+                sr.updated_at,
+                sr.user_id,
+                u.name as reporter_name,
+                u.email as reporter_email
+            FROM system_reports sr
+            LEFT JOIN users u ON sr.user_id = u.id
+            WHERE sr.id = ?
+        """, (report_id,))
+        
+        row = cursor.fetchone()
+        if not row:
+            return None
+        
+        report = {
+            "id": row[0],
+            "issue_type": row[1],
+            "subject": row[2],
+            "description": row[3],
+            "status": row[4],
+            "created_at": format_timestamp(row[5]),
+            "updated_at": format_timestamp(row[6]),
+            "user_id": row[7],
+            "reporter_name": row[8] or "Unknown User",
+            "reporter_email": row[9] or ""
+        }
+        
+        return report
+    except Exception as e:
+        raise Exception(f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def update_system_report_status(report_id, status):
+    """Update the status of a system report"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            UPDATE system_reports 
+            SET status = ?, updated_at = GETDATE()
+            WHERE id = ?
+            """,
+            (status, report_id)
+        )
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            raise Exception("Report not found")
+        
+        return {"message": f"System report status updated to {status}"}
+    except Exception as e:
+        raise Exception(f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
         cursor.execute(
             """
             SELECT 
@@ -1017,3 +1193,5 @@ def get_all_system_reports():
         if 'conn' in locals():
             conn.close()
         raise Exception(f"Failed to fetch system reports: {str(e)}")
+ 
+
