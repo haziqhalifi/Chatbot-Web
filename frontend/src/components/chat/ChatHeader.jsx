@@ -12,6 +12,9 @@ const ChatHeader = ({
   setIsExporting,
   messages,
   width,
+  mapView,
+  exportType,
+  setExportType,
 }) => {
   // Responsive design based on chat width
   const isCompact = width && width < 400;

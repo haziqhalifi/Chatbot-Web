@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLayer } from '../../contexts/LayerContext';
 import { ChatBox, ChatButton } from '../chat';
 
-const ChatInterface = () => {
+const ChatInterface = ({ mapView: parentMapView }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [savedChat, setSavedChat] = useState(() => {
     const saved = localStorage.getItem('tiara_last_chat');
@@ -12,6 +12,7 @@ const ChatInterface = () => {
   const [chatSize, setChatSize] = useState({ width: 380, height: 600 });
   const [isResizing, setIsResizing] = useState(false);
   const [showSizeIndicator, setShowSizeIndicator] = useState(false);
+  const [mapView, setMapView] = useState(null);
   const fixedPosition = { right: 16, bottom: 16 };
   const resizingRef = useRef(false);
 
@@ -244,6 +245,7 @@ const ChatInterface = () => {
             savedChat={savedChat}
             width={chatSize.width}
             height={chatSize.height}
+            mapView={parentMapView}
           />
         </div>
       )}
