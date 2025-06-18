@@ -195,13 +195,15 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
 
   return (
     <div
-      className="bg-[#a1a1a1] rounded-[22px] flex flex-col shadow-2xl"
+      className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
       style={{
         width: width || 380,
         height: height || 600,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
+        minWidth: 320,
+        minHeight: 450,
       }}
     >
       <ChatHeader
@@ -214,6 +216,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         isExporting={isExporting}
         setIsExporting={setIsExporting}
         messages={messages}
+        width={width}
       />
 
       <ChatMessages
@@ -223,6 +226,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         isListening={isListening}
         chatEndRef={chatEndRef}
         height={height}
+        width={width}
       />
 
       <ChatInput
@@ -242,6 +246,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         analyserRef={analyserRef}
         sourceRef={sourceRef}
         animationFrameRef={animationFrameRef}
+        width={width}
       />
     </div>
   );

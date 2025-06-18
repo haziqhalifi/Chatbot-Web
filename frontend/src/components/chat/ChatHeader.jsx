@@ -11,40 +11,49 @@ const ChatHeader = ({
   isExporting,
   setIsExporting,
   messages,
+  width,
 }) => {
+  // Responsive design based on chat width
+  const isCompact = width && width < 400;
+  const isMedium = width && width < 500;
+
   return (
-    <div className="flex justify-between items-center p-4 border-b border-gray-300">
-      <div className="flex items-center">
+    <div className="flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-[22px]">
+      <div className="flex items-center min-w-0 flex-1">
         {/* Bot Avatar */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0">
           <img
             src="/images/tiara.png"
             alt="Tiara Bot Avatar"
-            className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+            className={`${isCompact ? 'w-8 h-8' : 'w-[43px] h-[43px]'} rounded-full object-cover bg-white shadow-md`}
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'flex';
             }}
           />
           <div
-            className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm"
+            className={`${isCompact ? 'w-8 h-8' : 'w-[43px] h-[43px]'} rounded-full bg-white flex items-center justify-center text-blue-600 font-semibold text-sm shadow-md`}
             style={{ display: 'none' }}
           >
             🤖
           </div>
         </div>
-        <h2 className="text-xl font-bold text-[#0a4974] ml-3">Ask Tiara</h2>
+        <h2 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold text-white ml-3 truncate`}>
+          Ask Tiara
+        </h2>
       </div>
 
-      <div className="flex items-center space-x-2">
-        {/* Export Dropdown */}
-        <ExportDropdown
-          showExportDropdown={showExportDropdown}
-          setShowExportDropdown={setShowExportDropdown}
-          isExporting={isExporting}
-          setIsExporting={setIsExporting}
-          messages={messages}
-        />
+      <div className="flex items-center space-x-1 flex-shrink-0">
+        {/* Export Dropdown - Hide on very small screens */}
+        {!isCompact && (
+          <ExportDropdown
+            showExportDropdown={showExportDropdown}
+            setShowExportDropdown={setShowExportDropdown}
+            isExporting={isExporting}
+            setIsExporting={setIsExporting}
+            messages={messages}
+          />
+        )}
 
         {/* RAG Toggle Button */}
         <div className="relative">
@@ -52,14 +61,16 @@ const ChatHeader = ({
             onClick={onRagToggle}
             className={`${
               isRagEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-600'
-            } text-white rounded-full p-2 transition-colors duration-200`}
+            } text-white rounded-full p-2 transition-colors duration-200 ${
+              isCompact ? 'p-1.5' : 'p-2'
+            }`}
             aria-label={`RAG ${isRagEnabled ? 'Enabled' : 'Disabled'}`}
             title={`RAG (Retrieval-Augmented Generation) is ${isRagEnabled ? 'ON' : 'OFF'}`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
+              width={isCompact ? '14' : '16'}
+              height={isCompact ? '14' : '16'}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -88,14 +99,15 @@ const ChatHeader = ({
         {/* New Chat Button */}
         <button
           onClick={onNewChat}
-          className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
+          className="bg-white hover:bg-gray-100 text-blue-600 rounded-full transition-colors duration-200 shadow-md"
+          style={{ padding: isCompact ? '6px' : '8px' }}
           aria-label="New Chat"
           title="Start a new chat"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
+            width={isCompact ? '14' : '16'}
+            height={isCompact ? '14' : '16'}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -111,13 +123,14 @@ const ChatHeader = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-2 transition-colors duration-200"
+          className="bg-white hover:bg-gray-100 text-blue-600 rounded-full transition-colors duration-200 shadow-md"
+          style={{ padding: isCompact ? '6px' : '8px' }}
           aria-label="Minimize chat"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
+            width={isCompact ? '14' : '16'}
+            height={isCompact ? '14' : '16'}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

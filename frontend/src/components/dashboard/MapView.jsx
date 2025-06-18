@@ -599,10 +599,12 @@ const MapView = () => {
         expanded: false,
         expandIconClass: 'esri-icon-bookmark',
         expandTooltip: 'Bookmarks',
+        mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-right corner of the view
-      view.ui.add(bkExpand, 'top-right');
+      // Add the widget to the top-left corner of the view
+      view.ui.add(bkExpand, 'top-left');
 
       console.log('Bookmarks widget initialized successfully');
 
@@ -693,9 +695,10 @@ const MapView = () => {
         expandIconClass: 'esri-icon-layers',
         expandTooltip: 'Layer List',
         mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-left corner of the view
+      // Add the widget to the top-left corner of the view (below bookmarks)
       view.ui.add(layerListExpand, 'top-left');
 
       console.log('LayerList widget initialized successfully');
@@ -735,10 +738,11 @@ const MapView = () => {
         expandIconClass: 'esri-icon-basemap',
         expandTooltip: 'Basemap Gallery',
         mode: 'floating',
+        position: 'top-left',
       });
 
-      // Add the widget to the top-right corner of the view (below bookmarks)
-      view.ui.add(basemapExpand, 'top-right');
+      // Add the widget to the top-left corner of the view (below layer list)
+      view.ui.add(basemapExpand, 'top-left');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {
