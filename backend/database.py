@@ -43,7 +43,7 @@ def insert_report(report):
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO reports (user_id, title, location, disaster_type, description, timestamp)
+            INSERT INTO disaster_reports (user_id, title, location, disaster_type, description, timestamp)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
@@ -141,7 +141,7 @@ def update_users_table():
             pass
 
 def get_all_reports():
-    """Fetch all reports from the database with user information"""
+    """Fetch all disaster reports from the database with user information"""
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
@@ -157,7 +157,7 @@ def get_all_reports():
                 u.name as reporter_name,
                 u.email as reporter_email,
                 u.phone as reporter_phone
-            FROM reports r
+            FROM disaster_reports r
             LEFT JOIN users u ON r.user_id = u.id
             ORDER BY r.timestamp DESC        """)
         
@@ -212,7 +212,7 @@ def get_report_by_id(report_id):
                 u.name as reporter_name,
                 u.email as reporter_email,
                 u.phone as reporter_phone
-            FROM reports r
+            FROM disaster_reports r
             LEFT JOIN users u ON r.user_id = u.id
             WHERE r.id = ?        """, (report_id,))
         
@@ -579,11 +579,11 @@ def get_admin_dashboard_stats():
         cursor = conn.cursor()
         
         # Get total reports count
-        cursor.execute("SELECT COUNT(*) FROM reports")
+        cursor.execute("SELECT COUNT(*) FROM disaster_reports")
         total_reports = cursor.fetchone()[0]
         
         # Get active reports (assuming reports are active by default)
-        cursor.execute("SELECT COUNT(*) FROM reports WHERE timestamp >= DATEADD(day, -7, GETDATE())")
+        cursor.execute("SELECT COUNT(*) FROM disaster_reports WHERE timestamp >= DATEADD(day, -7, GETDATE())")
         active_alerts = cursor.fetchone()[0]
         
         # Get total users count
@@ -593,7 +593,7 @@ def get_admin_dashboard_stats():
         # Get reports by type for the last 30 days
         cursor.execute("""
             SELECT disaster_type, COUNT(*) as count 
-            FROM reports 
+            FROM disaster_reports 
             WHERE timestamp >= DATEADD(day, -30, GETDATE())
             GROUP BY disaster_type
             ORDER BY count DESC
@@ -611,7 +611,7 @@ def get_admin_dashboard_stats():
                 r.disaster_type,
                 r.timestamp,
                 u.name as reporter_name
-            FROM reports r
+            FROM disaster_reports r
             LEFT JOIN users u ON r.user_id = u.id
             ORDER BY r.timestamp DESC
         """)
@@ -657,7 +657,7 @@ def get_system_status():
         db_status = "operational"
         
         # Get latest report timestamp to check if system is receiving data
-        cursor.execute("SELECT TOP 1 timestamp FROM reports ORDER BY timestamp DESC")
+        cursor.execute("SELECT TOP 1 timestamp FROM disaster_reports ORDER BY timestamp DESC")
         latest_report = cursor.fetchone()
         
         monitoring_status = "active" if latest_report else "inactive"
@@ -881,3 +881,139 @@ def delete_faq(faq_id):
     finally:
         if 'conn' in locals():
             conn.close()
+
+def migrate_reports_tables():
+    """Migrate the reports table structure - rename reports to disaster_reports and create system_reports"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if the reports table exists and disaster_reports doesn't
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_NAME = 'reports'
+        """)
+        reports_exists = cursor.fetchone()[0] > 0
+        
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_NAME = 'disaster_reports'
+        """)
+        disaster_reports_exists = cursor.fetchone()[0] > 0
+        
+        # Rename reports table to disaster_reports if it exists and disaster_reports doesn't exist
+        if reports_exists and not disaster_reports_exists:
+            print("Renaming 'reports' table to 'disaster_reports'...")
+            cursor.execute("EXEC sp_rename 'reports', 'disaster_reports'")
+            print("Successfully renamed table.")
+        
+        # Check if system_reports table exists
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_NAME = 'system_reports'
+        """)
+        system_reports_exists = cursor.fetchone()[0] > 0
+        
+        # Create system_reports table if it doesn't exist
+        if not system_reports_exists:
+            print("Creating 'system_reports' table...")
+            cursor.execute("""
+                CREATE TABLE system_reports (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    subject NVARCHAR(255) NOT NULL,
+                    message NVARCHAR(MAX) NOT NULL,
+                    status NVARCHAR(50) DEFAULT 'PENDING',
+                    created_at DATETIME DEFAULT GETDATE(),
+                    updated_at DATETIME DEFAULT GETDATE(),
+                    resolved_at DATETIME NULL,
+                    admin_notes NVARCHAR(MAX) NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """)
+            print("Successfully created 'system_reports' table.")
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Database migration completed successfully.")
+        return True
+        
+    except Exception as e:
+        print(f"Migration failed: {e}")
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        return False
+
+def insert_system_report(user_id, subject, message):
+    """Insert a new system report"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO system_reports (user_id, subject, message, status, created_at)
+            VALUES (?, ?, ?, 'PENDING', GETDATE())
+            """,
+            (user_id, subject, message)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"message": "System report submitted successfully", "status": "success"}
+    except Exception as e:
+        if 'conn' in locals():
+            conn.rollback()
+            conn.close()
+        raise Exception(f"Failed to insert system report: {str(e)}")
+
+def get_all_system_reports():
+    """Fetch all system reports with user information"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT 
+                sr.id,
+                sr.user_id,
+                u.name as user_name,
+                u.email as user_email,
+                sr.subject,
+                sr.message,
+                sr.status,
+                sr.created_at,
+                sr.updated_at,
+                sr.resolved_at,
+                sr.admin_notes
+            FROM system_reports sr
+            LEFT JOIN users u ON sr.user_id = u.id
+            ORDER BY sr.created_at DESC
+            """
+        )
+        
+        system_reports = []
+        for row in cursor.fetchall():
+            report = {
+                "id": row[0],
+                "user_id": row[1],
+                "user_name": row[2],
+                "user_email": row[3],
+                "subject": row[4],
+                "message": row[5],
+                "status": row[6],
+                "created_at": row[7].isoformat() if row[7] else None,
+                "updated_at": row[8].isoformat() if row[8] else None,
+                "resolved_at": row[9].isoformat() if row[9] else None,
+                "admin_notes": row[10]
+            }
+            system_reports.append(report)
+        
+        cursor.close()
+        conn.close()
+        return {"system_reports": system_reports}
+    except Exception as e:
+        if 'conn' in locals():
+            conn.close()
+        raise Exception(f"Failed to fetch system reports: {str(e)}")
