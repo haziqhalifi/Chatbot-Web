@@ -19,6 +19,7 @@ const ChatInput = ({
   analyserRef,
   sourceRef,
   animationFrameRef,
+  width,
 }) => {
   const handleVoiceClick = async () => {
     if (!isListening) {
@@ -101,11 +102,15 @@ const ChatInput = ({
     }
   };
 
-  return (
-    <div className="p-4 border-t border-gray-300">
-      <VoiceInput isListening={isListening} audioLevel={audioLevel} />
+  // Responsive design based on chat width
+  const isCompact = width && width < 400;
 
-      <div className="bg-[#fafafa] rounded-[16px] flex items-center p-2">
+  return (
+    <div className="bg-white rounded-b-[22px] p-4 border-t border-blue-200 shadow-inner">
+      {/* Voice recording indicator */}
+      {isListening && <VoiceInput audioLevel={audioLevel} />}
+
+      <div className="bg-gray-50 rounded-[16px] flex items-center p-2 border border-gray-200">
         <input
           type="text"
           placeholder={
@@ -133,8 +138,9 @@ const ChatInput = ({
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : isListening
                 ? 'bg-red-500 hover:bg-red-600 text-white ring-2 ring-red-300 ring-offset-2 scale-110'
-                : 'hover:bg-gray-200 text-gray-600'
+                : 'hover:bg-blue-100 text-blue-600'
           }`}
+          style={{ padding: isCompact ? '6px' : '8px' }}
           aria-label={
             !canSendMessage ? 'Sending message...' : isListening ? 'Stop recording' : 'Voice input'
           }
@@ -149,8 +155,8 @@ const ChatInput = ({
           {isListening ? (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width={isCompact ? '16' : '20'}
+              height={isCompact ? '16' : '20'}
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -159,8 +165,8 @@ const ChatInput = ({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width={isCompact ? '16' : '20'}
+              height={isCompact ? '16' : '20'}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -182,8 +188,9 @@ const ChatInput = ({
           className={`p-2 ml-1 rounded-full transition-all duration-200 ${
             isListening || inputValue.trim() === '' || !canSendMessage
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-[#0a4974] hover:bg-[#083757] text-white hover:scale-105'
+              : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 shadow-md'
           }`}
+          style={{ padding: isCompact ? '6px' : '8px' }}
           aria-label="Send message"
           title={
             !canSendMessage
@@ -197,8 +204,8 @@ const ChatInput = ({
             <svg
               className="animate-spin"
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width={isCompact ? '16' : '20'}
+              height={isCompact ? '16' : '20'}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -211,8 +218,8 @@ const ChatInput = ({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width={isCompact ? '16' : '20'}
+              height={isCompact ? '16' : '20'}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -229,7 +236,9 @@ const ChatInput = ({
 
       {/* Disclaimer message */}
       <div className="mt-2 text-center">
-        <p className="text-xs text-gray-500">Tiara can make mistakes, so double-check it.</p>
+        <p className={`${isCompact ? 'text-xs' : 'text-xs'} text-gray-500`}>
+          Tiara can make mistakes, so double-check it.
+        </p>
       </div>
     </div>
   );
