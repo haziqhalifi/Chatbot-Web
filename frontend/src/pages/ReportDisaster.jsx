@@ -40,7 +40,8 @@ const ReportDisaster = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {      await api.post('/report', {
+    try {
+      await api.post('/report', {
         title: form.title,
         location: form.location,
         disaster_type: form.disaster_type,
