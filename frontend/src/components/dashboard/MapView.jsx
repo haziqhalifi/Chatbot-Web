@@ -12,16 +12,20 @@ import {
   Settings,
   Info,
   X,
-  Bookmark,
   Map as MapIcon,
 } from 'lucide-react';
 
 const MapView = () => {
+  // NOTE: This component now uses official ArcGIS widgets:
+  // - LayerList widget (top-left corner) - for layer visibility and opacity controls
+  // - BasemapGallery widget (top-right corner) - for basemap selection
+  // - Bookmarks widget (top-right corner) - for Malaysia city navigation
+  // The custom layer list panel and control buttons below can be removed to avoid overlap.
+
   const [mapView, setMapView] = useState(null);
   const [showLayerList, setShowLayerList] = useState(false);
   const [showLayerInfo, setShowLayerInfo] = useState(null);
   const [showOpacityControl, setShowOpacityControl] = useState(null);
-  const [showBookmarks, setShowBookmarks] = useState(false);
   const [showBasemapGallery, setShowBasemapGallery] = useState(false);
   const [layers, setLayers] = useState([
     {
@@ -295,6 +299,15 @@ const MapView = () => {
 
       // Initialize layers
       await initializeLayers(view);
+
+      // Initialize Bookmarks widget
+      await initializeBookmarks(view);
+
+      // Initialize LayerList widget
+      await initializeLayerList(view);
+
+      // Initialize BasemapGallery widget
+      await initializeBasemapGallery(view);
     } catch (error) {
       console.error('Failed to initialize map:', error);
       setLoading(false);
@@ -562,6 +575,177 @@ const MapView = () => {
     }
   };
 
+  const initializeBookmarks = async (view) => {
+    try {
+      console.log('Initializing Bookmarks widget...');
+      setLoadingMessage('Setting up bookmarks...');
+
+      // Import Bookmarks and Expand widgets
+      const bookmarksModule = await import('@arcgis/core/widgets/Bookmarks');
+      const Bookmarks = bookmarksModule.default || bookmarksModule.Bookmarks;
+
+      const expandModule = await import('@arcgis/core/widgets/Expand');
+      const Expand = expandModule.default || expandModule.Expand;
+
+      // Create bookmarks widget
+      const bookmarks = new Bookmarks({
+        view: view,
+      });
+
+      // Create expand widget to contain bookmarks
+      const bkExpand = new Expand({
+        view: view,
+        content: bookmarks,
+        expanded: false,
+        expandIconClass: 'esri-icon-bookmark',
+        expandTooltip: 'Bookmarks',
+      });
+
+      // Add the widget to the top-right corner of the view
+      view.ui.add(bkExpand, 'top-right');
+
+      console.log('Bookmarks widget initialized successfully');
+
+      // Add custom Malaysia bookmarks to the widget
+      await addCustomBookmarks(bookmarks);
+    } catch (error) {
+      console.error('Failed to initialize Bookmarks widget:', error);
+    }
+  };
+
+  const addCustomBookmarks = async (bookmarksWidget) => {
+    try {
+      console.log('Adding custom Malaysia bookmarks...');
+
+      // Create bookmark objects directly without importing Bookmark class
+      const customBookmarks = malaysiaBookmarks.map((bookmark) => ({
+        name: bookmark.name,
+        extent: {
+          xmin: bookmark.location.longitude - 0.1,
+          ymin: bookmark.location.latitude - 0.1,
+          xmax: bookmark.location.longitude + 0.1,
+          ymax: bookmark.location.latitude + 0.1,
+          spatialReference: { wkid: 4326 },
+        },
+        viewpoint: {
+          targetGeometry: {
+            type: 'point',
+            longitude: bookmark.location.longitude,
+            latitude: bookmark.location.latitude,
+            spatialReference: { wkid: 4326 },
+          },
+          rotation: 0,
+          scale: 100000,
+        },
+      }));
+
+      // Add bookmarks to the widget's bookmarks collection
+      if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.addMany) {
+        await bookmarksWidget.bookmarks.addMany(customBookmarks);
+        console.log(`Added ${customBookmarks.length} custom bookmarks successfully`);
+      } else if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.add) {
+        // Alternative: add one by one
+        for (const bookmark of customBookmarks) {
+          await bookmarksWidget.bookmarks.add(bookmark);
+        }
+        console.log(`Added ${customBookmarks.length} custom bookmarks successfully`);
+      } else {
+        console.warn(
+          'Bookmarks collection not available, bookmarks widget may not be fully initialized'
+        );
+        console.log('Available properties on bookmarksWidget:', Object.keys(bookmarksWidget));
+      }
+    } catch (error) {
+      console.error('Failed to add custom bookmarks:', error);
+    }
+  };
+
+  const initializeLayerList = async (view) => {
+    try {
+      console.log('Initializing LayerList widget...');
+      setLoadingMessage('Setting up layer list...');
+
+      // Import LayerList and Expand widgets
+      const layerListModule = await import('@arcgis/core/widgets/LayerList');
+      const LayerList = layerListModule.default || layerListModule.LayerList;
+
+      const expandModule = await import('@arcgis/core/widgets/Expand');
+      const Expand = expandModule.default || expandModule.Expand;
+
+      // Create layer list widget
+      const layerList = new LayerList({
+        view: view,
+        listItemCreatedFunction: (event) => {
+          // Customize layer list items
+          const item = event.item;
+          if (item.layer) {
+            // Add custom actions or styling if needed
+            console.log(`Layer list item created for: ${item.layer.title}`);
+          }
+        },
+      });
+
+      // Create expand widget to contain layer list
+      const layerListExpand = new Expand({
+        view: view,
+        content: layerList,
+        expanded: false,
+        expandIconClass: 'esri-icon-layers',
+        expandTooltip: 'Layer List',
+        mode: 'floating',
+      });
+
+      // Add the widget to the top-left corner of the view
+      view.ui.add(layerListExpand, 'top-left');
+
+      console.log('LayerList widget initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize LayerList widget:', error);
+    }
+  };
+
+  const initializeBasemapGallery = async (view) => {
+    try {
+      console.log('Initializing BasemapGallery widget...');
+      setLoadingMessage('Setting up basemap gallery...');
+
+      // Import BasemapGallery and Expand widgets
+      const basemapGalleryModule = await import('@arcgis/core/widgets/BasemapGallery');
+      const BasemapGallery = basemapGalleryModule.default || basemapGalleryModule.BasemapGallery;
+
+      const expandModule = await import('@arcgis/core/widgets/Expand');
+      const Expand = expandModule.default || expandModule.Expand;
+
+      // Create basemap gallery widget
+      const basemapGallery = new BasemapGallery({
+        view: view,
+        source: {
+          portal: {
+            url: 'https://www.arcgis.com',
+            useVectorBasemaps: true,
+          },
+        },
+      });
+
+      // Create expand widget to contain basemap gallery
+      const basemapExpand = new Expand({
+        view: view,
+        content: basemapGallery,
+        expanded: false,
+        expandIconClass: 'esri-icon-basemap',
+        expandTooltip: 'Basemap Gallery',
+        mode: 'floating',
+      });
+
+      // Add the widget to the top-right corner of the view (below bookmarks)
+      view.ui.add(basemapExpand, 'top-right');
+
+      console.log('BasemapGallery widget initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize BasemapGallery widget:', error);
+    }
+  };
+
   const toggleLayerVisibility = (layerId) => {
     setLayers((prevLayers) =>
       prevLayers.map((layer) =>
@@ -592,52 +776,6 @@ const MapView = () => {
     return layers.filter((layer) => layer.visible).length;
   };
 
-  const goToBookmark = async (bookmark) => {
-    console.log('Attempting to go to bookmark:', bookmark);
-    console.log('Current mapView:', mapView);
-
-    if (!mapView) {
-      console.error('Map view is not initialized');
-      alert('Map is not ready yet. Please wait for initialization to complete.');
-      return;
-    }
-
-    try {
-      console.log('Navigating to:', bookmark.location);
-
-      const target = {
-        longitude: parseFloat(bookmark.location.longitude),
-        latitude: parseFloat(bookmark.location.latitude),
-        zoom: 10,
-      };
-
-      console.log('Target coordinates:', target);
-
-      await mapView.goTo({
-        target: target,
-        duration: 2000,
-      });
-
-      console.log('Successfully navigated to bookmark');
-    } catch (error) {
-      console.error('Error navigating to bookmark:', error);
-
-      // Fallback: try with array format
-      try {
-        console.log('Trying fallback navigation method...');
-        await mapView.goTo({
-          target: [parseFloat(bookmark.location.longitude), parseFloat(bookmark.location.latitude)],
-          zoom: 10,
-          duration: 2000,
-        });
-        console.log('Successfully navigated using fallback method');
-      } catch (fallbackError) {
-        console.error('Fallback navigation also failed:', fallbackError);
-        alert(`Failed to navigate to ${bookmark.name}. Please try again.`);
-      }
-    }
-  };
-
   const toggleLayerList = () => {
     setShowLayerList(!showLayerList);
   };
@@ -662,7 +800,6 @@ const MapView = () => {
     <div className="relative w-full h-full">
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full"></div>
-
       {/* Fallback Map Container */}
       {!mapView && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
@@ -679,219 +816,8 @@ const MapView = () => {
           </div>
         </div>
       )}
-
-      {/* Control Buttons */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col space-y-2">
-        {/* Layer List Toggle Button */}
-        <button
-          onClick={toggleLayerList}
-          className="bg-white hover:bg-gray-100 text-gray-700 p-3 rounded-lg shadow-lg border border-gray-200 transition-all duration-200"
-          title="Toggle Layer List"
-        >
-          <Layers className="w-5 h-5" />
-        </button>
-
-        {/* Basemap Gallery Toggle Button */}
-        <button
-          onClick={() => setShowBasemapGallery(!showBasemapGallery)}
-          className="bg-white hover:bg-gray-100 text-gray-700 p-3 rounded-lg shadow-lg border border-gray-200 transition-all duration-200"
-          title="Toggle Basemap Gallery"
-        >
-          <MapIcon className="w-5 h-5" />
-        </button>
-
-        {/* Bookmarks Toggle Button */}
-        <button
-          onClick={() => setShowBookmarks(!showBookmarks)}
-          className="bg-white hover:bg-gray-100 text-gray-700 p-3 rounded-lg shadow-lg border border-gray-200 transition-all duration-200"
-          title="Toggle Bookmarks"
-        >
-          <Bookmark className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Custom Layer List Panel */}
-      {showLayerList && (
-        <div className="absolute top-16 right-4 z-10 bg-white rounded-lg shadow-xl border border-gray-200 w-96 max-h-[80vh] overflow-y-auto">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Malaysia Map Layers</h3>
-              <p className="text-sm text-gray-600 mt-1">Manage layer visibility and settings</p>
-            </div>
-            <button
-              onClick={toggleLayerList}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {loading && (
-            <div className="p-4 text-center">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-sm text-gray-600 mt-2">Loading layers...</p>
-            </div>
-          )}
-
-          <div className="p-2">
-            {layers.map((layer) => {
-              const IconComponent = iconMap[layer.icon];
-              return (
-                <div key={layer.id} className="space-y-2">
-                  <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <IconComponent className="w-5 h-5 text-gray-600" />
-                      <div className="flex-1">
-                        <h4 className="text-sm font-medium text-gray-800">{layer.name}</h4>
-                        <p className="text-xs text-gray-500 mt-1">{layer.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-1">
-                      {/* Info Button */}
-                      <button
-                        onClick={() => handleLayerInfo(layer.id)}
-                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Layer information"
-                      >
-                        <Info className="w-4 h-4" />
-                      </button>
-
-                      {/* Opacity Control Button */}
-                      <button
-                        onClick={() => handleOpacityControl(layer.id)}
-                        className="p-1 text-gray-400 hover:text-green-600 transition-colors"
-                        title="Opacity settings"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </button>
-
-                      {/* Visibility Toggle */}
-                      <button
-                        onClick={() => handleLayerToggle(layer.id)}
-                        className={`p-2 rounded-md transition-colors duration-150 ${
-                          layer.visible
-                            ? 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                            : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                        }`}
-                        title={layer.visible ? 'Hide layer' : 'Show layer'}
-                      >
-                        {layer.visible ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <EyeOff className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Layer Information Panel */}
-                  {showLayerInfo === layer.id && (
-                    <div className="ml-8 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <h5 className="text-sm font-medium text-blue-800 mb-2">Layer Information</h5>
-                      <div className="text-xs text-blue-700 space-y-1">
-                        <p>
-                          <strong>Type:</strong> {layer.type}
-                        </p>
-                        <p>
-                          <strong>Opacity:</strong> {Math.round(layer.opacity * 100)}%
-                        </p>
-                        <p>
-                          <strong>Status:</strong> {layer.visible ? 'Visible' : 'Hidden'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Opacity Control Panel */}
-                  {showOpacityControl === layer.id && (
-                    <div className="ml-8 p-3 bg-green-50 rounded-lg border border-green-200">
-                      <h5 className="text-sm font-medium text-green-800 mb-2">Opacity Control</h5>
-                      <div className="space-y-2">
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={layer.opacity}
-                          onChange={(e) =>
-                            handleOpacityChange(layer.id, parseFloat(e.target.value))
-                          }
-                          className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer"
-                        />
-                        <div className="flex justify-between text-xs text-green-700">
-                          <span>0%</span>
-                          <span>{Math.round(layer.opacity * 100)}%</span>
-                          <span>100%</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="p-3 border-t border-gray-200 bg-gray-50">
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>• Click the eye icon to toggle layer visibility</p>
-              <p>• Use the settings icon to adjust layer opacity</p>
-              <p>• Click the info icon for layer details</p>
-              <p>• Layers are optimized for Malaysia disaster management</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Malaysia Cities Bookmarks Panel */}
-      {showBookmarks && (
-        <div className="absolute top-16 left-4 z-10 bg-white rounded-lg shadow-xl border border-gray-200 w-80 max-h-[80vh] overflow-y-auto">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Malaysia Cities</h3>
-              <p className="text-sm text-gray-600 mt-1">Quick navigation to major cities</p>
-            </div>
-            <button
-              onClick={() => setShowBookmarks(false)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="p-2">
-            {malaysiaBookmarks.map((bookmark, index) => (
-              <button
-                key={index}
-                onClick={async (event) => {
-                  // Add visual feedback
-                  const button = event.target.closest('button');
-                  if (button) {
-                    button.classList.add('bg-blue-100');
-                    setTimeout(() => button.classList.remove('bg-blue-100'), 500);
-                  }
-
-                  // Navigate to bookmark
-                  await goToBookmark(bookmark);
-
-                  // Close the bookmarks panel after navigation
-                  setTimeout(() => setShowBookmarks(false), 1000);
-                }}
-                className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors duration-150 flex items-center space-x-3"
-              >
-                <MapPin className="w-5 h-5 text-blue-600" />
-                <div>
-                  <h4 className="text-sm font-medium text-gray-800">{bookmark.name}</h4>
-                  <p className="text-xs text-gray-500">{bookmark.description}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Layer Status Indicator */}
-      <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
+      {/* {/* Layer Status Indicator */}
+      {/* <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
         <div className="text-sm text-gray-700">
           <div className="flex items-center space-x-2">
             <span
@@ -904,8 +830,7 @@ const MapView = () => {
           </div>
           <div className="text-xs text-gray-500">Malaysia Disaster Management System</div>
         </div>
-      </div>
-
+      </div>  */}
       {/* Loading Overlay */}
       {loading && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-20">
