@@ -7,7 +7,7 @@ import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
 
-const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
+const ChatBox = ({ onClose, onNewChat, savedChat, width, height, mapView }) => {
   const { token } = useAuth();
   const {
     currentSession,
@@ -37,6 +37,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
 
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState('chat');
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -217,6 +218,9 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height }) => {
         setIsExporting={setIsExporting}
         messages={messages}
         width={width}
+        mapView={mapView}
+        exportType={exportType}
+        setExportType={setExportType}
       />
 
       <ChatMessages
