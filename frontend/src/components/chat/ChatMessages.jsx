@@ -2,11 +2,20 @@ import React, { forwardRef } from 'react';
 import UserAvatar from './UserAvatar';
 
 const ChatMessages = forwardRef(
-  ({ displayMessages, userProfile, isListening, chatEndRef, height }, ref) => {
+  ({ displayMessages, userProfile, isListening, chatEndRef, height, width }, ref) => {
+    // Calculate responsive message width based on chat window width
+    const getMessageMaxWidth = () => {
+      if (!width) return '75%';
+      if (width < 400) return '85%';
+      if (width < 500) return '80%';
+      if (width < 600) return '75%';
+      return '70%';
+    };
+
     return (
       <div
         ref={ref}
-        className="flex-1 overflow-y-auto px-4 py-4"
+        className="flex-1 overflow-y-auto px-4 py-4 chat-messages"
         style={{
           minHeight: 0,
           maxHeight: height ? height - 170 : 430,
@@ -23,27 +32,18 @@ const ChatMessages = forwardRef(
             style={{ width: '100%' }}
           >
             {message.sender === 'bot' && (
-              <div className="flex items-end mb-1">
-                <div className="relative">
-                  <img
-                    src="/images/tiara.png"
-                    alt="Tiara Bot Avatar"
-                    className={`w-8 h-8 rounded-full object-cover bg-[#0a4974] transition-all duration-300 ${
-                      message.text === 'Tiara is typing...'
-                        ? 'ring-2 ring-blue-300 ring-offset-1'
-                        : ''
-                    }`}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                  {message.text === 'Tiara is typing...' && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
-                  )}
-                </div>
+              <div className="flex-shrink-0">
+                <img
+                  src="/images/tiara.png"
+                  alt="Tiara Bot Avatar"
+                  className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
                 <div
-                  className="w-8 h-8 rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-xs"
+                  className="w-[43px] h-[43px] rounded-full bg-[#0a4974] flex items-center justify-center text-white font-semibold text-sm"
                   style={{ display: 'none' }}
                 >
                   🤖
@@ -52,24 +52,26 @@ const ChatMessages = forwardRef(
             )}
 
             <div
-              className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'} max-w-[75%]`}
+              className={`flex flex-col ${message.sender === 'user' ? 'items-end' : 'items-start'}`}
+              style={{ maxWidth: getMessageMaxWidth() }}
             >
               <div
                 className={`relative px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
                   message.sender === 'user'
-                    ? 'bg-gradient-to-br from-[#0a4974] to-[#083757] text-white rounded-2xl rounded-br-md'
-                    : 'bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100'
+                    ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white rounded-2xl rounded-br-md'
+                    : 'bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-200 shadow-sm'
                 }`}
                 style={{
                   wordBreak: 'break-word',
                   position: 'relative',
+                  minWidth: '60px',
                 }}
               >
                 {/* Message tail */}
                 <div
                   className={`absolute ${
                     message.sender === 'user'
-                      ? 'bottom-0 -right-2 border-l-[10px] border-l-[#083757] border-t-[10px] border-t-transparent'
+                      ? 'bottom-0 -right-2 border-l-[10px] border-l-indigo-600 border-t-[10px] border-t-transparent'
                       : 'bottom-0 -left-2 border-r-[10px] border-r-white border-t-[10px] border-t-transparent'
                   }`}
                   style={{
@@ -77,68 +79,79 @@ const ChatMessages = forwardRef(
                   }}
                 ></div>
 
-                {message.sender === 'bot' ? (
-                  message.text === 'Tiara is typing...' ? (
-                    <div className="flex items-center space-x-2 py-1">
-                      <span className="text-sm text-gray-600 font-medium">Tiara is typing</span>
-                      <div className="flex space-x-1">
-                        <div
-                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '0ms' }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '150ms' }}
-                        ></div>
-                        <div
-                          className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                          style={{ animationDelay: '300ms' }}
-                        ></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-sm leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: message.text }}
-                      style={{ wordBreak: 'break-word' }}
-                    />
-                  )
-                ) : message.isTranscribing ? (
-                  <div className="flex items-center space-x-2 py-1">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm text-white font-medium italic">Transcribing...</span>
-                  </div>
-                ) : (
-                  <p
-                    className="text-sm leading-relaxed whitespace-pre-line font-medium"
-                    style={{ wordBreak: 'break-word' }}
-                  >
-                    {message.text}
-                  </p>
-                )}
+                <div
+                  className={`text-sm leading-relaxed ${
+                    message.sender === 'user' ? 'text-white' : 'text-[#333333]'
+                  }`}
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {message.text}
+                </div>
               </div>
 
-              {/* Timestamp */}
+              {/* Message timestamp */}
               <div
-                className={`text-xs text-gray-500 mt-1 px-2 ${message.sender === 'user' ? 'text-right' : 'text-left'}`}
+                className={`text-xs text-gray-500 mt-1 ${
+                  message.sender === 'user' ? 'text-right' : 'text-left'
+                }`}
               >
-                {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {message.timestamp
+                  ? new Date(message.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : new Date().toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
               </div>
             </div>
 
             {message.sender === 'user' && (
-              <div className="flex items-end mb-1">
+              <div className="flex-shrink-0">
                 <UserAvatar userProfile={userProfile} />
               </div>
             )}
           </div>
         ))}
+
+        {/* Voice recording indicator */}
+        {isListening && (
+          <div className="flex justify-start items-end space-x-2">
+            <div className="flex-shrink-0">
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
+            </div>
+            <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
+              <div className="flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <div
+                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: '0.2s' }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+                    style={{ animationDelay: '0.4s' }}
+                  ></div>
+                </div>
+                <span className="text-sm text-gray-600">Listening...</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-scroll anchor */}
         <div ref={chatEndRef} />
       </div>
     );
   }
 );
-
-ChatMessages.displayName = 'ChatMessages';
 
 export default ChatMessages;

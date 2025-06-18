@@ -6,7 +6,7 @@ const ChatButton = ({ onClick, isOpen }) => {
   return (
     <button
       onClick={onClick}
-      className="fixed z-50 bg-[#0a4974] hover:bg-[#083757] text-white rounded-full p-4 shadow-lg transition-all duration-200 transform hover:scale-105"
+      className="fixed z-50 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 transform hover:scale-105 border-2 border-white"
       style={{
         right: '16px',
         bottom: '16px',
