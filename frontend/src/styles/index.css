@@ -98,6 +98,182 @@ body {
   border-radius: 2px;
 }
 
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+/* Chat resize improvements */
+.chat-resize-handle {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.chat-resize-handle:hover {
+  opacity: 1 !important;
+}
+
+/* Smooth resize transitions */
+.chat-window {
+  transition:
+    width 0.1s ease-out,
+    height 0.1s ease-out;
+}
+
+.chat-window.resizing {
+  transition: none;
+}
+
+/* Size indicator animation */
+.size-indicator {
+  animation: fadeInOut 1s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* Resize border animation */
+.resize-border {
+  animation: borderPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes borderPulse {
+  0% {
+    border-color: rgba(10, 73, 116, 0.3);
+  }
+  100% {
+    border-color: rgba(10, 73, 116, 0.8);
+  }
+}
+
+/* Responsive chat improvements */
+@media screen and (max-width: 768px) {
+  .chat-window {
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
+
+  .chat-resize-handle {
+    opacity: 1;
+  }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+  .chat-resize-handle {
+    opacity: 1;
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+/* Body resize feedback */
+body.chat-resizing {
+  cursor: nwse-resize !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+body.chat-resizing * {
+  cursor: nwse-resize !important;
+}
+
+/* Prevent text selection during resize */
+body.chat-resizing .chat-window {
+  pointer-events: none;
+}
+
+body.chat-resizing .chat-resize-handle {
+  pointer-events: auto;
+}
+
+/* Improved resize handle visibility */
+.chat-resize-handle {
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.chat-resize-handle:hover {
+  background-color: rgba(10, 73, 116, 0.2);
+}
+
+/* Smooth size transitions for better UX */
+.chat-window {
+  will-change: width, height;
+}
+
+/* Prevent layout shift during resize */
+.chat-window * {
+  box-sizing: border-box;
+}
+
+/* Map widget positioning improvements */
+.esri-view .esri-ui-top-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.esri-view .esri-ui-top-left .esri-expand {
+  margin-bottom: 8px;
+}
+
+.esri-view .esri-ui-top-left .esri-expand:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure widgets are visible and properly styled */
+.esri-view .esri-expand {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.esri-view .esri-expand:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Widget button styling */
+.esri-view .esri-expand__button {
+  background-color: white;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.esri-view .esri-expand__button:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+/* Ensure proper z-index for widgets */
+.esri-view .esri-ui-top-left {
+  z-index: 10;
+}
+
+/* Responsive adjustments for map widgets */
+@media screen and (max-width: 768px) {
+  .esri-view .esri-ui-top-left {
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .esri-view .esri-expand {
+    transform: scale(0.9);
+  }
 }
