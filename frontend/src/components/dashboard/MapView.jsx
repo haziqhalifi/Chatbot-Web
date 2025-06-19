@@ -280,6 +280,9 @@ const MapView = () => {
         map: map,
         zoom: 6,
         center: [101.6869, 3.139], // Kuala Lumpur
+        constraints: {
+          minZoom: 3, // Prevents zooming out too far
+        },
       });
 
       console.log('Map view created successfully');
