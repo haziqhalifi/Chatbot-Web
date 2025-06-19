@@ -36,7 +36,6 @@ def create_notifications_table():
                 location NVARCHAR(255) NULL, -- Location of the disaster/event
                 read_status BIT DEFAULT 0,
                 created_at DATETIME DEFAULT GETDATE(),
-                updated_at DATETIME DEFAULT GETDATE(),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
@@ -75,6 +74,27 @@ def update_notifications_table_schema():
         conn = get_db_conn()
         cursor = conn.cursor()
         
+        # Check if updated_at column exists and drop it
+        cursor.execute("""
+            SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'notifications' AND COLUMN_NAME = 'updated_at'
+        """)
+        if cursor.fetchone()[0] > 0:
+            print("Dropping updated_at column from notifications table...")
+            
+            # First drop the default constraint if it exists
+            cursor.execute("""
+                DECLARE @constraint_name nvarchar(200)
+                SELECT @constraint_name = NAME FROM SYS.DEFAULT_CONSTRAINTS
+                WHERE PARENT_OBJECT_ID = OBJECT_ID('notifications')
+                AND PARENT_COLUMN_ID = (SELECT column_id FROM sys.columns WHERE NAME = N'updated_at' AND object_id = OBJECT_ID(N'notifications'))
+                IF @constraint_name IS NOT NULL
+                EXEC('ALTER TABLE notifications DROP CONSTRAINT ' + @constraint_name)
+            """)
+
+            cursor.execute("ALTER TABLE notifications DROP COLUMN updated_at")
+            print("updated_at column dropped.")
+
         # Check if disaster_type column exists
         cursor.execute("""
             SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS 
@@ -130,8 +150,8 @@ def create_notification(user_id: int, title: str, message: str, notification_typ
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO notifications (user_id, title, message, type, disaster_type, location, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
+            INSERT INTO notifications (user_id, title, message, type, disaster_type, location, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, GETDATE())
         """, (user_id, title, message, notification_type, disaster_type, location))
         
         # Get the inserted notification ID
@@ -163,7 +183,7 @@ def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unrea
             where_clause += " AND read_status = 0"
         
         query = f"""
-            SELECT id, user_id, title, message, type, disaster_type, location, read_status, created_at, updated_at
+            SELECT id, user_id, title, message, type, disaster_type, location, read_status, created_at
             FROM notifications
             {where_clause}
             ORDER BY created_at DESC
@@ -185,8 +205,7 @@ def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unrea
                 "disaster_type": row[5],
                 "location": row[6],
                 "read": bool(row[7]),
-                "timestamp": row[8].isoformat() if row[8] else None,
-                "updated_at": row[9].isoformat() if row[9] else None
+                "timestamp": row[8].isoformat() if row[8] else None
             })
         
         # Get total count for pagination
@@ -240,7 +259,7 @@ def mark_notification_as_read(notification_id: int, user_id: int):
         
         cursor.execute("""
             UPDATE notifications 
-            SET read_status = 1, updated_at = GETDATE()
+            SET read_status = 1
             WHERE id = ? AND user_id = ?
         """, (notification_id, user_id))
         
@@ -268,7 +287,7 @@ def mark_all_notifications_as_read(user_id: int):
         
         cursor.execute("""
             UPDATE notifications 
-            SET read_status = 1, updated_at = GETDATE()
+            SET read_status = 1
             WHERE user_id = ? AND read_status = 0
         """, (user_id,))
         
@@ -351,8 +370,8 @@ def create_system_notification(title: str, message: str, notification_type: str 
         for user_id in user_ids:
             try:
                 cursor.execute("""
-                    INSERT INTO notifications (user_id, title, message, type, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, GETDATE(), GETDATE())
+                    INSERT INTO notifications (user_id, title, message, type, created_at)
+                    VALUES (?, ?, ?, ?, GETDATE())
                 """, (user_id, title, message, notification_type))
                 created_count += 1
             except Exception as e:

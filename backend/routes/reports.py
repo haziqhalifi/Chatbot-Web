@@ -56,7 +56,7 @@ def submit_report(report: ReportRequest, authorization: str = Header(None)):
             location=report.location,
             disaster_type=report.disaster_type,
             description=report.description,
-            timestamp=report.timestamp
+            created_at=report.timestamp
         )
         
         result = insert_report(complete_report)
