@@ -55,6 +55,8 @@ const ChatHeader = ({
             isExporting={isExporting}
             setIsExporting={setIsExporting}
             messages={messages}
+            exportType={exportType}
+            setExportType={setExportType}
           />
         )}
 
