@@ -18,12 +18,12 @@
     "filter": "Tapis",
     "clear": "Kosongkan",
     "selectLanguage": "Pilih Bahasa"
-  },
-  "navigation": {
+  },  "navigation": {
     "home": "Laman Utama",
     "chat": "Sembang",
     "profile": "Akaun Saya",
     "settings": "Tetapan",
+    "notifications": "Tetapan Notifikasi",
     "help": "Bantuan & Soalan Lazim",
     "logout": "Log Keluar"
   },

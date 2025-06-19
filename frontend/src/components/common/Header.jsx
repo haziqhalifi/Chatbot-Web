@@ -41,12 +41,16 @@ const Header = () => {
   } = useNotifications();
 
   const notificationService = useNotificationService();
-
   // Event handlers
   const handleLanguageChange = (lang) => {
     // The LanguageDropdown component will handle i18n.changeLanguage
     // We just need to close the layer
     closeLayer(); // Close language dropdown after selection
+  };
+
+  const handleNotificationSettings = () => {
+    closeLayer(); // Close dropdown
+    window.location.href = '/notification-settings';
   };
 
   // Demo function to test notifications
@@ -109,14 +113,13 @@ const Header = () => {
             language={getCurrentLanguageDisplay()}
             onLanguageChange={handleLanguageChange}
             onToggle={() => toggleLayer('LANGUAGE_DROPDOWN')}
-          />
-
-          <ProfileDropdown
+          />          <ProfileDropdown
             isOpen={isLayerActive('PROFILE_DROPDOWN')}
             userProfile={userProfile}
             onToggle={() => toggleLayer('PROFILE_DROPDOWN')}
             onOpenAccount={() => openLayer('ACCOUNT_MODAL')}
             onOpenSettings={() => openLayer('SETTINGS_MODAL')}
+            onOpenNotificationSettings={handleNotificationSettings}
             onOpenReport={() => openLayer('REPORT_MODAL')}
             onLogout={logout}
             onClose={closeLayer}
