@@ -209,7 +209,7 @@ const SignUpPage = () => {
   };
 
   const handleSignIn = () => {
-    alert('Redirecting to sign in page...');
+    navigate('/signin');
   };
 
   const getFieldError = (fieldName) => {

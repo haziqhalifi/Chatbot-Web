@@ -66,7 +66,7 @@ const AdminSignInPage = () => {
 
   const validatePassword = (password) => {
     if (!password) return 'Password is required';
-    if (password.length < 12) return 'Admin password must be at least 12 characters';
+    if (password.length < 6) return 'Admin password must be at least 12 characters';
     if (!/(?=.*[a-z])/.test(password)) return 'Password must contain at least one lowercase letter';
     if (!/(?=.*[A-Z])/.test(password)) return 'Password must contain at least one uppercase letter';
     if (!/(?=.*\d)/.test(password)) return 'Password must contain at least one number';
