@@ -29,18 +29,27 @@ const Header = () => {
 
   // Use layer effects for ESC key, click outside, etc.
   useLayerEffects();
-
   // Notification state using custom hook
   const {
     notifications,
     unreadCount,
+    fetchNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    clearAllNotifications,
+    clearAll: clearAllNotifications,
   } = useNotifications();
 
   const notificationService = useNotificationService();
+
+  // Handle notification dropdown toggle
+  const handleNotificationToggle = () => {
+    if (!isLayerActive('NOTIFICATION_DROPDOWN')) {
+      // Fetch notifications when opening the dropdown
+      fetchNotifications();
+    }
+    toggleLayer('NOTIFICATION_DROPDOWN');
+  };
   // Event handlers
   const handleLanguageChange = (lang) => {
     // The LanguageDropdown component will handle i18n.changeLanguage
@@ -84,7 +93,7 @@ const Header = () => {
     <>
       <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
         <div className="flex items-center">
-          <Link to="/admin" className="flex items-center">
+          <Link to="/" className="flex items-center">
             <Shield className="h-8 w-8 text-blue-500 mr-3" />
             <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
           </Link>
@@ -95,11 +104,12 @@ const Header = () => {
         </div>
 
         <div className="flex items-center space-x-4">
+          {' '}
           <NotificationCenter
             unreadCount={unreadCount}
             isDropdownOpen={isLayerActive('NOTIFICATION_DROPDOWN')}
             notifications={notifications}
-            onToggleDropdown={() => toggleLayer('NOTIFICATION_DROPDOWN')}
+            onToggleDropdown={handleNotificationToggle}
             onTestNotification={testNotification}
             onClose={closeLayer}
             onMarkAsRead={markAsRead}
@@ -107,13 +117,13 @@ const Header = () => {
             onDelete={deleteNotification}
             onClearAll={clearAllNotifications}
           />
-
           <LanguageDropdown
             isOpen={isLayerActive('LANGUAGE_DROPDOWN')}
             language={getCurrentLanguageDisplay()}
             onLanguageChange={handleLanguageChange}
             onToggle={() => toggleLayer('LANGUAGE_DROPDOWN')}
-          />          <ProfileDropdown
+          />{' '}
+          <ProfileDropdown
             isOpen={isLayerActive('PROFILE_DROPDOWN')}
             userProfile={userProfile}
             onToggle={() => toggleLayer('PROFILE_DROPDOWN')}
