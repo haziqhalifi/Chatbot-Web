@@ -145,7 +145,7 @@ class ChatRepository(BaseRepository):
         """Get user's chat sessions with pagination"""
         query = """
             SELECT s.id, s.title, s.created_at, s.updated_at,
-                   COUNT(m.id) as message_count
+            COUNT(m.id) as message_count
             FROM chat_sessions s
             LEFT JOIN chat_messages m ON s.id = m.session_id
             WHERE s.user_id = ?
