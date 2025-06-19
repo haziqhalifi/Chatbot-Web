@@ -35,10 +35,9 @@ class RAGSystem:
             embeddings_file: Path to store/load embeddings
         """
         if documents_path is None:
-            # Default to frontend public/file directory
-            self.documents_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), 
-                "frontend", "public", "file"
+            # Default to frontend public/file directory (relative to project root)
+            self.documents_path = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "file")
             )
         else:
             self.documents_path = documents_path
