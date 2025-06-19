@@ -14,10 +14,8 @@ import {
   X,
   Map as MapIcon,
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
-const MapView = ({ onMapViewReady }) => {
+const MapView = () => {
   // NOTE: This component now uses official ArcGIS widgets:
   // - LayerList widget (top-left corner) - for layer visibility and opacity controls
   // - BasemapGallery widget (top-right corner) - for basemap selection
@@ -125,8 +123,6 @@ const MapView = ({ onMapViewReady }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const mapRef = useRef(null);
-  const [showScreenshotDropdown, setShowScreenshotDropdown] = useState(false);
-  const screenshotBtnRef = useRef();
 
   // Malaysia cities bookmarks
   const malaysiaBookmarks = [
@@ -297,11 +293,6 @@ const MapView = ({ onMapViewReady }) => {
       setMapView(view);
       setLoadingMessage('Map view ready, initializing layers...');
 
-      // Notify parent component that mapView is ready
-      if (onMapViewReady) {
-        onMapViewReady(view);
-      }
-
       // Wait for view to be ready
       await view.when();
       console.log('View is ready');
@@ -397,7 +388,7 @@ const MapView = ({ onMapViewReady }) => {
             continue;
 
           case 'flood-risk-malaysia':
-            // Create flood risk areas as graphics layer
+            // Create flood risk area over Kelantan (Kota Bharu)
             graphicsLayer = new GraphicsLayer({
               title: layer.name,
               visible: layer.visible,
@@ -407,11 +398,11 @@ const MapView = ({ onMapViewReady }) => {
             const floodGeometry = new Polygon({
               rings: [
                 [
-                  [101.0, 2.0],
-                  [105.0, 2.0],
-                  [105.0, 4.0],
-                  [101.0, 4.0],
-                  [101.0, 2.0],
+                  [102.15, 6.1], // Near Kota Bharu, Kelantan
+                  [102.3, 6.1],
+                  [102.3, 6.25],
+                  [102.15, 6.25],
+                  [102.15, 6.1],
                 ],
               ],
               spatialReference: { wkid: 4326 },
@@ -439,7 +430,7 @@ const MapView = ({ onMapViewReady }) => {
             break;
 
           case 'emergency-services-malaysia':
-            // Create emergency service points
+            // Create emergency service points at real hospitals
             graphicsLayer = new GraphicsLayer({
               title: layer.name,
               visible: layer.visible,
@@ -447,11 +438,23 @@ const MapView = ({ onMapViewReady }) => {
             });
 
             const emergencyPoints = [
-              { longitude: 101.6869, latitude: 3.139, name: 'Kuala Lumpur Hospital' },
-              { longitude: 100.2381, latitude: 5.4164, name: 'George Town Hospital' },
-              { longitude: 103.7648, latitude: 1.4927, name: 'Johor Bahru Hospital' },
-              { longitude: 101.0901, latitude: 4.5979, name: 'Ipoh Hospital' },
-              { longitude: 101.5327, latitude: 3.0738, name: 'Shah Alam Hospital' },
+              { longitude: 101.6869, latitude: 3.139, name: 'Hospital Kuala Lumpur' },
+              {
+                longitude: 102.2405,
+                latitude: 6.1254,
+                name: 'Hospital Raja Perempuan Zainab II, Kota Bharu',
+              },
+              { longitude: 100.3075, latitude: 5.4164, name: 'Hospital Pulau Pinang' },
+              {
+                longitude: 103.4271,
+                latitude: 3.8236,
+                name: 'Hospital Tengku Ampuan Afzan, Kuantan',
+              },
+              {
+                longitude: 116.0735,
+                latitude: 5.9804,
+                name: 'Hospital Queen Elizabeth, Kota Kinabalu',
+              },
             ];
 
             emergencyPoints.forEach((point) => {
@@ -479,6 +482,129 @@ const MapView = ({ onMapViewReady }) => {
               });
               graphicsLayer.add(pointGraphic);
             });
+            break;
+
+          case 'landslide-risk-malaysia':
+            // Landslide risk polygon over Genting Highlands
+            graphicsLayer = new GraphicsLayer({
+              title: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+            });
+            const landslideGeometry = new Polygon({
+              rings: [
+                [
+                  [101.76, 3.4],
+                  [101.8, 3.4],
+                  [101.8, 3.45],
+                  [101.76, 3.45],
+                  [101.76, 3.4],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            });
+            const landslideSymbol = new SimpleFillSymbol({
+              color: layer.color,
+              outline: new SimpleLineSymbol({
+                color: [139, 69, 19, 1],
+                width: 1,
+              }),
+            });
+            const landslideGraphic = new Graphic({
+              geometry: landslideGeometry,
+              symbol: landslideSymbol,
+              attributes: {
+                name: layer.name,
+                description: layer.description,
+              },
+              popupTemplate: {
+                title: layer.name,
+                content: layer.description,
+              },
+            });
+            graphicsLayer.add(landslideGraphic);
+            break;
+
+          case 'tsunami-risk-malaysia':
+            // Tsunami risk polygon over Penang coast
+            graphicsLayer = new GraphicsLayer({
+              title: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+            });
+            const tsunamiGeometry = new Polygon({
+              rings: [
+                [
+                  [100.2, 5.2],
+                  [100.4, 5.2],
+                  [100.4, 5.5],
+                  [100.2, 5.5],
+                  [100.2, 5.2],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            });
+            const tsunamiSymbol = new SimpleFillSymbol({
+              color: layer.color,
+              outline: new SimpleLineSymbol({
+                color: [255, 165, 0, 1],
+                width: 1,
+              }),
+            });
+            const tsunamiGraphic = new Graphic({
+              geometry: tsunamiGeometry,
+              symbol: tsunamiSymbol,
+              attributes: {
+                name: layer.name,
+                description: layer.description,
+              },
+              popupTemplate: {
+                title: layer.name,
+                content: layer.description,
+              },
+            });
+            graphicsLayer.add(tsunamiGraphic);
+            break;
+
+          case 'earthquake-risk-malaysia':
+            // Earthquake risk polygon over Ranau, Sabah
+            graphicsLayer = new GraphicsLayer({
+              title: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+            });
+            const earthquakeGeometry = new Polygon({
+              rings: [
+                [
+                  [116.6, 5.9],
+                  [116.8, 5.9],
+                  [116.8, 6.1],
+                  [116.6, 6.1],
+                  [116.6, 5.9],
+                ],
+              ],
+              spatialReference: { wkid: 4326 },
+            });
+            const earthquakeSymbol = new SimpleFillSymbol({
+              color: layer.color,
+              outline: new SimpleLineSymbol({
+                color: [255, 0, 0, 1],
+                width: 1,
+              }),
+            });
+            const earthquakeGraphic = new Graphic({
+              geometry: earthquakeGeometry,
+              symbol: earthquakeSymbol,
+              attributes: {
+                name: layer.name,
+                description: layer.description,
+              },
+              popupTemplate: {
+                title: layer.name,
+                content: layer.description,
+              },
+            });
+            graphicsLayer.add(earthquakeGraphic);
             break;
 
           case 'transportation-network-malaysia':
@@ -608,12 +734,10 @@ const MapView = ({ onMapViewReady }) => {
         expanded: false,
         expandIconClass: 'esri-icon-bookmark',
         expandTooltip: 'Bookmarks',
-        mode: 'floating',
-        position: 'top-left',
       });
 
-      // Add the widget to the top-left corner of the view
-      view.ui.add(bkExpand, 'top-left');
+      // Add the widget to the top-right corner of the view
+      view.ui.add(bkExpand, 'top-right');
 
       console.log('Bookmarks widget initialized successfully');
 
@@ -704,10 +828,9 @@ const MapView = ({ onMapViewReady }) => {
         expandIconClass: 'esri-icon-layers',
         expandTooltip: 'Layer List',
         mode: 'floating',
-        position: 'top-left',
       });
 
-      // Add the widget to the top-left corner of the view (below bookmarks)
+      // Add the widget to the top-left corner of the view
       view.ui.add(layerListExpand, 'top-left');
 
       console.log('LayerList widget initialized successfully');
@@ -747,11 +870,10 @@ const MapView = ({ onMapViewReady }) => {
         expandIconClass: 'esri-icon-basemap',
         expandTooltip: 'Basemap Gallery',
         mode: 'floating',
-        position: 'top-left',
       });
 
-      // Add the widget to the top-left corner of the view (below layer list)
-      view.ui.add(basemapExpand, 'top-left');
+      // Add the widget to the top-right corner of the view (below bookmarks)
+      view.ui.add(basemapExpand, 'top-right');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {
@@ -809,72 +931,8 @@ const MapView = ({ onMapViewReady }) => {
     setShowOpacityControl(showOpacityControl === layerId ? null : layerId);
   };
 
-  // Screenshot handler
-  const handleScreenshot = async (format = 'png') => {
-    if (!mapRef.current) return;
-    const canvas = await html2canvas(mapRef.current, { backgroundColor: '#fff', scale: 2 });
-    if (format === 'png') {
-      const link = document.createElement('a');
-      link.download = `map-screenshot-${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
-    } else if (format === 'pdf') {
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`map-screenshot-${new Date().toISOString().split('T')[0]}.pdf`);
-    }
-    setShowScreenshotDropdown(false);
-  };
-
   return (
     <div className="relative w-full h-full">
-      {/* Screenshot Button (top right) */}
-      <div className="absolute top-4 right-4 z-30">
-        <div className="relative">
-          <button
-            onClick={() => setShowScreenshotDropdown((v) => !v)}
-            className="bg-white text-blue-600 rounded-full shadow-lg p-2 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-            title="Share or export map screenshot"
-            aria-label="Share or export map screenshot"
-          >
-            {/* Share Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-          </button>
-          {showScreenshotDropdown && (
-            <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-              <button
-                onClick={() => handleScreenshot('png')}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 rounded-t-lg"
-              >
-                Save as PNG
-              </button>
-              <button
-                onClick={() => handleScreenshot('pdf')}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 rounded-b-lg"
-              >
-                Save as PDF
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full"></div>
       {/* Fallback Map Container */}

@@ -1,0 +1,31 @@
+Location,Latitude,Longitude,Area_sqkm,Max_Depth_m,Type
+Tasik Kenyir,5.0011,102.6642,260,145,Reservoir
+Tasik Bera,3.4167,102.5833,61,6.7,Natural
+Tasik Chini,3.4333,102.9167,12.5,5,Natural
+Tasik Pedu,6.2514,100.71,75,40,Reservoir
+Tasik Temenggor,5.6167,101.3667,152,120,Reservoir
+Tasik Chenderoh,4.9328,100.9336,8,15,Reservoir
+Tasik Raban,4.5833,101.0833,3.5,8,Oxbow
+Tasik Merah,5.1167,100.4833,1.2,4,Oxbow
+Tasik Biru,1.4667,110.1333,0.8,12,Quarry
+Tasik Dayang Bunting,6.2833,99.8,1.2,15,Karst
+Tasik Putrajaya,2.9264,101.6964,4.2,12,Artificial
+Tasik Perdana,3.1333,101.6833,0.9,5,Artificial
+Tasik Garden,5.3333,100.2833,0.6,4,Artificial
+Tasik Aman,3.0333,101.4333,0.4,3,Artificial
+Tasik Permaisuri,3.1167,101.7333,0.5,3,Artificial
+Tasik Titiwangsa,3.1667,101.7167,0.7,4,Artificial
+Tasik Cyberjaya,2.9167,101.65,1.1,6,Artificial
+Tasik Shah Alam,3.0833,101.5333,0.8,4,Artificial
+Tasik Taiping,4.85,100.7333,0.6,3,Artificial
+Tasik Cempaka,3.0333,101.75,0.3,2,Artificial
+Tasik Tasek,4.5833,101.0833,0.4,3,Oxbow
+Tasik Universiti,3.0667,101.4833,0.5,3,Artificial
+Tasik Puchong,3,101.6167,0.7,4,Artificial
+Tasik Seri Serdang,3,101.7167,0.6,3,Artificial
+Tasik Mines,3.0667,101.7,1.2,8,Quarry
+Tasik Sri Hartamas,3.1667,101.65,0.4,3,Artificial
+Tasik Kota Permai,3.0333,101.5667,0.5,3,Artificial
+Tasik Prima,3.0333,101.6167,0.6,3,Artificial
+Tasik Puchong Perdana,3,101.6167,0.5,3,Artificial
+Tasik Bandar Kinrara,3.0667,101.5667,0.4,3,Artificial

@@ -1,0 +1,21 @@
+Location,Latitude,Longitude,Mean_WS_ms,Max_WS_ms,Prevailing_Dir,Monsoon_Boost
+Kuala Lumpur,3.139,101.6869,1.8,5.2,SW,NE
+Penang Island,5.4141,100.3288,2.1,6.5,SW,NE
+Langkawi,6.35,99.8,2.3,7.1,SW,NE
+Kota Bharu,6.1256,102.2437,2.5,8.3,NE,SW
+Kuantan,3.8167,103.3333,2.2,7.8,NE,SW
+Johor Bahru,1.4854,103.7618,1.9,5.9,SW,NE
+Kota Kinabalu,5.9804,116.0735,1.7,4.8,NE,SW
+Kuching,1.5397,110.3549,1.5,4.2,SW,NE
+Miri,4.3995,113.9914,1.8,5.5,NE,SW
+Sandakan,5.8394,118.1173,1.6,4.6,NE,SW
+Tawau,4.2495,117.8878,1.4,4,NE,SW
+Labuan,5.2767,115.2417,2,6.2,NE,SW
+Kuala Terengganu,5.3296,103.137,2.4,8,NE,SW
+Pulau Perhentian,5.9167,102.7333,2.7,9.2,NE,SW
+Pulau Tioman,2.8186,104.16,2.3,7.5,NE,SW
+Pulau Redang,5.7833,103,2.5,8.4,NE,SW
+Pulau Kapas,5.2167,103.2667,2.2,7.3,NE,SW
+Pulau Pangkor,4.2167,100.55,2,6.1,SW,NE
+Pulau Langkawi,6.35,99.8,2.3,7.1,SW,NE
+Pulau Sibu,2.2167,104.0833,2.1,6.8,NE,SW

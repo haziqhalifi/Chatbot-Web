@@ -1,0 +1,26 @@
+Location,Latitude,Longitude,Depth_m,Fe_Oxide_pct,Clay_pct,Land_Use
+Johor Laterite Belt,2,103.5,8,45,75,Oil Palm
+Pahang Inland,3.5,102.5,6,42,72,Rubber
+Terengganu Uplands,5,102.75,7,48,78,Forest
+Kelantan Highlands,5.5,102,5,40,70,Agriculture
+Perak Old Alluvium,4.5,101,9,50,80,Oil Palm
+Kedah Red Earth,5.5,100.5,6,38,68,Paddy
+Selangor Inland,3.25,101.5,7,45,76,Development
+Negeri Sembilan,2.75,102.25,5,35,65,Oil Palm
+Malacca Red Earth,2.25,102.25,4,30,60,Agriculture
+Sarawak Plateau,2,113,10,55,85,Pepper
+Sabah Interior,5,116.5,8,52,82,Oil Palm
+Bintulu Red Earth,3.1667,113.0333,7,48,78,Forest
+Miri Laterite,4.3333,113.9833,6,45,75,Agriculture
+Sibu Uplands,2.3,111.8167,5,40,70,Development
+Kuching Red Earth,1.55,110.3333,9,50,80,Oil Palm
+Serian Laterite,1.1667,110.5833,7,46,77,Pepper
+Sri Aman Area,1.25,111.4667,6,42,73,Agriculture
+Betong Plateau,1.4167,111.5333,8,49,79,Oil Palm
+Sarikei Red Earth,2.1167,111.5167,5,38,68,Forest
+Kapit Laterite,2,112.9333,10,58,88,Rubber
+Belaga Uplands,2.75,113.75,9,53,83,Logging
+Limbang Red Earth,4.75,115,7,47,78,Agriculture
+Lawas Laterite,4.9167,115.4167,6,44,76,Oil Palm
+Kota Samarahan,1.4667,110.5,5,39,69,Development
+Marudi Plateau,4.25,114.3333,8,51,81,Forest

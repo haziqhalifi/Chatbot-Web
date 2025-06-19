@@ -1,0 +1,26 @@
+Location,Latitude,Longitude,Age_yrs,Texture,Salinity_dS/m,Land_Use
+Klang Delta,3,101.4,50,Sandy,0.8,Mangrove
+Penang Beach,5.4736,100.2458,30,Sand,1.2,Recreation
+Johor Straits,1.4667,103.75,40,Silty,2.5,Aquaculture
+Kuantan Sandy,3.8167,103.3667,20,Sand,0.5,Beach
+Malacca Coast,2.2,102.25,25,Sandy,1,Tourism
+Lumut Beach,4.2328,100.6299,15,Sand,0.7,Recreation
+Desaru Sands,1.5667,104.2667,10,Sand,0.3,Resort
+Cherating Beach,4.1333,103.4,18,Sand,0.6,Tourism
+Port Dickson,2.5228,101.7969,22,Sandy,0.9,Recreation
+Teluk Batik,4.0833,100.7833,12,Sand,0.4,Park
+Pulau Kapas,5.2167,103.2667,8,Sand,0.2,Conservation
+Pulau Redang,5.7833,103,5,Sand,0.1,Marine Park
+Pulau Perhentian,5.9167,102.7333,6,Sand,0.15,Ecotourism
+Pulau Tioman,2.8186,104.16,7,Sand,0.12,Resort
+Pulau Pangkor,4.2167,100.55,15,Sand,0.6,Tourism
+Pulau Langkawi,6.35,99.8,20,Sand,0.8,Resort
+Semporna Beach,4.4818,118.6112,12,Sand,1.5,Fishing
+Kudat Sandy,6.8843,116.8476,9,Sand,0.9,Agriculture
+Sandakan Shore,5.8333,118.1167,14,Silty,1.2,Urban
+Tawau Beach,4.25,117.9,11,Sand,0.7,Recreation
+Kota Kinabalu,5.9804,116.0735,16,Sandy,0.8,Tourism
+Lahad Datu Coast,5.0267,118.3284,13,Silty,1.8,Fishing
+Keningau River,5.3333,116.1667,17,Sandy,0.3,Agriculture
+Beaufort Flood,5.3333,115.75,19,Silty,0.6,Paddy
+Kuala Penyu,5.5667,115.6,10,Sand,1,Recreation
