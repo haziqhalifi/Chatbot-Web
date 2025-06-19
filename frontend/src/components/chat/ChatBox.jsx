@@ -40,6 +40,8 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState('chat');
 
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioContextRef = useRef(null);
@@ -237,6 +239,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
         displayMessages={displayMessages}
         userProfile={userProfile}
         isListening={isListening}
+        isTranscribing={isTranscribing}
         chatEndRef={chatEndRef}
         height={height}
         width={width}
@@ -260,6 +263,8 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
         sourceRef={sourceRef}
         animationFrameRef={animationFrameRef}
         width={width}
+        isTranscribing={isTranscribing}
+        setIsTranscribing={setIsTranscribing}
       />
     </div>
   );

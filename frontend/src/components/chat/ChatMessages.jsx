@@ -2,7 +2,10 @@ import React, { forwardRef } from 'react';
 import UserAvatar from './UserAvatar';
 
 const ChatMessages = forwardRef(
-  ({ displayMessages, userProfile, isListening, chatEndRef, height, width }, ref) => {
+  (
+    { displayMessages, userProfile, isListening, isTranscribing, chatEndRef, height, width },
+    ref
+  ) => {
     // Calculate responsive message width based on chat window width
     const getMessageMaxWidth = () => {
       if (!width) return '75%';
@@ -88,7 +91,11 @@ const ChatMessages = forwardRef(
                     wordBreak: 'break-word',
                   }}
                 >
-                  {message.text}
+                  {message.sender === 'bot' ? (
+                    <span dangerouslySetInnerHTML={{ __html: message.text }} />
+                  ) : (
+                    message.text
+                  )}
                 </div>
               </div>
 
@@ -143,6 +150,22 @@ const ChatMessages = forwardRef(
                 </div>
                 <span className="text-sm text-gray-600">Listening...</span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Transcribing indicator */}
+        {isTranscribing && (
+          <div className="flex justify-start items-end space-x-2">
+            <div className="flex-shrink-0">
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
+            </div>
+            <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
+              <span className="text-sm text-gray-600">Transcribing your voice...</span>
             </div>
           </div>
         )}

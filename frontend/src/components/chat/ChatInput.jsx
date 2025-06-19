@@ -20,6 +20,8 @@ const ChatInput = ({
   sourceRef,
   animationFrameRef,
   width,
+  isTranscribing,
+  setIsTranscribing,
 }) => {
   const handleVoiceClick = async () => {
     if (!isListening) {
@@ -71,6 +73,7 @@ const ChatInput = ({
             const formData = new FormData();
             formData.append('file', audioBlob, 'voice.wav');
 
+            setIsTranscribing(true);
             try {
               const res = await api.post('/transcribe', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
@@ -84,6 +87,8 @@ const ChatInput = ({
             } catch (err) {
               console.error('Voice transcription failed:', err);
               alert('Voice transcription failed. Please try again.');
+            } finally {
+              setIsTranscribing(false);
             }
           };
 
