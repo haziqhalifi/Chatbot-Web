@@ -12,6 +12,7 @@ const LAYER_TYPES = {
   // Modals (higher z-index)
   ACCOUNT_MODAL: { type: 'account', zIndex: 50 },
   REPORT_MODAL: { type: 'report', zIndex: 50 },
+  REPORT_DISASTER_MODAL: { type: 'report_disaster', zIndex: 50 },
   SETTINGS_MODAL: { type: 'settings', zIndex: 50 },
   EMERGENCY_MODAL: { type: 'emergency', zIndex: 50 },
 

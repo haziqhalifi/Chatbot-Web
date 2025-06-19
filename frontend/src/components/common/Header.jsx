@@ -85,7 +85,7 @@ const Header = () => {
             <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
           </Link>
           <Navigation
-            onOpenReport={() => openLayer('REPORT_MODAL')}
+            onOpenReport={() => openLayer('REPORT_DISASTER_MODAL')}
             onOpenEmergency={() => openLayer('EMERGENCY_MODAL')}
           />
         </div>
@@ -127,6 +127,7 @@ const Header = () => {
       <ModalsContainer
         isAccountOpen={isLayerActive('ACCOUNT_MODAL')}
         isReportOpen={isLayerActive('REPORT_MODAL')}
+        isReportDisasterOpen={isLayerActive('REPORT_DISASTER_MODAL')}
         isSettingsOpen={isLayerActive('SETTINGS_MODAL')}
         isEmergencyOpen={isLayerActive('EMERGENCY_MODAL')}
         onClose={closeLayer}
