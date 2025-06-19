@@ -15,7 +15,7 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 
-const MapView = () => {
+const MapView = ({ onMapViewReady }) => {
   const [mapView, setMapView] = useState(null);
   const [showLayerList, setShowLayerList] = useState(false);
   const [showLayerInfo, setShowLayerInfo] = useState(null);
@@ -195,6 +195,12 @@ const MapView = () => {
 
     return () => clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    if (mapView && typeof onMapViewReady === 'function') {
+      onMapViewReady(mapView);
+    }
+  }, [mapView, onMapViewReady]);
 
   const initializeMap = async () => {
     try {
@@ -930,7 +936,7 @@ const MapView = () => {
   return (
     <div className="relative w-full h-full">
       {/* Main Map Container */}
-      <div ref={mapRef} className="w-full h-full"></div>
+      <div ref={mapRef} className="w-full h-full" id="real-map-container"></div>
       {/* Fallback Map Container */}
       {!mapView && (
         <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
