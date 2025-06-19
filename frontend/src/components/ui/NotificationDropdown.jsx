@@ -118,8 +118,11 @@ const NotificationDropdown = ({
   };
   return (
     <div
-      className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden"
+      className="notification-dropdown absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-hidden"
       onClick={(e) => e.stopPropagation()} // Prevent any clicks inside from bubbling up
+      onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown from bubbling up
+      onScroll={(e) => e.stopPropagation()} // Prevent scroll events from bubbling up
+      onWheel={(e) => e.stopPropagation()} // Prevent wheel events from bubbling up
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
@@ -150,7 +153,13 @@ const NotificationDropdown = ({
         </div>
       </div>{' '}
       {/* Notifications List */}
-      <div className="max-h-80 overflow-y-auto">
+      <div
+        className="max-h-80 overflow-y-auto"
+        onScroll={(e) => e.stopPropagation()} // Prevent scroll events from bubbling up
+        onMouseDown={(e) => e.stopPropagation()} // Prevent mousedown events from bubbling up
+        onMouseUp={(e) => e.stopPropagation()} // Prevent mouseup events from bubbling up
+        onWheel={(e) => e.stopPropagation()} // Prevent wheel events from bubbling up
+      >
         {loading ? (
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
