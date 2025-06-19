@@ -16,17 +16,10 @@ import {
 } from 'lucide-react';
 
 const MapView = () => {
-  // NOTE: This component now uses official ArcGIS widgets:
-  // - LayerList widget (top-left corner) - for layer visibility and opacity controls
-  // - BasemapGallery widget (top-right corner) - for basemap selection
-  // - Bookmarks widget (top-right corner) - for Malaysia city navigation
-  // The custom layer list panel and control buttons below can be removed to avoid overlap.
-
   const [mapView, setMapView] = useState(null);
   const [showLayerList, setShowLayerList] = useState(false);
   const [showLayerInfo, setShowLayerInfo] = useState(null);
   const [showOpacityControl, setShowOpacityControl] = useState(null);
-  const [showBasemapGallery, setShowBasemapGallery] = useState(false);
   const [layers, setLayers] = useState([
     {
       id: 'malaysia-boundaries',
@@ -736,8 +729,8 @@ const MapView = () => {
         expandTooltip: 'Bookmarks',
       });
 
-      // Add the widget to the top-right corner of the view
-      view.ui.add(bkExpand, 'top-right');
+      // Add the widget to the top-left corner of the view
+      view.ui.add(bkExpand, 'top-left');
 
       console.log('Bookmarks widget initialized successfully');
 
@@ -872,8 +865,8 @@ const MapView = () => {
         mode: 'floating',
       });
 
-      // Add the widget to the top-right corner of the view (below bookmarks)
-      view.ui.add(basemapExpand, 'top-right');
+      // Add the widget to the top-left corner of the view (below bookmarks)
+      view.ui.add(basemapExpand, 'top-left');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {

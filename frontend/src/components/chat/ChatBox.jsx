@@ -7,7 +7,7 @@ import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
 
-const ChatBox = ({ onClose, onNewChat, savedChat, width, height, mapView }) => {
+const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const { token } = useAuth();
   const {
     currentSession,
@@ -20,6 +20,7 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height, mapView }) => {
     isSending,
     isCreatingSession,
     canSendMessage,
+    loadSession,
   } = useChat();
 
   const [userProfile, setUserProfile] = useState(() => {
@@ -187,6 +188,14 @@ const ChatBox = ({ onClose, onNewChat, savedChat, width, height, mapView }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showExportDropdown]);
+
+  useEffect(() => {
+    if (currentSession) {
+      loadSession(currentSession.id);
+    }
+    // Only run on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 

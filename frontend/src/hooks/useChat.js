@@ -22,7 +22,8 @@ export const useChat = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isSending, setIsSending] = useState(false);
-  const [isCreatingSession, setIsCreatingSession] = useState(false);  const [pendingMessage, setPendingMessage] = useState(null);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState(null);
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
   // Save current session to localStorage whenever it changes
@@ -37,7 +38,7 @@ export const useChat = () => {
   // Validate current session when user is authenticated
   const validateSession = useCallback(async () => {
     if (!currentSession || sessionInitialized) return;
-    
+
     try {
       // Try to fetch the session to see if it's valid
       await chatAPI.getSession(currentSession.id);
@@ -66,7 +67,8 @@ export const useChat = () => {
       // Clear session if user is not authenticated
       setCurrentSession(null);
       setSessionInitialized(false);
-    }  }, [validateSession, sessionInitialized]);
+    }
+  }, [validateSession, sessionInitialized]);
 
   // Create a new chat session
   const createSession = useCallback(async (title = null) => {
@@ -376,16 +378,19 @@ export const useChat = () => {
           throw error;
         }
         return;
-      }      // Session exists and ready, send immediately
+      } // Session exists and ready, send immediately
       try {
         return await sendMessage(messageText, ragEnabled);
       } catch (error) {
         // If we get a 404 "Chat session not found", clear the invalid session and retry
-        if (error.response?.status === 404 && error.response?.data?.detail === "Chat session not found") {
+        if (
+          error.response?.status === 404 &&
+          error.response?.data?.detail === 'Chat session not found'
+        ) {
           console.log('Session became invalid, creating new session and retrying...');
           setCurrentSession(null);
           setSessionInitialized(false);
-          
+
           // Queue the message and create new session
           setPendingMessage({ text: messageText, ragEnabled });
           try {
@@ -401,7 +406,7 @@ export const useChat = () => {
       }
     },
     [currentSession, isCreatingSession, createSession, sendMessage]
-  );  // Clear all chat data (useful for logout)
+  ); // Clear all chat data (useful for logout)
   const clearChatSession = useCallback(() => {
     setCurrentSession(null);
     setSessions([]);
@@ -438,7 +443,8 @@ export const useChat = () => {
     sendMessageWithSessionHandling,
     updateSessionTitle,
     deleteSession,
-    startNewChat,    initializeChat,
+    startNewChat,
+    initializeChat,
     clearError,
     validateSession,
     clearChatSession,
