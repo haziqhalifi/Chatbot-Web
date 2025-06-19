@@ -94,7 +94,7 @@ class ChatService:
             raise HTTPException(status_code=500, detail="Failed to save bot message")
     
     @staticmethod
-    def process_chat_message(session_id, user_id, prompt, rag_enabled=True, x_api_key=None, api_key_credits=None):
+    def process_chat_message(session_id, user_id, prompt, rag_enabled=True, x_api_key=None, api_key_credits=None, message_type="text"):
         """Process a chat message and generate AI response"""
         try:
             # Verify session belongs to user
@@ -102,8 +102,8 @@ class ChatService:
             if not session:
                 raise HTTPException(status_code=404, detail="Chat session not found")
             
-            # Save user message
-            user_message = ChatService.save_user_message(session_id, user_id, prompt)
+            # Save user message with correct message_type
+            user_message = ChatService.save_user_message(session_id, user_id, prompt, message_type)
             
             # Generate AI response
             from pydantic import BaseModel

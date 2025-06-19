@@ -24,6 +24,7 @@ class ChatGenerateRequest(BaseModel):
     session_id: int
     prompt: str
     rag_enabled: bool = True
+    message_type: str = "text"  # Add message_type for text, voice, image
 
 class UpdateSessionTitleRequest(BaseModel):
     title: str
@@ -111,7 +112,8 @@ def generate_chat_response(
         request.prompt, 
         request.rag_enabled, 
         x_api_key, 
-        API_KEY_CREDITS
+        API_KEY_CREDITS,
+        request.message_type
     )
 
 @router.put("/chat/sessions/{session_id}")

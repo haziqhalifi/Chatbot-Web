@@ -100,14 +100,14 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   };
 
   // Handle voice message with text
-  const handleSendMessageWithText = async (text) => {
+  const handleSendMessageWithText = async (text, messageType = 'text') => {
     if (text.trim() === '' || !canSendMessage) return;
 
     const messageToSend = text.trim();
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+      await sendMessageWithSessionHandling(messageToSend, isRagEnabled, messageType);
     } catch (error) {
       console.error('Failed to send voice message:', error);
       setInputValue(messageToSend);
