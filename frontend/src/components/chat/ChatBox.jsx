@@ -6,6 +6,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
+import useUserProfile from '../../hooks/useUserProfile';
 
 const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const { token } = useAuth();
@@ -22,11 +23,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     canSendMessage,
     loadSession,
   } = useChat();
-
-  const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('tiara_user_profile');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const { userProfile } = useUserProfile();
 
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -116,47 +113,6 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
       setInputValue(messageToSend);
     }
   };
-
-  // Fetch user profile for avatar
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!token) return;
-
-      const savedProfile = localStorage.getItem('tiara_user_profile');
-      const profileTimestamp = localStorage.getItem('tiara_user_profile_timestamp');
-      const now = Date.now();
-      const CACHE_DURATION = 24 * 60 * 60 * 1000;
-
-      if (savedProfile && profileTimestamp && now - parseInt(profileTimestamp) < CACHE_DURATION) {
-        const cachedProfile = JSON.parse(savedProfile);
-        setUserProfile(cachedProfile);
-        return;
-      }
-
-      try {
-        console.log('Fetching fresh user profile data...');
-        const response = await api.get('/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 5000,
-        });
-
-        const profileData = response.data;
-        setUserProfile(profileData);
-        localStorage.setItem('tiara_user_profile', JSON.stringify(profileData));
-        localStorage.setItem('tiara_user_profile_timestamp', now.toString());
-        console.log('User profile cached in localStorage');
-      } catch (error) {
-        console.error('Failed to fetch user profile for chat:', error);
-        if (savedProfile) {
-          console.log('Using expired cached profile data as fallback');
-          const cachedProfile = JSON.parse(savedProfile);
-          setUserProfile(cachedProfile);
-        }
-      }
-    };
-
-    fetchUserProfile();
-  }, [token]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
