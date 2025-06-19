@@ -154,3 +154,6 @@ class ErrorDetail(BaseModel):
 class ErrorResponse(BaseModel):
     success: bool = False
     error: ErrorDetail
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr

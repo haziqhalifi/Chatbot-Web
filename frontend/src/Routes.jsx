@@ -16,6 +16,7 @@ import FAQ from './pages/FAQ';
 import Report from './pages/Report';
 import NotificationSettings from './pages/NotificationSettings';
 import AdminNotifications from './pages/AdminPage/AdminNotifications';
+import ResetPassword from './pages/ResetPassword';
 
 const AppRoutes = () => {
   return (
@@ -37,6 +38,7 @@ const AppRoutes = () => {
         <Route path="/report" element={<Report />} />
         <Route path="/notification-settings" element={<NotificationSettings />} />
         <Route path="/admin/notifications" element={<AdminNotifications />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </Router>
   );

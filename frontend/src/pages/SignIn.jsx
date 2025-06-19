@@ -15,6 +15,10 @@ const SignInPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotStatus, setForgotStatus] = useState('');
+  const [forgotError, setForgotError] = useState('');
 
   const navigate = useNavigate();
 
@@ -119,11 +123,35 @@ const SignInPage = () => {
   };
 
   const handleForgotPassword = () => {
-    if (!formData.email) {
-      alert('Please enter your email address first');
+    setForgotStatus('');
+    setForgotError('');
+    setForgotEmail(formData.email || '');
+    setShowForgotModal(true);
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    setForgotStatus('');
+    setForgotError('');
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address');
       return;
     }
-    alert(`Password reset link sent to ${formData.email}`);
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || 'Failed to send reset link');
+      setForgotStatus('If the email exists, a reset link has been sent.');
+    } catch (err) {
+      setForgotError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignUp = () => {
@@ -178,6 +206,43 @@ const SignInPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold mb-2">Forgot Password</h3>
+            <form onSubmit={handleForgotSubmit} className="space-y-3">
+              <input
+                type="email"
+                className="w-full px-4 py-2 border rounded-md"
+                placeholder="Enter your email address"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
+              />
+              {forgotError && <div className="text-red-600 text-sm">{forgotError}</div>}
+              {forgotStatus && <div className="text-green-600 text-sm">{forgotStatus}</div>}
+              <div className="flex space-x-2 mt-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+                <button
+                  type="button"
+                  className="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                  onClick={() => setShowForgotModal(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">

@@ -186,8 +186,6 @@ const SignUpPage = () => {
         const data = await response.json();
         throw new Error(data.detail || 'Registration failed');
       }
-      // Success
-      alert('Account created successfully! Redirecting to dashboard...');
       navigate('/');
     } catch (error) {
       setErrors((prev) => ({

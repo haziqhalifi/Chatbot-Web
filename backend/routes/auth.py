@@ -1,17 +1,18 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 import jwt
 import os
+from datetime import datetime, timedelta
 
 # Import from new organized structure
-from services.user_service import create_user, verify_user
+from services.user_service import create_user, verify_user, pwd_context
 from utils.auth import google_authenticate
 from services.notification_service import create_welcome_notification
 from database import get_db_conn
 
 # Import new models and utilities
-from models import AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse
-from utils.security import validate_password, hash_password, verify_password
-from middleware.error_handler import CustomException, ErrorCode
+from models import AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse, ForgotPasswordRequest
+from utils.security import generate_secure_token
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -104,3 +105,74 @@ def google_auth(data: GoogleAuthRequest):
         jwt_secret=JWT_SECRET,
         jwt_algorithm=JWT_ALGORITHM
     )
+
+@router.post("/forgot-password")
+def forgot_password(request: ForgotPasswordRequest):
+    email = request.email
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            # Always return success to avoid leaking user existence
+            return {"message": "If the email exists, a reset link has been sent."}
+        user_id = user_row[0]
+        # Generate token and expiry
+        token = generate_secure_token(48)
+        expires_at = (datetime.utcnow() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+        # Store token
+        cursor.execute("""
+            INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
+            VALUES (?, ?, ?, 0)
+        """, (user_id, token, expires_at))
+        conn.commit()
+        # Log the reset link (simulate email)
+        reset_link = f"http://localhost:4028/reset-password?token={token}"
+        print(f"[FORGOT PASSWORD] Send this link to user: {reset_link}")
+        return {"message": "If the email exists, a reset link has been sent."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+@router.post("/reset-password")
+def reset_password(request: ResetPasswordRequest):
+    token = request.token
+    new_password = request.new_password
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        # Find token
+        cursor.execute("""
+            SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?
+        """, (token,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=400, detail="Invalid or expired token.")
+        user_id, expires_at, used = row
+        if used:
+            raise HTTPException(status_code=400, detail="Token already used.")
+        if datetime.utcnow() > datetime.strptime(str(expires_at), '%Y-%m-%d %H:%M:%S'):
+            raise HTTPException(status_code=400, detail="Token expired.")
+        # Update password
+        hashed = pwd_context.hash(new_password)
+        cursor.execute("UPDATE users SET hashed_password = ? WHERE id = ?", (hashed, user_id))
+        # Mark token as used
+        cursor.execute("UPDATE password_reset_tokens SET used = 1 WHERE token = ?", (token,))
+        conn.commit()
+        return {"message": "Password has been reset successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        try:
+            conn.close()
+        except:
+            pass

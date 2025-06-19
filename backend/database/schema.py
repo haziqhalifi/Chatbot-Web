@@ -17,6 +17,9 @@ def update_database_schema():
     # Create FAQ table and insert default data
     create_faq_table()
     insert_default_faqs()
+    
+    # Create password reset tokens table
+    create_password_reset_tokens_table()
 
 def create_notifications_table():
     """Create notifications table if it doesn't exist"""
@@ -119,8 +122,38 @@ def migrate_reports_tables():
         print(f"Migration failed: {e}")
         return False
 
+def create_password_reset_tokens_table():
+    """Create password_reset_tokens table if it doesn't exist"""
+    try:
+        with DatabaseConnection() as conn:
+            conn.autocommit = False
+            cursor = conn.cursor()
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'password_reset_tokens')
+                CREATE TABLE password_reset_tokens (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    token NVARCHAR(128) NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BIT DEFAULT 0,
+                    created_at DATETIME DEFAULT GETDATE(),
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_password_reset_tokens_user_id')
+                CREATE INDEX IX_password_reset_tokens_user_id ON password_reset_tokens(user_id)
+            """)
+            conn.commit()
+            conn.autocommit = True
+            cursor.close()
+            print("password_reset_tokens table created successfully")
+    except Exception as e:
+        print(f"Error creating password_reset_tokens table: {e}")
+
 __all__ = [
     'update_database_schema',
     'create_notifications_table', 
-    'migrate_reports_tables'
+    'migrate_reports_tables',
+    'create_password_reset_tokens_table',
 ]
