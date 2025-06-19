@@ -40,35 +40,6 @@ body {
   text-size-adjust: 100%;
 }
 
-/* Modal styles */
-.modal-backdrop {
-  animation: fadeIn 0.2s ease-out;
-}
-
-.modal-backdrop > div {
-  animation: slideIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
 /* Map container specific styles */
 .map-container {
   position: relative;

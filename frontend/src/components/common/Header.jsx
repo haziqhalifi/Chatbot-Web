@@ -118,7 +118,6 @@ const Header = () => {
             onOpenAccount={() => openLayer('ACCOUNT_MODAL')}
             onOpenSettings={() => openLayer('SETTINGS_MODAL')}
             onOpenReport={() => openLayer('REPORT_MODAL')}
-            onOpenSystemReport={() => openLayer('SYSTEM_REPORT_MODAL')}
             onLogout={logout}
             onClose={closeLayer}
           />
@@ -128,7 +127,6 @@ const Header = () => {
       <ModalsContainer
         isAccountOpen={isLayerActive('ACCOUNT_MODAL')}
         isReportOpen={isLayerActive('REPORT_MODAL')}
-        isSystemReportOpen={isLayerActive('SYSTEM_REPORT_MODAL')}
         isSettingsOpen={isLayerActive('SETTINGS_MODAL')}
         isEmergencyOpen={isLayerActive('EMERGENCY_MODAL')}
         onClose={closeLayer}
