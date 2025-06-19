@@ -4,10 +4,7 @@ import { ChatBox, ChatButton } from '../chat';
 
 const ChatInterface = ({ mapView: parentMapView }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [savedChat, setSavedChat] = useState(() => {
-    const saved = localStorage.getItem('tiara_last_chat');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [savedChat, setSavedChat] = useState(null);
   const [chatKey, setChatKey] = useState(0);
   const [chatSize, setChatSize] = useState({ width: 380, height: 600 });
   const [isResizing, setIsResizing] = useState(false);
@@ -36,12 +33,8 @@ const ChatInterface = ({ mapView: parentMapView }) => {
     }
   }, [activeLayer, isChatOpen]);
 
-  const handleClose = (messages) => {
+  const handleClose = () => {
     setIsChatOpen(false);
-    if (messages) {
-      setSavedChat(messages);
-      localStorage.setItem('tiara_last_chat', JSON.stringify(messages));
-    }
   };
 
   const handleOpen = () => {
@@ -53,8 +46,6 @@ const ChatInterface = ({ mapView: parentMapView }) => {
   };
 
   const handleNewChat = () => {
-    setSavedChat(null);
-    localStorage.removeItem('tiara_last_chat');
     setChatKey((k) => k + 1);
   };
 
@@ -242,7 +233,6 @@ const ChatInterface = ({ mapView: parentMapView }) => {
             key={chatKey}
             onClose={handleClose}
             onNewChat={handleNewChat}
-            savedChat={savedChat}
             width={chatSize.width}
             height={chatSize.height}
             mapView={parentMapView}
