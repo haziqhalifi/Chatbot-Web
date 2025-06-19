@@ -173,7 +173,8 @@ def update_user_profile(user_id: int, name: str, language: str, phone: str = "",
             raise HTTPException(status_code=404, detail="User not found")
         conn.commit()
         print("Profile updated successfully")
-        return {"message": "Profile updated successfully"}
+        # Fetch and return the updated profile
+        return get_user_profile(user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
