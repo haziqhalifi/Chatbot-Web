@@ -7,12 +7,15 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch notifications
+  // Fetch notifications - only called when dropdown is opened
   const fetchNotifications = useCallback(async (params = {}) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await notificationAPI.getNotifications(params);
+      const response = await notificationAPI.getNotifications({
+        ...params,
+        limit: 15, // Limit to reduce payload
+      });
       setNotifications(response.data.notifications);
       setUnreadCount(response.data.unread_count);
     } catch (err) {
@@ -22,7 +25,7 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Fetch unread count only
+  // Lightweight unread count fetch
   const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await notificationAPI.getUnreadCount();
@@ -32,70 +35,102 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Mark notification as read
+  // Mark notification as read with optimistic update
   const markAsRead = useCallback(async (notificationId) => {
+    // Optimistic update
+    setNotifications((prev) =>
+      prev.map((notification) =>
+        notification.id === notificationId ? { ...notification, read: true } : notification
+      )
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
     try {
       await notificationAPI.markAsRead(notificationId);
+    } catch (err) {
+      // Revert optimistic update on error
       setNotifications((prev) =>
         prev.map((notification) =>
-          notification.id === notificationId ? { ...notification, read: true } : notification
+          notification.id === notificationId ? { ...notification, read: false } : notification
         )
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (err) {
+      setUnreadCount((prev) => prev + 1);
       setError(err.response?.data?.detail || 'Failed to mark as read');
       throw err;
     }
   }, []);
 
-  // Mark all notifications as read
+  // Mark all notifications as read with optimistic update
   const markAllAsRead = useCallback(async () => {
+    const previousNotifications = notifications;
+    const previousUnreadCount = unreadCount;
+
+    // Optimistic update
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
+    setUnreadCount(0);
+
     try {
       await notificationAPI.markAllAsRead();
-      setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
-      setUnreadCount(0);
     } catch (err) {
+      // Revert optimistic update on error
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
       setError(err.response?.data?.detail || 'Failed to mark all as read');
       throw err;
     }
-  }, []);
+  }, [notifications, unreadCount]);
 
-  // Delete notification
+  // Delete notification with optimistic update
   const deleteNotification = useCallback(
     async (notificationId) => {
+      const notificationToDelete = notifications.find((n) => n.id === notificationId);
+      const wasUnread = notificationToDelete && !notificationToDelete.read;
+
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.filter((notification) => notification.id !== notificationId)
+      );
+
+      if (wasUnread) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+
       try {
         await notificationAPI.deleteNotification(notificationId);
-        const notificationToDelete = notifications.find((n) => n.id === notificationId);
-        setNotifications((prev) =>
-          prev.filter((notification) => notification.id !== notificationId)
-        );
-
-        // Update unread count if the deleted notification was unread
-        if (notificationToDelete && !notificationToDelete.read) {
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        }
       } catch (err) {
+        // Revert optimistic update on error
+        if (notificationToDelete) {
+          setNotifications((prev) => [...prev, notificationToDelete]);
+          if (wasUnread) {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
         setError(err.response?.data?.detail || 'Failed to delete notification');
         throw err;
       }
     },
     [notifications]
   );
-  // Clear all notifications
+
+  // Clear all notifications with optimistic update
   const clearAll = useCallback(async () => {
+    const previousNotifications = notifications;
+    const previousUnreadCount = unreadCount;
+
+    // Optimistic update
+    setNotifications([]);
+    setUnreadCount(0);
+
     try {
-      console.log('useNotifications: clearAll called');
-      const response = await notificationAPI.clearAll();
-      console.log('useNotifications: clearAll API response:', response);
-      setNotifications([]);
-      setUnreadCount(0);
-      console.log('useNotifications: state updated after clearAll');
+      await notificationAPI.clearAll();
     } catch (err) {
-      console.error('useNotifications: clearAll error:', err);
+      // Revert optimistic update on error
+      setNotifications(previousNotifications);
+      setUnreadCount(previousUnreadCount);
       setError(err.response?.data?.detail || 'Failed to clear all notifications');
       throw err;
     }
-  }, []);
+  }, [notifications, unreadCount]);
 
   // Create notification (for testing purposes)
   const createNotification = useCallback(
@@ -112,23 +147,71 @@ export const useNotifications = () => {
     [fetchNotifications]
   );
 
-  // Auto-refresh unread count every 30 seconds
+  // Intelligent polling - only when necessary
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (localStorage.getItem('token')) {
-        fetchUnreadCount();
-      }
-    }, 30000);
+    let interval;
+    let isVisible = true;
+    let lastActivity = Date.now();
 
-    return () => clearInterval(interval);
+    const handleVisibilityChange = () => {
+      isVisible = !document.hidden;
+      if (isVisible) {
+        lastActivity = Date.now();
+        // Fetch unread count when tab becomes visible
+        if (localStorage.getItem('token')) {
+          fetchUnreadCount();
+        }
+      }
+    };
+
+    const handleUserActivity = () => {
+      lastActivity = Date.now();
+    };
+
+    // Only poll if document is visible and user was active recently
+    const startPolling = () => {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const inactiveTime = now - lastActivity;
+        
+        // Only poll if:
+        // - User is authenticated
+        // - Document is visible
+        // - User was active in the last 5 minutes
+        if (
+          localStorage.getItem('token') &&
+          isVisible &&
+          inactiveTime < 5 * 60 * 1000
+        ) {
+          fetchUnreadCount();
+        }
+      }, 2 * 60 * 1000); // Poll every 2 minutes instead of 30 seconds
+    };
+
+    // Event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('click', handleUserActivity);
+    document.addEventListener('keydown', handleUserActivity);
+    document.addEventListener('mousemove', handleUserActivity);
+
+    // Start polling
+    startPolling();
+
+    return () => {
+      if (interval) clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('click', handleUserActivity);
+      document.removeEventListener('keydown', handleUserActivity);
+      document.removeEventListener('mousemove', handleUserActivity);
+    };
   }, [fetchUnreadCount]);
 
-  // Initial load
+  // Initial unread count fetch - don't fetch all notifications on mount
   useEffect(() => {
     if (localStorage.getItem('token')) {
-      fetchNotifications();
+      fetchUnreadCount();
     }
-  }, [fetchNotifications]);
+  }, [fetchUnreadCount]);
 
   return {
     notifications,

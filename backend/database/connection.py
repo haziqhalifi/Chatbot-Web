@@ -56,7 +56,7 @@ else:
 class DatabaseConnectionPool:
     """Thread-safe database connection pool to reduce vCore usage"""
     
-    def __init__(self, min_connections=2, max_connections=8, connection_timeout=300):
+    def __init__(self, min_connections=5, max_connections=25, connection_timeout=300):
         self.min_connections = min_connections
         self.max_connections = max_connections
         self.connection_timeout = connection_timeout
@@ -65,7 +65,9 @@ class DatabaseConnectionPool:
         self.lock = threading.Lock()
         self.connection_times = {}  # Use regular dict instead of WeakKeyDictionary
         self.connection_ids = {}    # Track connection IDs
-        self._connection_counter = 0        # Initialize minimum connections (with error handling)
+        self._connection_counter = 0
+        
+        # Initialize minimum connections (with error handling)
         self._initialize_pool()        
         # Start cleanup thread
         self.cleanup_thread = threading.Thread(target=self._cleanup_expired_connections, daemon=True)
@@ -135,16 +137,15 @@ class DatabaseConnectionPool:
                 except Exception as e:
                     print(f"Failed to create new connection: {e}")
                     raise
-        
-        # Wait for connection to become available
+          # Wait for connection to become available with longer timeout
         try:
-            conn = self.pool.get(timeout=5)
+            conn = self.pool.get(timeout=10)  # Increased from 5 to 10 seconds
             conn_id = self.connection_ids.get(id(conn))
             if conn_id:
                 self.connection_times[conn_id] = time.time()
             return conn
         except Empty:
-            raise Exception("Connection pool exhausted - too many concurrent requests")
+            raise Exception(f"Connection pool exhausted - too many concurrent requests. Active: {self.active_connections}/{self.max_connections}")
     
     def return_connection(self, conn):
         """Return a connection to the pool"""
@@ -217,12 +218,13 @@ def get_connection_pool():
         with _pool_lock:
             if _connection_pool is None:
                 try:
-                    _connection_pool = DatabaseConnectionPool(min_connections=2, max_connections=10)
+                    # Increased pool size to handle more concurrent requests
+                    _connection_pool = DatabaseConnectionPool(min_connections=5, max_connections=25)
                     print("Database connection pool initialized successfully")
                 except Exception as e:
                     print(f"Warning: Failed to initialize connection pool: {e}")
                     # Return a minimal pool that will try to create connections on demand
-                    _connection_pool = DatabaseConnectionPool(min_connections=0, max_connections=5)
+                    _connection_pool = DatabaseConnectionPool(min_connections=0, max_connections=15)
     return _connection_pool
 
 class DatabaseConnection:

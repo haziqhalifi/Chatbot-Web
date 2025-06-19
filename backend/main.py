@@ -9,7 +9,7 @@ from services.subscription_service import create_subscriptions_table
 from utils.rag import initialize_rag
 
 # Import route modules
-from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev
+from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, health
 
 # --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
 # For better Malay language support, consider using these models with Ollama:
@@ -69,3 +69,4 @@ app.include_router(subscriptions.router, tags=["Subscriptions"])
 app.include_router(chat.router, tags=["Chat"])
 app.include_router(admin.router, tags=["Admin"])
 app.include_router(dev.router, tags=["Development"])
+app.include_router(health.router, tags=["Health"])

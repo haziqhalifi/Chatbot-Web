@@ -4,7 +4,51 @@ from datetime import datetime
 from typing import List, Optional
 import json
 
-# --- Notification-related database logic ---
+def get_notifications(user_id: int, limit: int = 10, offset: int = 0, unread_only: bool = False):
+    """Get notifications for a user"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        where_clause = "WHERE user_id = ?"
+        params = [user_id]
+        
+        if unread_only:
+            where_clause += " AND is_read = 0"
+        
+        query = f"""
+            SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
+            FROM notifications 
+            {where_clause}
+            ORDER BY created_at DESC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """
+        
+        params.extend([offset, limit])
+        cursor.execute(query, params)
+        
+        notifications = []
+        for row in cursor.fetchall():
+            notifications.append({
+                "id": row[0],
+                "user_id": row[1],
+                "title": row[2],
+                "message": row[3],
+                "type": row[4],
+                "disaster_type": row[5],
+                "location": row[6],
+                "read": bool(row[7]),  # Convert BIT to boolean
+                "created_at": row[8].isoformat() if row[8] else None
+            })
+        
+        return notifications
+        
+    except Exception as e:
+        print(f"Error getting notifications: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 def create_notifications_table():
     """Create notifications table if it doesn't exist"""
@@ -23,8 +67,7 @@ def create_notifications_table():
             # Check if we need to add new columns
             update_notifications_table_schema()
             return
-            
-        # Create notifications table with enhanced schema
+              # Create notifications table with enhanced schema
         cursor.execute("""
             CREATE TABLE notifications (
                 id INT IDENTITY(1,1) PRIMARY KEY,
@@ -34,7 +77,7 @@ def create_notifications_table():
                 type NVARCHAR(50) DEFAULT 'info', -- info, warning, danger, success
                 disaster_type NVARCHAR(100) NULL, -- Type of disaster (flood, earthquake, etc.)
                 location NVARCHAR(255) NULL, -- Location of the disaster/event
-                read_status BIT DEFAULT 0,
+                is_read BIT DEFAULT 0,
                 created_at DATETIME DEFAULT GETDATE(),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
@@ -45,7 +88,7 @@ def create_notifications_table():
             CREATE INDEX IX_notifications_user_id ON notifications(user_id)
         """)
         cursor.execute("""
-            CREATE INDEX IX_notifications_read_status ON notifications(read_status)
+            CREATE INDEX IX_notifications_is_read ON notifications(is_read)
         """)
         cursor.execute("""
             CREATE INDEX IX_notifications_created_at ON notifications(created_at)
@@ -174,16 +217,14 @@ def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unrea
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        
-        # Build query based on filters
+          # Build query based on filters
         where_clause = "WHERE user_id = ?"
         params = [user_id]
-        
         if unread_only:
-            where_clause += " AND read_status = 0"
+            where_clause += " AND is_read = 0"
         
         query = f"""
-            SELECT id, user_id, title, message, type, disaster_type, location, read_status, created_at
+            SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
             FROM notifications
             {where_clause}
             ORDER BY created_at DESC
@@ -234,10 +275,9 @@ def get_unread_count(user_id: int):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        
         cursor.execute("""
             SELECT COUNT(*) FROM notifications 
-            WHERE user_id = ? AND read_status = 0
+            WHERE user_id = ? AND is_read = 0
         """, (user_id,))
         
         count = cursor.fetchone()[0]
@@ -256,10 +296,9 @@ def mark_notification_as_read(notification_id: int, user_id: int):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        
         cursor.execute("""
             UPDATE notifications 
-            SET read_status = 1
+            SET is_read = 1
             WHERE id = ? AND user_id = ?
         """, (notification_id, user_id))
         
@@ -284,11 +323,10 @@ def mark_all_notifications_as_read(user_id: int):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        
         cursor.execute("""
             UPDATE notifications 
-            SET read_status = 1
-            WHERE user_id = ? AND read_status = 0
+            SET is_read = 1
+            WHERE user_id = ? AND is_read = 0
         """, (user_id,))
         
         updated_count = cursor.rowcount

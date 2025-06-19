@@ -1,52 +1,55 @@
 from fastapi import HTTPException
 from database import get_db_conn
+from database.connection import DatabaseConnection
+from middleware.database_middleware import with_database_connection
 from datetime import datetime
 from typing import List, Optional, Dict
 import json
 
 # --- Subscription-related database logic ---
 
+@with_database_connection(max_retries=3, retry_delay=0.5)
 def create_subscriptions_table():
     """Create subscription tables if they don't exist"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Check if table exists
-        cursor.execute("""
-            SELECT * FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_NAME = 'user_subscriptions'
-        """)
-        if cursor.fetchone():
-            print("User subscriptions table already exists")
-            return
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
             
-        # Create user_subscriptions table
-        cursor.execute("""
-            CREATE TABLE user_subscriptions (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                user_id INT NOT NULL,
-                disaster_types NVARCHAR(500), -- JSON array of disaster types
-                locations NVARCHAR(500), -- JSON array of locations/areas
-                notification_methods NVARCHAR(200) DEFAULT 'web', -- web, email, sms (future)
-                radius_km INT DEFAULT 10, -- Alert radius in kilometers for location-based alerts
-                is_active BIT DEFAULT 1,
-                created_at DATETIME DEFAULT GETDATE(),
-                updated_at DATETIME DEFAULT GETDATE(),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        """)
-        
-        # Create index for better query performance
-        cursor.execute("""
-            CREATE INDEX IX_user_subscriptions_user_id ON user_subscriptions(user_id)
-        """)
-        cursor.execute("""
-            CREATE INDEX IX_user_subscriptions_active ON user_subscriptions(is_active)
-        """)
-        
-        conn.commit()
-        print("User subscriptions table created successfully")
+            # Check if table exists
+            cursor.execute("""
+                SELECT * FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_NAME = 'user_subscriptions'
+            """)
+            if cursor.fetchone():
+                print("User subscriptions table already exists")
+                return
+                
+            # Create user_subscriptions table
+            cursor.execute("""
+                CREATE TABLE user_subscriptions (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    disaster_types NVARCHAR(500), -- JSON array of disaster types
+                    locations NVARCHAR(500), -- JSON array of locations/areas
+                    notification_methods NVARCHAR(200) DEFAULT 'web', -- web, email, sms (future)
+                    radius_km INT DEFAULT 10, -- Alert radius in kilometers for location-based alerts
+                    is_active BIT DEFAULT 1,
+                    created_at DATETIME DEFAULT GETDATE(),
+                    updated_at DATETIME DEFAULT GETDATE(),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            
+            # Create index for better query performance
+            cursor.execute("""
+                CREATE INDEX IX_user_subscriptions_user_id ON user_subscriptions(user_id)
+            """)
+            cursor.execute("""
+                CREATE INDEX IX_user_subscriptions_active ON user_subscriptions(is_active)
+            """)
+            
+            conn.commit()
+            print("User subscriptions table created successfully")
         
     except Exception as e:
         print(f"Error creating user subscriptions table: {e}")
@@ -56,95 +59,92 @@ def create_subscriptions_table():
         except:
             pass
 
+@with_database_connection(max_retries=3, retry_delay=0.5)
 def get_user_subscription(user_id: int):
     """Get user's notification subscription preferences"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT id, disaster_types, locations, notification_methods, 
-                   radius_km, is_active, created_at, updated_at
-            FROM user_subscriptions 
-            WHERE user_id = ? AND is_active = 1
-        """, (user_id,))
-        
-        row = cursor.fetchone()
-        if row:
-            return {
-                "id": row[0],
-                "user_id": user_id,
-                "disaster_types": json.loads(row[1]) if row[1] else [],
-                "locations": json.loads(row[2]) if row[2] else [],
-                "notification_methods": row[3].split(',') if row[3] else ['web'],
-                "radius_km": row[4],
-                "is_active": bool(row[5]),
-                "created_at": row[6].isoformat(),
-                "updated_at": row[7].isoformat()
-            }
-        else:
-            # Return default subscription settings
-            return {
-                "id": None,
-                "user_id": user_id,
-                "disaster_types": [],
-                "locations": [],
-                "notification_methods": ['web'],
-                "radius_km": 10,
-                "is_active": True,
-                "created_at": None,
-                "updated_at": None
-            }
-        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT id, disaster_types, locations, notification_methods, 
+                       radius_km, is_active, created_at, updated_at
+                FROM user_subscriptions 
+                WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            row = cursor.fetchone()
+            if row:
+                return {
+                    "id": row[0],
+                    "user_id": user_id,
+                    "disaster_types": json.loads(row[1]) if row[1] else [],
+                    "locations": json.loads(row[2]) if row[2] else [],
+                    "notification_methods": row[3].split(',') if row[3] else ['web'],
+                    "radius_km": row[4],
+                    "is_active": bool(row[5]),
+                    "created_at": row[6].isoformat(),
+                    "updated_at": row[7].isoformat()
+                }
+            else:
+                # Return default subscription settings
+                return {
+                    "id": None,
+                    "user_id": user_id,
+                    "disaster_types": [],
+                    "locations": [],
+                    "notification_methods": ['web'],
+                    "radius_km": 10,
+                    "is_active": True,
+                    "created_at": None,
+                    "updated_at": None
+                }
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
+@with_database_connection(max_retries=3, retry_delay=0.5)
 def create_or_update_subscription(user_id: int, disaster_types: List[str], 
                                 locations: List[str], notification_methods: List[str], 
                                 radius_km: int = 10):
     """Create or update user's notification subscription"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Check if subscription exists
-        cursor.execute("""
-            SELECT id FROM user_subscriptions WHERE user_id = ? AND is_active = 1
-        """, (user_id,))
-        
-        existing = cursor.fetchone()
-        
-        disaster_types_json = json.dumps(disaster_types)
-        locations_json = json.dumps(locations)
-        methods_str = ','.join(notification_methods)
-        
-        if existing:
-            # Update existing subscription
-            cursor.execute("""
-                UPDATE user_subscriptions 
-                SET disaster_types = ?, locations = ?, notification_methods = ?, 
-                    radius_km = ?, updated_at = GETDATE()
-                WHERE user_id = ? AND is_active = 1
-            """, (disaster_types_json, locations_json, methods_str, radius_km, user_id))
-            subscription_id = existing[0]
-        else:
-            # Create new subscription
-            cursor.execute("""
-                INSERT INTO user_subscriptions 
-                (user_id, disaster_types, locations, notification_methods, radius_km, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())
-            """, (user_id, disaster_types_json, locations_json, methods_str, radius_km))
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
             
-            cursor.execute("SELECT @@IDENTITY")
-            subscription_id = cursor.fetchone()[0]
-        
-        conn.commit()
-        return {
+            # Check if subscription exists
+            cursor.execute("""
+                SELECT id FROM user_subscriptions WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            existing = cursor.fetchone()
+            
+            disaster_types_json = json.dumps(disaster_types)
+            locations_json = json.dumps(locations)
+            methods_str = ','.join(notification_methods)
+            
+            if existing:
+                # Update existing subscription
+                cursor.execute("""
+                    UPDATE user_subscriptions 
+                    SET disaster_types = ?, locations = ?, notification_methods = ?, 
+                        radius_km = ?, updated_at = GETDATE()
+                    WHERE user_id = ? AND is_active = 1
+                """, (disaster_types_json, locations_json, methods_str, radius_km, user_id))
+                subscription_id = existing[0]
+            else:
+                # Create new subscription
+                cursor.execute("""
+                    INSERT INTO user_subscriptions 
+                    (user_id, disaster_types, locations, notification_methods, radius_km, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())
+                """, (user_id, disaster_types_json, locations_json, methods_str, radius_km))
+                
+                cursor.execute("SELECT @@IDENTITY")
+                subscription_id = cursor.fetchone()[0]
+            
+            conn.commit()
+            return {
             "message": "Subscription updated successfully", 
             "subscription_id": subscription_id,
             "user_id": user_id,
