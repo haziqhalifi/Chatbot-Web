@@ -118,6 +118,10 @@ const AccountPage = ({ onClose }) => {
       console.log('Profile update response:', response.data);
       alert('Profile updated successfully!');
 
+      // Update localStorage with the new profile data
+      localStorage.setItem('tiara_user_profile', JSON.stringify(response.data));
+      window.dispatchEvent(new Event('profileUpdated'));
+
       // Refresh the profile data after successful update
       window.location.reload(); // Simple way to refresh data
     } catch (error) {
