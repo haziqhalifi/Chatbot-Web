@@ -39,8 +39,15 @@ const ReportDisaster = ({ onClose }) => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('You must be logged in to submit a report. Please sign in first.');
+      setIsSubmitting(false);
+      return;
+    }
     setIsSubmitting(true);
-    try {      await api.post('/report', {
+    try {
+      await api.post('/report', {
         title: form.title,
         location: form.location,
         disaster_type: form.disaster_type,
