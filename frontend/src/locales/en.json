@@ -18,12 +18,12 @@
     "filter": "Filter",
     "clear": "Clear",
     "selectLanguage": "Select Language"
-  },
-  "navigation": {
+  },  "navigation": {
     "home": "Home",
     "chat": "Chat",
     "profile": "My Account",
     "settings": "Settings",
+    "notifications": "Notification Settings",
     "help": "Help & FAQ",
     "logout": "Logout"
   },

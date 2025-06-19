@@ -8,6 +8,7 @@ const ProfileDropdown = ({
   onToggle,
   onOpenAccount,
   onOpenSettings,
+  onOpenNotificationSettings,
   onOpenReport,
   onLogout,
   onClose,
@@ -51,8 +52,7 @@ const ProfileDropdown = ({
                 </svg>
                 {t('navigation.profile')}
               </div>
-            </button>
-            <button
+            </button>            <button
               className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
               onClick={onOpenSettings}
             >
@@ -77,6 +77,32 @@ const ProfileDropdown = ({
                   />
                 </svg>
                 {t('navigation.settings')}
+              </div>
+            </button>
+            <button
+              className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
+              onClick={onOpenNotificationSettings}
+            >
+              <div className="flex items-center">                <svg
+                  className="w-5 h-5 mr-3 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13.73 21a2 2 0 0 1-3.46 0"
+                  />
+                </svg>
+                {t('navigation.notifications')}
               </div>
             </button>
             <div className="border-t border-gray-100"></div>
