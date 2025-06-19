@@ -114,7 +114,6 @@ class DisasterReport(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
     created_at: datetime
-    updated_at: datetime
 
 # ========== Notification Models ==========
 class NotificationType(str, Enum):

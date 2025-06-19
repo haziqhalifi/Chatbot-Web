@@ -211,7 +211,7 @@ def get_connection_pool():
     if _connection_pool is None:
         with _pool_lock:
             if _connection_pool is None:
-                _connection_pool = DatabaseConnectionPool()
+                _connection_pool = DatabaseConnectionPool(min_connections=4, max_connections=20)
     return _connection_pool
 
 class DatabaseConnection:
@@ -245,7 +245,7 @@ def insert_report(report):
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO disaster_reports (user_id, title, location, disaster_type, description, timestamp)
+                INSERT INTO disaster_reports (user_id, title, location, disaster_type, description, created_at)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
@@ -254,7 +254,7 @@ def insert_report(report):
                     report.location,
                     report.disaster_type,
                     report.description,
-                    report.timestamp
+                    report.created_at
                 )
             )
             if not conn.autocommit:
@@ -351,14 +351,14 @@ def get_all_reports():
                     r.location,
                     r.disaster_type,
                     r.description,
-                    r.timestamp,
+                    r.created_at,
                     r.user_id,
                     u.name as reporter_name,
                     u.email as reporter_email,
                     u.phone as reporter_phone
                 FROM disaster_reports r
                 LEFT JOIN users u ON r.user_id = u.id
-                ORDER BY r.timestamp DESC        """)
+                ORDER BY r.created_at DESC        """)
             
             reports = []
             for row in cursor.fetchall():
@@ -402,7 +402,7 @@ def get_report_by_id(report_id):
                     r.location,
                     r.disaster_type,
                     r.description,
-                    r.timestamp,
+                    r.created_at,
                     r.user_id,
                     u.name as reporter_name,
                     u.email as reporter_email,
@@ -758,7 +758,7 @@ def get_admin_dashboard_stats():
             total_reports = cursor.fetchone()[0]
             
             # Get active reports (assuming reports are active by default)
-            cursor.execute("SELECT COUNT(*) FROM disaster_reports WHERE timestamp >= DATEADD(day, -7, GETDATE())")
+            cursor.execute("SELECT COUNT(*) FROM disaster_reports WHERE created_at >= DATEADD(day, -7, GETDATE())")
             active_alerts = cursor.fetchone()[0]
             
             # Get total users count
@@ -769,7 +769,7 @@ def get_admin_dashboard_stats():
             cursor.execute("""
                 SELECT disaster_type, COUNT(*) as count 
                 FROM disaster_reports 
-                WHERE timestamp >= DATEADD(day, -30, GETDATE())
+                WHERE created_at >= DATEADD(day, -30, GETDATE())
                 GROUP BY disaster_type
                 ORDER BY count DESC
             """)
@@ -784,11 +784,11 @@ def get_admin_dashboard_stats():
                     r.title,
                     r.location,
                     r.disaster_type,
-                    r.timestamp,
+                    r.created_at,
                     u.name as reporter_name
                 FROM disaster_reports r
                 LEFT JOIN users u ON r.user_id = u.id
-                ORDER BY r.timestamp DESC
+                ORDER BY r.created_at DESC
             """)
             
             recent_reports = []
@@ -828,7 +828,7 @@ def get_system_status():
             db_status = "operational"
             
             # Get latest report timestamp to check if system is receiving data
-            cursor.execute("SELECT TOP 1 timestamp FROM disaster_reports ORDER BY timestamp DESC")
+            cursor.execute("SELECT TOP 1 created_at FROM disaster_reports ORDER BY created_at DESC")
             latest_report = cursor.fetchone()
             
             cursor.close()
