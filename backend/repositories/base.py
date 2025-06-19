@@ -96,16 +96,16 @@ class UserRepository(BaseRepository):
         results = self.execute_query(query, (email,))
         return results[0] if results else None
     
-    def create(self, email: str, password_hash: str, role: str = 'user') -> int:
-        """Create new user and return user ID"""
+    def create(self, email: str, hashed_password: str, role: str = 'user') -> int:
+        """Create new user and return user ID with hashed_password column."""
         command = """
-            INSERT INTO users (email, password_hash, role, created_at)
+            INSERT INTO users (email, hashed_password, role, created_at)
             OUTPUT INSERTED.id
             VALUES (?, ?, ?, GETUTCDATE())
         """
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(command, (email, password_hash, role))
+            cursor.execute(command, (email, hashed_password, role))
             user_id = cursor.fetchone()[0]
             conn.commit()
             return user_id
