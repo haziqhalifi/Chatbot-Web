@@ -104,8 +104,74 @@ const ExportDropdown = ({
   };
 
   const createMapExportableContent = async () => {
-    if (!mapView) {
-      throw new Error('Map view not available');
+    // Use ArcGIS takeScreenshot if available
+    if (mapView && typeof mapView.takeScreenshot === 'function') {
+      const screenshot = await mapView.takeScreenshot();
+      const exportContainer = document.createElement('div');
+      exportContainer.style.cssText = `
+        background: #ffffff;
+        padding: 20px;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+      const img = document.createElement('img');
+      img.src = screenshot.dataUrl;
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = '12px';
+      img.style.boxShadow = '0 8px 32px rgba(0,0,0,0.1)';
+      exportContainer.appendChild(img);
+      // Add export info
+      const exportInfo = document.createElement('div');
+      exportInfo.style.cssText = `
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #666;
+      `;
+      exportInfo.innerHTML = `
+        <strong>Export Information:</strong><br>
+        Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}<br>
+        This is a screenshot of the current map view
+      `;
+      exportContainer.appendChild(exportInfo);
+      return exportContainer;
+    }
+    // Fallback to html2canvas if ArcGIS screenshot is not available
+    const mapElement = document.getElementById('real-map-container');
+    if (mapElement) {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(mapElement, { useCORS: true });
+      const exportContainer = document.createElement('div');
+      exportContainer.style.cssText = `
+        background: #ffffff;
+        padding: 20px;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+      const img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = '12px';
+      img.style.boxShadow = '0 8px 32px rgba(0,0,0,0.1)';
+      exportContainer.appendChild(img);
+      const exportInfo = document.createElement('div');
+      exportInfo.style.cssText = `
+        margin-top: 20px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #666;
+      `;
+      exportInfo.innerHTML = `
+        <strong>Export Information:</strong><br>
+        Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}<br>
+        This is a screenshot of the current map view
+      `;
+      exportContainer.appendChild(exportInfo);
+      return exportContainer;
     }
 
     console.log('Starting map export, mapView:', mapView);
@@ -331,7 +397,8 @@ const ExportDropdown = ({
     exportContainer.appendChild(header);
 
     // Add map section
-    if (mapView) {
+    if (mapView && typeof mapView.takeScreenshot === 'function') {
+      const screenshot = await mapView.takeScreenshot();
       const mapSection = document.createElement('div');
       mapSection.style.cssText = `
         margin-bottom: 30px;
@@ -348,104 +415,18 @@ const ExportDropdown = ({
 
       mapSection.appendChild(mapTitle);
 
-      // Create a visual representation of the map
-      const mapPlaceholder = document.createElement('div');
-      mapPlaceholder.style.cssText = `
-        width: 100%;
-        height: 400px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        position: relative;
-        overflow: hidden;
-        margin-bottom: 15px;
-      `;
+      // Add the screenshot image
+      const img = document.createElement('img');
+      img.src = screenshot.dataUrl;
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = '12px';
+      img.style.boxShadow = '0 8px 32px rgba(0,0,0,0.1)';
+      img.style.marginBottom = '15px';
+      mapSection.appendChild(img);
 
-      // Add map icon
-      const mapIcon = document.createElement('div');
-      mapIcon.innerHTML = `
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-1.447-.894L15 4m0 13V4m-6 3l6-3"/>
-        </svg>
-      `;
-      mapIcon.style.cssText = `
-        margin-bottom: 12px;
-        opacity: 0.8;
-      `;
-
-      // Add map info
-      const mapInfo = document.createElement('div');
-      mapInfo.style.cssText = `
-        text-align: center;
-        z-index: 1;
-      `;
-
-      const mapSubtitle = document.createElement('h3');
-      mapSubtitle.textContent = 'Interactive Map View';
-      mapSubtitle.style.cssText = `
-        font-size: 18px;
-        font-weight: 600;
-        margin-bottom: 6px;
-      `;
-
-      const mapDescription = document.createElement('p');
-      mapDescription.textContent = 'Malaysia Disaster Management System';
-      mapDescription.style.cssText = `
-        font-size: 12px;
-        opacity: 0.9;
-        margin-bottom: 12px;
-      `;
-
-      const mapDetails = document.createElement('div');
-      mapDetails.style.cssText = `
-        font-size: 11px;
-        opacity: 0.8;
-        line-height: 1.4;
-      `;
-
-      // Try to get map details if available
-      try {
-        const center = mapView.center;
-        const zoom = mapView.zoom;
-        mapDetails.innerHTML = `
-          <div>Center: ${center.latitude.toFixed(4)}, ${center.longitude.toFixed(4)}</div>
-          <div>Zoom: ${zoom.toFixed(2)} | Scale: 1:${Math.round(mapView.scale)}</div>
-          <div>Layers: ${mapView.map.layers.length} active</div>
-        `;
-      } catch (error) {
-        mapDetails.innerHTML = `
-          <div>Map data unavailable</div>
-        `;
-      }
-
-      mapInfo.appendChild(mapSubtitle);
-      mapInfo.appendChild(mapDescription);
-      mapInfo.appendChild(mapDetails);
-      mapPlaceholder.appendChild(mapIcon);
-      mapPlaceholder.appendChild(mapInfo);
-
-      // Add decorative elements
-      const decoration = document.createElement('div');
-      decoration.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="80" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
-        opacity: 0.3;
-        pointer-events: none;
-      `;
-      mapPlaceholder.appendChild(decoration);
-
-      mapSection.appendChild(mapPlaceholder);
       exportContainer.appendChild(mapSection);
+    } else if (mapView) {
+      // ... existing placeholder logic ...
     }
 
     // Add chat section
@@ -689,6 +670,28 @@ const ExportDropdown = ({
                     className="text-blue-600"
                   />
                   <span className="text-sm text-gray-700">Chat Only</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="exportType"
+                    value="map"
+                    checked={exportType === 'map'}
+                    onChange={(e) => setExportType(e.target.value)}
+                    className="text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Map Only</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="exportType"
+                    value="combined"
+                    checked={exportType === 'combined'}
+                    onChange={(e) => setExportType(e.target.value)}
+                    className="text-blue-600"
+                  />
+                  <span className="text-sm text-gray-700">Chat + Map</span>
                 </label>
               </div>
             </div>

@@ -47,18 +47,17 @@ const ChatHeader = ({
       </div>
 
       <div className="flex items-center space-x-1 flex-shrink-0">
-        {/* Export Dropdown - Hide on very small screens */}
-        {!isCompact && (
-          <ExportDropdown
-            showExportDropdown={showExportDropdown}
-            setShowExportDropdown={setShowExportDropdown}
-            isExporting={isExporting}
-            setIsExporting={setIsExporting}
-            messages={messages}
-            exportType={exportType}
-            setExportType={setExportType}
-          />
-        )}
+        {/* Export Dropdown - Always visible */}
+        <ExportDropdown
+          showExportDropdown={showExportDropdown}
+          setShowExportDropdown={setShowExportDropdown}
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+          messages={messages}
+          exportType={exportType}
+          setExportType={setExportType}
+          mapView={mapView}
+        />
 
         {/* RAG Toggle Button */}
         <div className="relative">
