@@ -4,12 +4,12 @@ from fastapi.exceptions import RequestValidationError
 from config.settings import API_KEY_CREDITS
 
 # Import database and services
-from database import update_database_schema, create_faq_table, insert_default_faqs, create_system_reports_table
+from database import update_database_schema, create_faq_table, insert_default_faqs
 from services.subscription_service import create_subscriptions_table
 from utils.rag import initialize_rag
 
 # Import route modules
-from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, system_reports
+from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev
 
 # --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
 # For better Malay language support, consider using these models with Ollama:
@@ -27,9 +27,6 @@ print("Database schema updated successfully!")
 
 # Initialize subscription tables
 create_subscriptions_table()
-
-# Initialize system reports table
-create_system_reports_table()
 
 # Initialize FAQ table and data
 create_faq_table()
@@ -72,4 +69,3 @@ app.include_router(subscriptions.router, tags=["Subscriptions"])
 app.include_router(chat.router, tags=["Chat"])
 app.include_router(admin.router, tags=["Admin"])
 app.include_router(dev.router, tags=["Development"])
-app.include_router(system_reports.router, tags=["System Reports"])
