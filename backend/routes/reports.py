@@ -7,6 +7,7 @@ from database import insert_report, get_all_reports, get_report_by_id, get_db_co
 from utils.chat import verify_api_key
 from services.notification_service import create_report_confirmation_notification
 from services.subscription_service import create_targeted_disaster_notification
+from datetime import datetime
 
 router = APIRouter()
 
@@ -19,7 +20,7 @@ class ReportRequest(BaseModel):
     location: str
     disaster_type: str
     description: str
-    timestamp: str  # ISO format string for date and time
+    created_at: Optional[str] = None
 
 class SystemReportRequest(BaseModel):
     subject: str
@@ -56,7 +57,7 @@ def submit_report(report: ReportRequest, authorization: str = Header(None)):
             location=report.location,
             disaster_type=report.disaster_type,
             description=report.description,
-            created_at=report.timestamp
+            created_at=report.created_at if report.created_at else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         )
         
         result = insert_report(complete_report)
