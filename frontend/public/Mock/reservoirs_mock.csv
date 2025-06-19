@@ -1,0 +1,31 @@
+Location,Latitude,Longitude,Capacity_MCM,Surface_Area_sqkm,Max_Depth_m,Primary_Use,Year_Completed
+Tasik Kenyir,5.0011,102.6642,"13,600",260,145,"Hydroelectric, Tourism",1985
+Sungai Selangor Dam,3.5333,101.6333,235,24,105,"Water Supply, Flood Control",2003
+Bakun Reservoir,2.7559,114.0087,"43,800",695,185,Hydroelectric,2011
+Pedu Reservoir,6.2514,100.71,"1,200",75,40,"Irrigation, Water Supply",1964
+Temenggor Lake,5.6167,101.3667,"6,000",152,120,"Hydroelectric, Fisheries",1978
+Chenderoh Reservoir,4.9328,100.9336,120,8,15,Hydroelectric,1930
+Bersia Reservoir,5.1333,100.9833,320,12,55,Hydroelectric,1983
+Kenering Reservoir,5.1333,101.1167,280,10,50,Hydroelectric,1984
+Sultan Mahmud Reservoir,5.0011,102.6642,"13,600",260,145,Hydroelectric,1985
+Murum Reservoir,2.6353,114.405,"12,000",245,141,Hydroelectric,2015
+Semenyih Reservoir,2.9486,101.8433,61,5,42,Water Supply,1983
+Klang Gates Dam,3.2417,101.75,25,3,35,Water Supply,1958
+Langkawi Reservoir,6.3667,99.7833,5,1,18,Water Supply,1990
+Sungai Tinggi Dam,3.4667,101.7167,60,6,40,Water Supply,2001
+Sungai Perak Dam,5.0833,100.9667,180,15,45,Hydroelectric,1982
+Batang Ai Reservoir,1.14,111.85,"2,400",28,85,Hydroelectric,1985
+Sultan Abu Bakar Dam,4.4667,101.3833,420,22,65,Hydroelectric,1963
+Talang Dam,4.2167,101.2833,85,4,25,Hydroelectric,1962
+Sungai Piah Reservoir,4.9333,101.1167,150,8,40,Hydroelectric,2003
+Susu Reservoir,4.9333,101.1333,110,5,35,Hydroelectric,2003
+Woh Reservoir,4.9333,101.15,95,4,30,Hydroelectric,2003
+Sungai Kinta Reservoir,4.5833,101.0833,45,3,20,Water Supply,1904
+Sungai Pari Reservoir,4.5833,101.1,30,2,15,Water Supply,1904
+Sungai Raia Reservoir,4.5833,101.1167,55,4,22,Water Supply,1904
+Sungai Siput Reservoir,4.5833,101.1333,40,3,18,Water Supply,1904
+Sungai Temong Reservoir,4.5833,101.15,65,5,25,Water Supply,1904
+Sungai Terap Reservoir,4.5833,101.1667,50,4,20,Water Supply,1904
+Sungai Ulu Reservoir,4.5833,101.1833,35,2,15,Water Supply,1904
+Putrajaya Lake,2.9264,101.6964,4.2,4.2,12,"Recreation, Aesthetics",1999
+Cyberjaya Lake,2.9167,101.65,1.1,1.1,6,"Recreation, Urban Cooling",2005
