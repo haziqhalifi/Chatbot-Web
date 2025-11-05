@@ -1,0 +1,51 @@
+@startuml Notification Handling Flow
+!theme plain
+title Notification Handling Flow (FR25-FR31)
+
+start
+
+:System event occurs;
+
+:Generate notification;
+
+:Send real-time alert;
+
+fork
+    :Push notification;
+fork again
+    :Email notification;
+fork again
+    :In-app notification;
+end fork
+
+:User receives notification;
+
+:User views notification;
+
+:User interacts with notification;
+
+if (Action type?) then (Mark as read)
+    :Update notification status;
+    :Remove from unread count;
+else (Open related content)
+    :Navigate to relevant section;
+    :Mark as read automatically;
+else (Dismiss)
+    :Hide notification;
+    :Keep as unread;
+endif
+
+:User manages preferences;
+
+if (Update preferences?) then (yes)
+    :Access notification settings;
+    :Update notification types;
+    :Update delivery methods;
+    :Save preferences;
+    :Apply to future notifications;
+else (no)
+    :Continue with current settings;
+endif
+
+stop
+@enduml

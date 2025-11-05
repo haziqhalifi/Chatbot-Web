@@ -1,0 +1,68 @@
+@startuml Admin Dashboard Overview
+!theme plain
+title Admin Dashboard Overview Flow (FR46-FR49)
+
+start
+
+:Admin logs in;
+
+:Access admin dashboard;
+
+:View system overview;
+
+:Admin selects management task;
+
+if (Task type?) then (User Management)
+    :View user list;
+    :Select user;
+    fork
+        :Edit user details;
+        :Update user status;
+    fork again
+        :View user activity;
+        :Generate user report;
+    fork again
+        :Reset user password;
+        :Send reset notification;
+    end fork
+else (Report Management)
+    :View incident reports;
+    :Filter by status/date;
+    :Select report;
+    fork
+        :Update report status;
+        :Add admin notes;
+    fork again
+        :Assign to team member;
+        :Set priority level;
+    end fork
+else (FAQ Management)
+    :View FAQ database;
+    :Select FAQ;
+    fork
+        :Edit FAQ content;
+        :Update categories;
+    fork again
+        :Add new FAQ;
+        :Publish FAQ;
+    fork again
+        :Delete outdated FAQ;
+        :Archive FAQ;
+    end fork
+else (Data Export)
+    :Select data type;
+    :Configure export parameters;
+    :Generate export file;
+    :Download data;
+endif
+
+:Admin reviews system logs;
+
+:View system performance;
+
+:Check system health;
+
+:Admin completes tasks;
+
+stop
+@enduml

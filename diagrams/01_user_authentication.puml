@@ -1,0 +1,25 @@
+@startuml User Login and Authentication Flow
+!theme plain
+title User Login and Authentication Flow (FR1-FR5)
+
+start
+
+:User accesses application;
+
+:User enters email & password;
+
+:System validates credentials;
+
+if (Credentials valid?) then (yes)
+    :Generate JWT token;
+    :Store token in session;
+    :Redirect to dashboard;
+    :User gains access to system;
+else (no)
+    :Show error message;
+    :Return to login form;
+    stop
+endif
+
+stop
+@enduml

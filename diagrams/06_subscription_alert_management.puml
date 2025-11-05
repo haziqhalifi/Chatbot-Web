@@ -1,0 +1,58 @@
+@startuml Subscription and Alert Management
+!theme plain
+title Subscription and Alert Management Flow (FR41-FR45)
+
+start
+
+:User accesses subscription settings;
+
+:User subscribes to alerts;
+
+:User selects alert type;
+
+:User specifies location/area;
+
+:Save subscription preferences;
+
+:System filters incoming alerts;
+
+:Alert event occurs;
+
+:System checks subscriptions;
+
+if (Alert matches user preferences?) then (yes)
+    :Generate targeted notification;
+    :Send only relevant alerts;
+    :User receives notification;
+else (no)
+    :Skip user for this alert;
+endif
+
+:User manages subscriptions;
+
+fork
+    :Add new subscription;
+    :Configure alert criteria;
+    :Save new subscription;
+fork again
+    :Modify existing subscription;
+    :Update criteria;
+    :Save changes;
+fork again
+    :Remove subscription;
+    :Delete subscription;
+    :Stop related alerts;
+end fork
+
+:User reviews received alerts;
+
+if (Alert relevant?) then (yes)
+    :User engages with alert;
+    :Take appropriate action;
+else (no)
+    :User ignores alert;
+    :Consider adjusting preferences;
+endif
+
+stop
+@enduml
