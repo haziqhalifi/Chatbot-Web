@@ -1,0 +1,39 @@
+@startuml Admin Authentication Flow
+!theme plain
+title Admin Authentication Activity Diagram
+
+start
+
+:Admin accesses admin panel;
+
+:Show admin login form;
+
+:Admin enters credentials & admin code;
+
+:Call /admin/signin endpoint;
+
+:Verify admin code;
+
+if (Admin code valid?) then (yes)
+    :Verify user credentials;
+    if (Credentials valid?) then (yes)
+        :Check if user is admin;
+        if (User is admin?) then (yes)
+            :Generate admin JWT token;
+            :Return admin access response;
+            :Redirect to admin dashboard;
+        else (no)
+            :Return "Not authorized as admin";
+            stop
+        endif
+    else (no)
+        :Return "Invalid credentials";
+        stop
+    endif
+else (no)
+    :Return "Invalid admin code";
+    stop
+endif
+
+stop
+@enduml

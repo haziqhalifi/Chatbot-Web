@@ -1,0 +1,48 @@
+@startuml Subscription Management
+!theme plain
+title Subscription Management Activity Diagram
+
+start
+
+:User accesses subscription page;
+
+:Load available subscription plans;
+
+:Display subscription options;
+
+:User selects plan;
+
+if (User has existing subscription?) then (yes)
+    :Check if upgrade/downgrade;
+    if (Upgrade?) then (yes)
+        :Calculate pro-rated amount;
+        :Process upgrade;
+    else (no)
+        :Schedule downgrade;
+        :Update subscription end date;
+    endif
+else (no)
+    :Process new subscription;
+endif
+
+:Call payment processor;
+
+if (Payment successful?) then (yes)
+    :Create subscription record;
+    :Update user credits;
+    :Set subscription status to active;
+    :Create subscription notification;
+    :Send confirmation email;
+    :Return success;
+else (no)
+    :Log payment failure;
+    :Return payment error;
+    :Show error to user;
+endif
+
+:Update subscription display;
+
+:Show subscription details;
+
+stop
+@enduml

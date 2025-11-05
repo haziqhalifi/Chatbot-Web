@@ -1,0 +1,58 @@
+@startuml Notification System
+!theme plain
+title Notification System Activity Diagram
+
+start
+
+:System event occurs;
+
+split
+    :User registration;
+    :Create welcome notification;
+split again
+    :Admin action;
+    :Create admin notification;
+split again
+    :System alert;
+    :Create system notification;
+split again
+    :Chat milestone;
+    :Create achievement notification;
+end split
+
+:Save notification to database;
+
+:Check user notification preferences;
+
+if (Real-time notifications enabled?) then (yes)
+    :Send WebSocket notification;
+    :Update frontend notification count;
+else (no)
+    :Store for later retrieval;
+endif
+
+:User accesses notifications;
+
+:Call /notifications endpoint;
+
+:Fetch unread notifications;
+
+:Display notification list;
+
+:User clicks notification;
+
+if (Notification type?) then (chat)
+    :Navigate to chat session;
+    :Mark notification as read;
+else (system)
+    :Show notification details;
+    :Mark notification as read;
+else (admin)
+    :Navigate to admin panel;
+    :Mark notification as read;
+endif
+
+:Update notification status;
+
+stop
+@enduml

@@ -87,6 +87,10 @@ See each folder's README for more details.
    ..\env\Scripts\Activate.ps1
    ```
 
+   ```CMD
+   ..\env\Scripts\activate.bat
+   ```
+
 2. **Install dependencies**:
 
    ```powershell

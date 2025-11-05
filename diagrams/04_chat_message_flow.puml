@@ -1,0 +1,50 @@
+@startuml Chat Message Flow
+!theme plain
+title Chat Message Processing Activity Diagram
+
+start
+
+:User in active chat session;
+
+:User types message;
+
+:User sends message;
+
+:Save user message to database;
+
+:Call /chat/sessions/{id}/generate;
+
+:Validate user authorization;
+
+if (Authorization valid?) then (yes)
+    :Extract user message;
+    :Check RAG enabled;
+    if (RAG enabled?) then (yes)
+        :Search knowledge base;
+        :Retrieve relevant context;
+        :Enhance prompt with context;
+    else (no)
+        :Use original prompt;
+    endif
+    
+    :Call AI model (qwen2.5:7b);
+    :Generate response;
+    
+    if (Response generated?) then (yes)
+        :Save bot response to database;
+        :Update session timestamp;
+        :Return response to frontend;
+        :Display response to user;
+    else (no)
+        :Return error message;
+        :Show error to user;
+    endif
+else (no)
+    :Return authentication error;
+    :Redirect to login;
+endif
+
+:User can continue chatting;
+
+stop
+@enduml
