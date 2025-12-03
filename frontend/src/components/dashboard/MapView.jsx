@@ -206,7 +206,45 @@ const MapView = ({ onMapViewReady }) => {
       }
     };
 
+    const fetchNadmaDisasters = async () => {
+      try {
+        console.log('Fetching NADMA disasters from API...');
+        const response = await fetch('http://localhost:8000/map/nadma/disasters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('NADMA disasters fetched:', result);
+
+        // Add NADMA disasters as a layer
+        const nadmaLayer = {
+          id: 'nadma-disasters',
+          name: 'NADMA Real-time Disasters',
+          visible: true,
+          type: 'nadma-feature',
+          icon: 'AlertTriangle',
+          description: 'Real-time disaster data from NADMA MyDIMS',
+          opacity: 1.0,
+          color: [255, 0, 0, 0.8],
+          nadmaData: result.data,
+          isStatic: false,
+        };
+
+        setLayers((prevLayers) => [...prevLayers, nadmaLayer]);
+        console.log('NADMA layer added to map');
+      } catch (error) {
+        console.error('Error fetching NADMA disasters:', error);
+      }
+    };
+
     fetchMapEndpoints();
+    fetchNadmaDisasters();
   }, []); // Run once on mount
 
   // Generate ArcGIS token for authentication
@@ -388,6 +426,9 @@ const MapView = ({ onMapViewReady }) => {
         zoom: 11, // Zoom level from index.html
         constraints: {
           minZoom: 3, // Prevents zooming out too far
+        },
+        ui: {
+          components: [], // Remove all default UI components to avoid duplicates
         },
       });
 
@@ -785,6 +826,73 @@ const MapView = ({ onMapViewReady }) => {
             });
             break;
 
+          case 'nadma-disasters':
+            // Handle NADMA disasters layer
+            console.log('Creating NADMA disasters layer...');
+            graphicsLayer = new GraphicsLayer({
+              title: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+            });
+
+            // Add disaster points from NADMA data
+            if (layer.nadmaData && Array.isArray(layer.nadmaData)) {
+              console.log(`Adding ${layer.nadmaData.length} NADMA disaster points`);
+
+              layer.nadmaData.forEach((disaster) => {
+                // Extract coordinates - adjust these field names based on actual NADMA API response
+                const lat = disaster.latitude || disaster.lat || disaster.location?.latitude;
+                const lon =
+                  disaster.longitude ||
+                  disaster.lng ||
+                  disaster.lon ||
+                  disaster.location?.longitude;
+
+                if (lat && lon) {
+                  const point = new Point({
+                    longitude: lon,
+                    latitude: lat,
+                    spatialReference: { wkid: 4326 },
+                  });
+
+                  const symbol = new SimpleMarkerSymbol({
+                    style: 'circle',
+                    color: [255, 0, 0, 0.8],
+                    size: '12px',
+                    outline: {
+                      color: [255, 255, 255],
+                      width: 2,
+                    },
+                  });
+
+                  const graphic = new Graphic({
+                    geometry: point,
+                    symbol: symbol,
+                    attributes: {
+                      name: disaster.name || disaster.title || 'Disaster',
+                      type: disaster.type || disaster.disaster_type || 'Unknown',
+                      description: disaster.description || disaster.details || '',
+                      status: disaster.status || 'Active',
+                      ...disaster,
+                    },
+                    popupTemplate: {
+                      title: '{name}',
+                      content: `
+                        <b>Type:</b> {type}<br>
+                        <b>Status:</b> {status}<br>
+                        <b>Description:</b> {description}
+                      `,
+                    },
+                  });
+
+                  graphicsLayer.add(graphic);
+                }
+              });
+
+              console.log(`Added ${graphicsLayer.graphics.length} disaster points to map`);
+            }
+            break;
+
           default:
             // Check if this is an API-based layer with a URL
             if (layer.type === 'api-feature' && layer.url) {
@@ -928,7 +1036,7 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      view.ui.add(searchExpand, 'top-right');
+      view.ui.add(searchExpand, 'top-left');
       console.log('Search widget initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Search widget:', error);
@@ -1086,8 +1194,8 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      // Add the widget to the top-right corner (matching index.html layout)
-      view.ui.add(layerListExpand, 'top-right');
+      // Add the widget to the top-left corner (moved to avoid chatbot overlap)
+      view.ui.add(layerListExpand, 'top-left');
 
       console.log('LayerList widget initialized successfully');
     } catch (error) {
@@ -1128,8 +1236,8 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      // Add the widget to the top-right corner (matching index.html layout)
-      view.ui.add(basemapExpand, 'top-right');
+      // Add the widget to the top-left corner (moved to avoid chatbot overlap)
+      view.ui.add(basemapExpand, 'top-left');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {
@@ -1161,7 +1269,7 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      view.ui.add(legendExpand, 'top-right');
+      view.ui.add(legendExpand, 'top-left');
       console.log('Legend widget initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Legend widget:', error);
