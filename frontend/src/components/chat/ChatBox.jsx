@@ -6,6 +6,7 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
+import ChatHistory from './ChatHistory';
 import useUserProfile from '../../hooks/useUserProfile';
 
 const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
@@ -22,6 +23,10 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     isCreatingSession,
     canSendMessage,
     loadSession,
+    availableProviders,
+    providerDescriptions,
+    preferredProvider,
+    setPreferredProvider,
   } = useChat();
   const { userProfile } = useUserProfile();
 
@@ -38,6 +43,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const [exportType, setExportType] = useState('chat');
 
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -72,6 +78,28 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     const newRagState = !isRagEnabled;
     setIsRagEnabled(newRagState);
     localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
+  };
+
+  const activeProvider = currentSession?.ai_provider || preferredProvider;
+  const providerTooltip = providerDescriptions[preferredProvider] || 'Select AI provider';
+
+  const handleProviderChange = async (event) => {
+    const newProvider = event.target.value;
+    if (!availableProviders.includes(newProvider)) {
+      return;
+    }
+
+    const previousProvider = preferredProvider;
+    setPreferredProvider(newProvider);
+
+    if (!currentSession || currentSession.ai_provider !== newProvider) {
+      try {
+        await startNewChat(newProvider);
+      } catch (err) {
+        console.error('Failed to switch AI provider:', err);
+        setPreferredProvider(previousProvider);
+      }
+    }
   };
 
   // Handle new chat button
@@ -161,68 +189,93 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     if (e.key === 'Enter' && canSendMessage) handleSendMessage();
   };
 
+  const handleOpenHistory = () => {
+    setShowHistory(true);
+  };
+
+  const handleCloseHistory = () => {
+    setShowHistory(false);
+  };
+
   return (
-    <div
-      className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
-      style={{
-        width: width || 380,
-        height: height || 600,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 320,
-        minHeight: 450,
-      }}
-    >
-      <ChatHeader
-        onClose={() => onClose(messages)}
-        onNewChat={handleNewChatClick}
-        onRagToggle={handleRagToggle}
-        isRagEnabled={isRagEnabled}
-        showExportDropdown={showExportDropdown}
-        setShowExportDropdown={setShowExportDropdown}
-        isExporting={isExporting}
-        setIsExporting={setIsExporting}
-        messages={messages}
-        width={width}
-        mapView={mapView}
-        exportType={exportType}
-        setExportType={setExportType}
+    <>
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        isOpen={showHistory}
+        onClose={handleCloseHistory}
+        currentSessionId={currentSession?.id}
       />
 
-      <ChatMessages
-        ref={chatContainerRef}
-        displayMessages={displayMessages}
-        userProfile={userProfile}
-        isListening={isListening}
-        isTranscribing={isTranscribing}
-        chatEndRef={chatEndRef}
-        height={height}
-        width={width}
-      />
+      {/* Chat Box */}
+      <div
+        className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
+        style={{
+          width: width || 380,
+          height: height || 600,
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 320,
+          minHeight: 450,
+        }}
+      >
+        <ChatHeader
+          onClose={() => onClose(messages)}
+          onNewChat={handleNewChatClick}
+          onRagToggle={handleRagToggle}
+          isRagEnabled={isRagEnabled}
+          showExportDropdown={showExportDropdown}
+          setShowExportDropdown={setShowExportDropdown}
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+          messages={messages}
+          width={width}
+          mapView={mapView}
+          exportType={exportType}
+          setExportType={setExportType}
+          aiProviders={availableProviders}
+          selectedProvider={preferredProvider}
+          activeProvider={activeProvider}
+          onProviderChange={handleProviderChange}
+          providerTooltip={providerTooltip}
+          disableProviderSelect={isSending || isCreatingSession}
+          onOpenHistory={handleOpenHistory}
+        />
 
-      <ChatInput
-        inputValue={inputValue}
-        onInputChange={handleInputChange}
-        onKeyPress={handleKeyPress}
-        onSendMessage={handleSendMessage}
-        onSendMessageWithText={handleSendMessageWithText}
-        isListening={isListening}
-        setIsListening={setIsListening}
-        audioLevel={audioLevel}
-        setAudioLevel={setAudioLevel}
-        canSendMessage={canSendMessage}
-        mediaRecorderRef={mediaRecorderRef}
-        audioChunksRef={audioChunksRef}
-        audioContextRef={audioContextRef}
-        analyserRef={analyserRef}
-        sourceRef={sourceRef}
-        animationFrameRef={animationFrameRef}
-        width={width}
-        isTranscribing={isTranscribing}
-        setIsTranscribing={setIsTranscribing}
-      />
-    </div>
+        <ChatMessages
+          ref={chatContainerRef}
+          displayMessages={displayMessages}
+          userProfile={userProfile}
+          isListening={isListening}
+          isTranscribing={isTranscribing}
+          chatEndRef={chatEndRef}
+          height={height}
+          width={width}
+        />
+
+        <ChatInput
+          inputValue={inputValue}
+          onInputChange={handleInputChange}
+          onKeyPress={handleKeyPress}
+          onSendMessage={handleSendMessage}
+          onSendMessageWithText={handleSendMessageWithText}
+          isListening={isListening}
+          setIsListening={setIsListening}
+          audioLevel={audioLevel}
+          setAudioLevel={setAudioLevel}
+          canSendMessage={canSendMessage}
+          mediaRecorderRef={mediaRecorderRef}
+          audioChunksRef={audioChunksRef}
+          audioContextRef={audioContextRef}
+          analyserRef={analyserRef}
+          sourceRef={sourceRef}
+          animationFrameRef={animationFrameRef}
+          width={width}
+          isTranscribing={isTranscribing}
+          setIsTranscribing={setIsTranscribing}
+        />
+      </div>
+    </>
   );
 };
 

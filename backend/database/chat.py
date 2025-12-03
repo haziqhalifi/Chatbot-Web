@@ -1,7 +1,8 @@
 from datetime import datetime
 from .connection import DatabaseConnection, format_timestamp
+import json
 
-def create_chat_session(user_id, title=None):
+def create_chat_session(user_id, title=None, ai_provider="gemini"):
     """Create a new chat session for a user"""
     try:
         with DatabaseConnection() as conn:
@@ -12,10 +13,10 @@ def create_chat_session(user_id, title=None):
                 title = f"Chat {datetime.now().strftime('%Y-%m-%d %H:%M')}"
             
             cursor.execute("""
-                INSERT INTO chat_sessions (user_id, title) 
-                OUTPUT INSERTED.id, INSERTED.title, INSERTED.created_at, INSERTED.updated_at
-                VALUES (?, ?)
-            """, (user_id, title))
+                INSERT INTO chat_sessions (user_id, title, ai_provider) 
+                OUTPUT INSERTED.id, INSERTED.title, INSERTED.ai_provider, INSERTED.created_at, INSERTED.updated_at
+                VALUES (?, ?, ?)
+            """, (user_id, title, ai_provider))
             
             row = cursor.fetchone()
             if not conn.autocommit:
@@ -26,8 +27,9 @@ def create_chat_session(user_id, title=None):
                 "id": row[0],
                 "user_id": user_id,
                 "title": row[1],
-                "created_at": format_timestamp(row[2]),
-                "updated_at": format_timestamp(row[3]),
+                "ai_provider": row[2],
+                "created_at": format_timestamp(row[3]),
+                "updated_at": format_timestamp(row[4]),
                 "is_active": True
             }
             
@@ -42,7 +44,7 @@ def get_user_chat_sessions(user_id, limit=20, offset=0):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, title, created_at, updated_at, is_active
+                SELECT id, title, ai_provider, metadata, created_at, updated_at, is_active
                 FROM chat_sessions 
                 WHERE user_id = ? AND is_active = 1
                 ORDER BY updated_at DESC
@@ -51,12 +53,21 @@ def get_user_chat_sessions(user_id, limit=20, offset=0):
             
             sessions = []
             for row in cursor.fetchall():
+                metadata = {}
+                if row[3]:  # metadata column
+                    try:
+                        metadata = json.loads(row[3])
+                    except:
+                        pass
+                
                 sessions.append({
                     "id": row[0],
                     "title": row[1],
-                    "created_at": format_timestamp(row[2]),
-                    "updated_at": format_timestamp(row[3]),
-                    "is_active": bool(row[4])
+                    "ai_provider": row[2],
+                    "metadata": metadata,
+                    "created_at": format_timestamp(row[4]),
+                    "updated_at": format_timestamp(row[5]),
+                    "is_active": bool(row[6])
                 })
             
             cursor.close()
@@ -73,7 +84,7 @@ def get_chat_session(session_id, user_id):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT id, user_id, title, created_at, updated_at, is_active
+                SELECT id, user_id, title, ai_provider, metadata, created_at, updated_at, is_active
                 FROM chat_sessions 
                 WHERE id = ? AND user_id = ? AND is_active = 1
             """, (session_id, user_id))
@@ -83,14 +94,24 @@ def get_chat_session(session_id, user_id):
             
             if not row:
                 return None
+            
+            metadata = {}
+            if row[4]:  # metadata column
+                try:
+                    metadata = json.loads(row[4])
+                except:
+                    pass
                 
             return {
                 "id": row[0],
                 "user_id": row[1],
                 "title": row[2],
-                "created_at": format_timestamp(row[3]),
-                "updated_at": format_timestamp(row[4]),
-                "is_active": bool(row[5])
+                "ai_provider": row[3],
+                "metadata": metadata,
+                "openai_thread_id": metadata.get('openai_thread_id'),
+                "created_at": format_timestamp(row[5]),
+                "updated_at": format_timestamp(row[6]),
+                "is_active": bool(row[7])
             }
             
     except Exception as e:
@@ -227,6 +248,47 @@ def delete_chat_session(session_id, user_id):
         print(f"Error deleting chat session: {e}")
         raise
 
+def update_session_metadata(session_id, metadata_updates):
+    """Update session metadata (used for storing OpenAI thread IDs, etc.)"""
+    try:
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Get current metadata
+            cursor.execute("SELECT metadata FROM chat_sessions WHERE id = ?", (session_id,))
+            row = cursor.fetchone()
+            
+            if not row:
+                return False
+            
+            # Parse existing metadata
+            current_metadata = {}
+            if row[0]:
+                try:
+                    current_metadata = json.loads(row[0])
+                except:
+                    pass
+            
+            # Merge with updates
+            current_metadata.update(metadata_updates)
+            
+            # Save back
+            cursor.execute("""
+                UPDATE chat_sessions 
+                SET metadata = ?, updated_at = GETDATE()
+                WHERE id = ?
+            """, (json.dumps(current_metadata), session_id))
+            
+            if not conn.autocommit:
+                conn.commit()
+            
+            cursor.close()
+            return True
+            
+    except Exception as e:
+        print(f"Error updating session metadata: {e}")
+        raise
+
 def create_chat_tables():
     """Create chat sessions and messages tables"""
     try:
@@ -244,6 +306,8 @@ def create_chat_tables():
                     id INT IDENTITY(1,1) PRIMARY KEY,
                     user_id INT NOT NULL,
                     title VARCHAR(500),
+                    ai_provider VARCHAR(50) DEFAULT 'gemini',
+                    metadata NVARCHAR(MAX),
                     created_at DATETIME DEFAULT GETDATE(),
                     updated_at DATETIME DEFAULT GETDATE(),
                     is_active BIT DEFAULT 1,
@@ -251,6 +315,27 @@ def create_chat_tables():
                 )
             """)
             print("chat_sessions table created/verified")
+            
+            # Add ai_provider column if it doesn't exist (migration)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.columns 
+                              WHERE object_id = OBJECT_ID('chat_sessions') 
+                              AND name = 'ai_provider')
+                BEGIN
+                    ALTER TABLE chat_sessions ADD ai_provider VARCHAR(50) DEFAULT 'gemini'
+                END
+            """)
+            
+            # Add metadata column if it doesn't exist (migration)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.columns 
+                              WHERE object_id = OBJECT_ID('chat_sessions') 
+                              AND name = 'metadata')
+                BEGIN
+                    ALTER TABLE chat_sessions ADD metadata NVARCHAR(MAX)
+                END
+            """)
+            print("chat_sessions table columns updated")
             
             # Create chat_messages table
             cursor.execute("""
@@ -300,5 +385,6 @@ __all__ = [
     'get_chat_messages',
     'update_chat_session_title',
     'delete_chat_session',
-    'create_chat_tables'
+    'create_chat_tables',
+    'update_session_metadata'
 ]

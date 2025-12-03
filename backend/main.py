@@ -2,6 +2,22 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from config.settings import API_KEY_CREDITS
+import logging
+
+# Configure logging to reduce noise from frequent endpoints
+class EndpointFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        # Hide logs for these frequent endpoints
+        excluded_endpoints = [
+            "/chat/providers",
+            "/health",
+            "/notifications/ws",
+        ]
+        message = record.getMessage()
+        return not any(endpoint in message for endpoint in excluded_endpoints)
+
+# Apply filter to uvicorn access logger
+logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
 # Import database and services
 from database import update_database_schema, create_faq_table, insert_default_faqs
@@ -9,7 +25,7 @@ from services.subscription_service import create_subscriptions_table
 from utils.rag import initialize_rag
 
 # Import route modules
-from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, health
+from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, health, map
 
 # --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
 # For better Malay language support, consider using these models with Ollama:
@@ -70,3 +86,4 @@ app.include_router(chat.router, tags=["Chat"])
 app.include_router(admin.router, tags=["Admin"])
 app.include_router(dev.router, tags=["Development"])
 app.include_router(health.router, tags=["Health"])
+app.include_router(map.router, prefix="/map", tags=["Map"])

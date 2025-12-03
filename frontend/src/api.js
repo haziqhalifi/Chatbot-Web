@@ -151,8 +151,13 @@ export const faqAPI = {
 // Chat API endpoints
 export const chatAPI = {
   // Create a new chat session
-  createSession: (title = null) => {
-    return api.post('/chat/sessions', { title });
+  createSession: (title = null, aiProvider = null) => {
+    return api.post('/chat/sessions', { title, ai_provider: aiProvider });
+  },
+
+  // Get available AI providers
+  getProviders: () => {
+    return api.get('/chat/providers');
   },
 
   // Get user's chat sessions
