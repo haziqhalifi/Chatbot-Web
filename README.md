@@ -30,19 +30,33 @@ A full-stack web application featuring a chatbot with a FastAPI backend and a mo
 
    ```bash
    ..\env\Scripts\uvicorn.exe main:app --reload
+
+
    ```
 
-   The backend will be available at `http://127.0.0.1:8000` by default.
+   new command for virtual env
+
+   ```bash
+   cd "C:\Users\user\Desktop\Chatbot Web\backend" & "..\\.venv\Scripts\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8000
+
+
+   cd "C:\Users\user\Desktop\Chatbot Web"
+   .venv\Scripts\Activate.ps1
+   cd backend
+   uvicorn main:app --host 127.0.0.1 --port 8000
+   ```
+
+The backend will be available at `http://127.0.0.1:8000` by default.
 
 ## Frontend Setup
 
 1. **Install dependencies**
 
-   In the `frontend` directory:
+In the `frontend` directory:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 2. **Start the frontend development server**
 
@@ -56,6 +70,48 @@ A full-stack web application featuring a chatbot with a FastAPI backend and a mo
 
 - Open the frontend in your browser.
 - Interact with the chatbot UI. Messages are sent to the FastAPI backend for processing.
+
+## Map Data API
+
+The application includes a Map Data API that provides ArcGIS Feature Server endpoints for disaster management mapping.
+
+### Available Endpoints
+
+- **GET /map/endpoints** — Get all available map data endpoints
+- **GET /map/endpoints/{type}** — Get a specific endpoint by type (landslide, flood, poi, population)
+- **GET /map/types** — Get all available map data types
+
+### Data Sources
+
+The API provides access to these geospatial datasets:
+
+1. **Land Slide Risk Area** — Areas prone to landslides and slope failures
+2. **Flood Prone Area** — Areas at risk of flooding during monsoon seasons
+3. **Place of Interest** — Points of interest including emergency services
+4. **Population** — Population density data for evacuation planning
+
+For detailed API documentation, see `backend/routes/MAP_API.md` or visit `http://localhost:8000/docs` when the backend is running.
+
+### Frontend Integration Example
+
+```javascript
+// Fetch map endpoints
+const response = await fetch("http://localhost:8000/map/endpoints");
+const data = await response.json();
+
+// Use with ArcGIS to create layers
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+
+data.endpoints.forEach((endpoint) => {
+  const layer = new FeatureLayer({
+    url: endpoint.url,
+    title: endpoint.name,
+  });
+  map.add(layer);
+});
+```
+
+See `frontend/src/examples/MapDataAPIExample.jsx` for complete usage examples.
 
 ## Notes
 
