@@ -26,6 +26,41 @@ export const useChat = () => {
   const [pendingMessage, setPendingMessage] = useState(null);
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
+  const [availableProviders, setAvailableProviders] = useState(['gemini']);
+  const [defaultProvider, setDefaultProvider] = useState('gemini');
+  const [providerDescriptions, setProviderDescriptions] = useState({});
+  const [preferredProvider, setPreferredProviderState] = useState(() => {
+    const stored = localStorage.getItem('tiara_ai_provider');
+    return stored || 'gemini';
+  });
+
+  const setPreferredProvider = useCallback(
+    (provider, validProviders) => {
+      const providerList =
+        Array.isArray(validProviders) && validProviders.length > 0
+          ? validProviders
+          : availableProviders;
+      const fallback = defaultProvider || providerList[0] || 'gemini';
+
+      if (!provider) {
+        setPreferredProviderState(fallback);
+        localStorage.setItem('tiara_ai_provider', fallback);
+        return;
+      }
+
+      if (!providerList.includes(provider)) {
+        console.warn(`Attempted to set unavailable AI provider: ${provider}`);
+        setPreferredProviderState(fallback);
+        localStorage.setItem('tiara_ai_provider', fallback);
+        return;
+      }
+
+      setPreferredProviderState(provider);
+      localStorage.setItem('tiara_ai_provider', provider);
+    },
+    [availableProviders, defaultProvider]
+  );
+
   // Save current session to localStorage whenever it changes
   useEffect(() => {
     if (currentSession) {
@@ -34,6 +69,38 @@ export const useChat = () => {
       localStorage.removeItem('tiara_current_session');
     }
   }, [currentSession]);
+
+  // Fetch AI providers only once on mount
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const response = await chatAPI.getProviders();
+        const data = response.data || {};
+
+        const providerList =
+          Array.isArray(data.providers) && data.providers.length > 0 ? data.providers : ['gemini'];
+        const defaultFromApi =
+          data.default && providerList.includes(data.default) ? data.default : providerList[0];
+
+        setAvailableProviders(providerList);
+        setDefaultProvider(defaultFromApi);
+        setProviderDescriptions(data.descriptions || {});
+
+        const stored = localStorage.getItem('tiara_ai_provider');
+        const initial = stored && providerList.includes(stored) ? stored : defaultFromApi;
+        setPreferredProvider(initial, providerList);
+      } catch (err) {
+        console.error('Failed to fetch AI providers:', err);
+        setAvailableProviders(['gemini']);
+        setDefaultProvider('gemini');
+        setProviderDescriptions({});
+        setPreferredProvider('gemini', ['gemini']);
+      }
+    };
+
+    fetchProviders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - fetch only once on mount
 
   // Validate current session when user is authenticated
   const validateSession = useCallback(async () => {
@@ -71,78 +138,96 @@ export const useChat = () => {
   }, [validateSession, sessionInitialized]);
 
   // Create a new chat session
-  const createSession = useCallback(async (title = null) => {
-    try {
-      setLoading(true);
-      setError(null);
-      setIsCreatingSession(true);
-      const response = await chatAPI.createSession(title);
-      const newSession = response.data;
+  const createSession = useCallback(
+    async (title = null, aiProviderOverride = null) => {
+      try {
+        setLoading(true);
+        setError(null);
+        setIsCreatingSession(true);
 
-      setCurrentSession(newSession);
-      setSessions((prev) => [newSession, ...prev]);
-      setSessionInitialized(true);
+        const providerToUse =
+          aiProviderOverride ||
+          preferredProvider ||
+          defaultProvider ||
+          availableProviders[0] ||
+          'gemini';
 
-      // Add hardcoded welcome message for new sessions
-      setMessages([
-        {
-          id: 1,
-          sender: 'bot',
-          text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+        const response = await chatAPI.createSession(title, providerToUse);
+        const newSession = response.data;
 
-      return newSession;
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to create chat session');
-      throw err;
-    } finally {
-      setLoading(false);
-      setIsCreatingSession(false);
-    }
-  }, []);
+        setCurrentSession(newSession);
+        setSessions((prev) => [newSession, ...prev]);
+        setSessionInitialized(true);
+        setPreferredProvider(newSession.ai_provider || providerToUse);
+
+        // Add hardcoded welcome message for new sessions
+        setMessages([
+          {
+            id: 1,
+            sender: 'bot',
+            text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+
+        return newSession;
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Failed to create chat session');
+        throw err;
+      } finally {
+        setLoading(false);
+        setIsCreatingSession(false);
+      }
+    },
+    [preferredProvider, defaultProvider, availableProviders, setPreferredProvider]
+  );
 
   // Load an existing session
-  const loadSession = useCallback(async (sessionId) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const loadSession = useCallback(
+    async (sessionId) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Get session details
-      const sessionResponse = await chatAPI.getSession(sessionId);
-      const session = sessionResponse.data;
-      setCurrentSession(session); // Get session messages
-      const messagesResponse = await chatAPI.getSessionMessages(sessionId);
-      const sessionMessages = messagesResponse.data.messages;
+        // Get session details
+        const sessionResponse = await chatAPI.getSession(sessionId);
+        const session = sessionResponse.data;
+        setCurrentSession(session);
+        setPreferredProvider(session.ai_provider);
 
-      // Convert to frontend format
-      const formattedMessages = sessionMessages.map((msg, index) => ({
-        id: msg.id || index + 1,
-        sender: msg.sender_type,
-        text: msg.content,
-        timestamp: msg.timestamp,
-      }));
+        // Get session messages
+        const messagesResponse = await chatAPI.getSessionMessages(sessionId);
+        const sessionMessages = messagesResponse.data.messages;
 
-      // If no messages exist, add welcome message
-      if (formattedMessages.length === 0) {
-        formattedMessages.push({
-          id: 1,
-          sender: 'bot',
-          text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
-          timestamp: new Date().toISOString(),
-        });
+        // Convert to frontend format
+        const formattedMessages = sessionMessages.map((msg, index) => ({
+          id: msg.id || index + 1,
+          sender: msg.sender_type,
+          text: msg.content,
+          timestamp: msg.timestamp,
+        }));
+
+        // If no messages exist, add welcome message
+        if (formattedMessages.length === 0) {
+          formattedMessages.push({
+            id: 1,
+            sender: 'bot',
+            text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
+            timestamp: new Date().toISOString(),
+          });
+        }
+
+        setMessages(formattedMessages);
+        return session;
+      } catch (err) {
+        setError(err.response?.data?.detail || 'Failed to load chat session');
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      setMessages(formattedMessages);
-      return session;
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load chat session');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [setPreferredProvider]
+  );
   // Get user's chat sessions
   const fetchSessions = useCallback(async (limit = 20, offset = 0, skipLoading = false) => {
     try {
@@ -277,31 +362,34 @@ export const useChat = () => {
     },
     [currentSession]
   ); // Start a new chat (always create a fresh session)
-  const startNewChat = useCallback(async () => {
-    try {
-      // Clear current session first
-      setCurrentSession(null);
-      setPendingMessage(null); // Clear any pending messages
+  const startNewChat = useCallback(
+    async (aiProviderOverride = null) => {
+      try {
+        // Clear current session first
+        setCurrentSession(null);
+        setPendingMessage(null); // Clear any pending messages
 
-      // Add welcome message immediately
-      setMessages([
-        {
-          id: 1,
-          sender: 'bot',
-          text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+        // Add welcome message immediately
+        setMessages([
+          {
+            id: 1,
+            sender: 'bot',
+            text: 'Greetings! I am Tiara. 👋 How may I assist you today?',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
 
-      // Create a new session (this will preserve the welcome message)
-      const newSession = await createSession();
-      console.log('Started new chat with session:', newSession.id);
-      return newSession;
-    } catch (err) {
-      console.error('Failed to start new chat:', err);
-      throw err;
-    }
-  }, [createSession]);
+        // Create a new session (this will preserve the welcome message)
+        const newSession = await createSession(null, aiProviderOverride);
+        console.log('Started new chat with session:', newSession.id);
+        return newSession;
+      } catch (err) {
+        console.error('Failed to start new chat:', err);
+        throw err;
+      }
+    },
+    [createSession]
+  );
 
   // Clear error
   const clearError = useCallback(() => {
@@ -440,6 +528,10 @@ export const useChat = () => {
     isCreatingSession,
     pendingMessage,
     sessionInitialized,
+    availableProviders,
+    providerDescriptions,
+    preferredProvider,
+    defaultProvider,
 
     // Actions
     createSession,
@@ -454,6 +546,7 @@ export const useChat = () => {
     clearError,
     validateSession,
     clearChatSession,
+    setPreferredProvider,
 
     // Computed
     hasActiveSession: !!currentSession,
