@@ -1,6 +1,5 @@
 from fastapi import HTTPException, Header, UploadFile, File, Depends
 import ollama
-import whisper
 import os
 import re
 import time
@@ -9,6 +8,14 @@ from config.models import AI_MODEL, MODEL_SETTINGS
 from .language import detect_language, get_language_instruction
 from .performance import should_use_rag, perf_monitor, is_general_question
 import logging
+
+# Optional whisper import for voice transcription
+try:
+    import whisper
+    WHISPER_AVAILABLE = True
+except Exception as e:
+    WHISPER_AVAILABLE = False
+    print(f"Warning: Whisper not available for audio transcription: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +140,12 @@ def md_table_to_html(md):
     return '\n'.join(html)
 
 def transcribe_audio_file(file: UploadFile):
+    if not WHISPER_AVAILABLE:
+        raise HTTPException(
+            status_code=503, 
+            detail="Audio transcription is not available. Whisper library is not properly installed."
+        )
+    
     try:
         audio_bytes = file.file.read()
         temp_dir = os.path.dirname(os.path.abspath(__file__))

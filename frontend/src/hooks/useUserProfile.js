@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import api from '../api'; // adjust path as needed
 
 // Custom hook for user profile management
 const useUserProfile = () => {
-  const [userProfile, setUserProfile] = React.useState(() => {
+  const [userProfile, setUserProfile] = useState(() => {
     // Load profile from localStorage on initialization
     const savedProfile = localStorage.getItem('tiara_user_profile');
     return savedProfile ? JSON.parse(savedProfile) : null;
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const response = await api.get('/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserProfile(response.data);
+        localStorage.setItem('tiara_user_profile', JSON.stringify(response.data));
+      } catch (e) {
+        // fallback to localStorage if needed
+      }
+    };
+    fetchProfile();
+  }, []);
 
   React.useEffect(() => {
     const handleStorageChange = () => {

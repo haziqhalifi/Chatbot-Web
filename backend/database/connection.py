@@ -219,7 +219,7 @@ def get_connection_pool():
             if _connection_pool is None:
                 try:
                     # Increased pool size to handle more concurrent requests
-                    _connection_pool = DatabaseConnectionPool(min_connections=5, max_connections=25)
+                    _connection_pool = DatabaseConnectionPool(min_connections=5, max_connections=100)
                     print("Database connection pool initialized successfully")
                 except Exception as e:
                     print(f"Warning: Failed to initialize connection pool: {e}")

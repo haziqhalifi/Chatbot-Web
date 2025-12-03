@@ -24,3 +24,19 @@ RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "60"))
 
 # Security Configuration
 BCRYPT_ROUNDS = int(os.getenv("BCRYPT_ROUNDS", "12"))
+
+# OpenAI Assistant API Configuration
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
+OPENAI_ASSISTANT_ENABLED = bool(OPENAI_API_KEY and OPENAI_ASSISTANT_ID)
+
+# AI Model Provider Options
+AI_PROVIDERS = ["gemini"]
+if OPENAI_ASSISTANT_ENABLED and "openai" not in AI_PROVIDERS:
+	AI_PROVIDERS.append("openai")
+
+_configured_default = os.getenv("DEFAULT_AI_PROVIDER")
+if _configured_default and _configured_default in AI_PROVIDERS:
+	DEFAULT_AI_PROVIDER = _configured_default
+else:
+	DEFAULT_AI_PROVIDER = AI_PROVIDERS[0] if AI_PROVIDERS else "gemini"

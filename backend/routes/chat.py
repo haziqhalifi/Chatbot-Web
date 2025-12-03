@@ -5,6 +5,7 @@ import jwt
 import os
 from services.chat_service import ChatService
 from utils.chat import verify_api_key
+from config.settings import AI_PROVIDERS, DEFAULT_AI_PROVIDER, OPENAI_ASSISTANT_ENABLED
 
 router = APIRouter()
 
@@ -15,6 +16,7 @@ JWT_ALGORITHM = "HS256"
 # Chat-related models
 class ChatSessionRequest(BaseModel):
     title: Optional[str] = None
+    ai_provider: Optional[str] = None  # "gemini" or "openai"
 
 class ChatMessageRequest(BaseModel):
     content: str
@@ -24,6 +26,7 @@ class ChatGenerateRequest(BaseModel):
     session_id: int
     prompt: str
     rag_enabled: bool = True
+    message_type: str = "text"  # Add message_type for text, voice, image
 
 class UpdateSessionTitleRequest(BaseModel):
     title: str
@@ -52,7 +55,26 @@ def create_chat_session(
 ):
     """Create a new chat session"""
     user_id = get_user_id_from_token(authorization)
-    return ChatService.create_new_session(user_id, request.title)
+    return ChatService.create_new_session(user_id, request.title, request.ai_provider)
+
+@router.get("/chat/providers")
+def get_ai_providers():
+    """Get available AI providers"""
+    provider_descriptions = {
+        k: v
+        for k, v in {
+            "gemini": "Gemini/Ollama - Local AI model with RAG support",
+            "openai": "ChatGPT (OpenAI Assistant) - Cloud-based AI assistant"
+        }.items()
+        if k in AI_PROVIDERS
+    }
+
+    return {
+        "providers": AI_PROVIDERS,
+        "default": DEFAULT_AI_PROVIDER,
+        "descriptions": provider_descriptions,
+        "openai_configured": OPENAI_ASSISTANT_ENABLED
+    }
 
 @router.get("/chat/sessions")
 def get_chat_sessions(
@@ -111,7 +133,8 @@ def generate_chat_response(
         request.prompt, 
         request.rag_enabled, 
         x_api_key, 
-        API_KEY_CREDITS
+        API_KEY_CREDITS,
+        request.message_type
     )
 
 @router.put("/chat/sessions/{session_id}")

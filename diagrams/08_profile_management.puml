@@ -1,0 +1,54 @@
+@startuml User Profile Management
+!theme plain
+title User Profile Management Activity Diagram
+
+start
+
+:User accesses profile page;
+
+:Load user profile data;
+
+:Display current profile information;
+
+:User makes changes;
+
+split
+    :Change password;
+    :Validate current password;
+    if (Current password valid?) then (yes)
+        :Hash new password;
+        :Update password in database;
+        :Return success;
+    else (no)
+        :Return error;
+        stop
+    endif
+split again
+    :Update profile details;
+    :Validate input data;
+    if (Data valid?) then (yes)
+        :Update user information;
+        :Return success;
+    else (no)
+        :Return validation error;
+        stop
+    endif
+split again
+    :Upload profile picture;
+    :Validate image file;
+    if (Image valid?) then (yes)
+        :Save image file;
+        :Update profile picture path;
+        :Return success;
+    else (no)
+        :Return file error;
+        stop
+    endif
+end split
+
+:Update profile display;
+
+:Show success message;
+
+stop
+@enduml
