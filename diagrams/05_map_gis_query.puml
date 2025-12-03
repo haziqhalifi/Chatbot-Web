@@ -1,0 +1,52 @@
+@startuml Map and GIS Query Display
+!theme plain
+title Map and GIS Query Display Flow (FR32-FR36)
+
+start
+
+:Chatbot receives spatial query;
+
+:System identifies GIS requirement;
+
+:Chatbot triggers map display;
+
+:Load relevant map layers;
+
+:Process spatial data;
+
+:Generate map insights;
+
+:Display interactive map;
+
+:Show query results on map;
+
+:User interacts with map;
+
+fork
+    :User zooms in/out;
+    :Update map view;
+    :Refresh data if needed;
+fork again
+    :User selects map layers;
+    :Toggle layer visibility;
+    :Update display;
+fork again
+    :User clicks map features;
+    :Show feature details;
+    :Display popup information;
+end fork
+
+:User reviews spatial insights;
+
+if (User needs more info?) then (yes)
+    :User asks follow-up question;
+    :System refines map display;
+    :Update insights;
+else (no)
+    :User satisfied with results;
+endif
+
+:Map interaction complete;
+
+stop
+@enduml

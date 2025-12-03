@@ -15,10 +15,32 @@ const ChatHeader = ({
   mapView,
   exportType,
   setExportType,
+  aiProviders,
+  selectedProvider,
+  activeProvider,
+  onProviderChange,
+  providerTooltip,
+  disableProviderSelect,
+  onOpenHistory,
 }) => {
   // Responsive design based on chat width
   const isCompact = width && width < 400;
-  const isMedium = width && width < 500;
+
+  const formatProviderLabel = (provider) => {
+    if (!provider) {
+      return '';
+    }
+
+    if (provider.toLowerCase() === 'openai') {
+      return 'ChatGPT';
+    }
+
+    if (provider.toLowerCase() === 'gemini') {
+      return 'Gemini';
+    }
+
+    return provider.charAt(0).toUpperCase() + provider.slice(1);
+  };
 
   return (
     <div className="flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-[22px]">
@@ -41,12 +63,67 @@ const ChatHeader = ({
             🤖
           </div>
         </div>
-        <h2 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold text-white ml-3 truncate`}>
-          Ask Tiara
-        </h2>
+        <div className="ml-3 min-w-0">
+          <h2 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold text-white truncate`}>
+            Ask Tiara
+          </h2>
+          {activeProvider && (
+            <p className={`text-xs text-blue-100 ${isCompact ? 'mt-0.5' : 'mt-1'} truncate`}>
+              Using {formatProviderLabel(activeProvider)}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center space-x-1 flex-shrink-0">
+        {/* History Button */}
+        <button
+          onClick={onOpenHistory}
+          className="bg-white hover:bg-gray-100 text-blue-600 rounded-full transition-colors duration-200 shadow-md"
+          style={{ padding: isCompact ? '6px' : '8px' }}
+          aria-label="Chat History"
+          title="View chat history"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width={isCompact ? '14' : '16'}
+            height={isCompact ? '14' : '16'}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+
+        {aiProviders && aiProviders.length > 0 && (
+          <div className="flex items-center bg-white/15 border border-white/20 rounded-full px-3 py-1 mr-1">
+            <label
+              htmlFor="tiara-provider-select"
+              className="text-xs uppercase tracking-wide text-blue-100 mr-2"
+            >
+              Model
+            </label>
+            <select
+              id="tiara-provider-select"
+              value={selectedProvider}
+              onChange={onProviderChange}
+              disabled={disableProviderSelect}
+              className="bg-white text-blue-700 text-xs font-medium rounded-full px-2 py-1 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+              title={providerTooltip}
+            >
+              {aiProviders.map((provider) => (
+                <option key={provider} value={provider}>
+                  {formatProviderLabel(provider)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Export Dropdown - Always visible */}
         <ExportDropdown
           showExportDropdown={showExportDropdown}

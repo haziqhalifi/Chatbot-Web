@@ -1,0 +1,134 @@
+@startuml Map Data API Flow
+
+title Map Data API - Endpoint Flow Diagram
+
+actor User
+participant "Frontend\n(React/ArcGIS)" as Frontend
+participant "FastAPI\nBackend" as Backend
+participant "Map Router\n(/map/*)" as MapRouter
+database "ArcGIS\nFeature Server" as ArcGIS
+
+== Get All Map Endpoints ==
+
+User -> Frontend: Request map data
+activate Frontend
+
+Frontend -> Backend: GET /map/endpoints
+activate Backend
+
+Backend -> MapRouter: Route to map.router
+activate MapRouter
+
+MapRouter -> MapRouter: Return MAP_ENDPOINTS array
+note right
+  Returns:
+  - Land Slide Risk Area
+  - Flood Prone Area
+  - Place of Interest
+  - Population
+end note
+
+MapRouter --> Backend: JSON response with\nall endpoints
+deactivate MapRouter
+
+Backend --> Frontend: HTTP 200\n{endpoints: [...]}
+deactivate Backend
+
+Frontend -> Frontend: Parse endpoint data
+Frontend -> ArcGIS: Create FeatureLayers\nfrom endpoint URLs
+activate ArcGIS
+
+ArcGIS --> Frontend: Layer data
+deactivate ArcGIS
+
+Frontend -> Frontend: Add layers to map
+Frontend --> User: Display map with layers
+deactivate Frontend
+
+== Get Specific Endpoint ==
+
+User -> Frontend: Request specific\nlayer (e.g., flood)
+activate Frontend
+
+Frontend -> Backend: GET /map/endpoints/flood
+activate Backend
+
+Backend -> MapRouter: Route to\nget_map_endpoint_by_type(type="flood")
+activate MapRouter
+
+MapRouter -> MapRouter: Search MAP_ENDPOINTS\nfor type="flood"
+
+alt Endpoint Found
+    MapRouter --> Backend: JSON response\n{name, url, type, description}
+    Backend --> Frontend: HTTP 200\nFlood endpoint data
+    Frontend -> ArcGIS: Create FeatureLayer\nwith flood URL
+    activate ArcGIS
+    ArcGIS --> Frontend: Flood layer data
+    deactivate ArcGIS
+    Frontend --> User: Display flood layer
+else Endpoint Not Found
+    MapRouter --> Backend: HTTPException(404)
+    Backend --> Frontend: HTTP 404\n"Endpoint type not found"
+    Frontend --> User: Show error message
+end
+
+deactivate MapRouter
+deactivate Backend
+deactivate Frontend
+
+== Get Available Types ==
+
+User -> Frontend: Request available\ndata types
+activate Frontend
+
+Frontend -> Backend: GET /map/types
+activate Backend
+
+Backend -> MapRouter: Route to get_map_types()
+activate MapRouter
+
+MapRouter -> MapRouter: Extract types from\nMAP_ENDPOINTS
+
+MapRouter --> Backend: {types: [...]}
+deactivate MapRouter
+
+Backend --> Frontend: HTTP 200\n["landslide", "flood",\n"poi", "population"]
+deactivate Backend
+
+Frontend --> User: Display type options
+deactivate Frontend
+
+== Error Handling ==
+
+User -> Frontend: Request invalid type
+activate Frontend
+
+Frontend -> Backend: GET /map/endpoints/invalid
+activate Backend
+
+Backend -> MapRouter: Route with\ntype="invalid"
+activate MapRouter
+
+MapRouter -> MapRouter: Search MAP_ENDPOINTS
+note right
+  Type "invalid" not found
+  in available endpoints
+end note
+
+MapRouter --> Backend: HTTPException(404)
+Backend --> Frontend: HTTP 404\n"Map endpoint type 'invalid'\nnot found. Available types:\nlandslide, flood, poi, population"
+deactivate MapRouter
+deactivate Backend
+
+Frontend --> User: Display error message\nwith available types
+deactivate Frontend
+
+note over Frontend, ArcGIS
+  **Data Flow Summary**
+  1. Frontend requests endpoints from backend API
+  2. Backend returns ArcGIS Feature Server URLs
+  3. Frontend uses URLs to create ArcGIS layers
+  4. Layers display disaster management data
+end note
+
+@enduml

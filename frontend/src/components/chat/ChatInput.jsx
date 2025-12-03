@@ -82,7 +82,7 @@ const ChatInput = ({
               onInputChange({ target: { value: transcript } });
 
               if (transcript.trim()) {
-                onSendMessageWithText(transcript);
+                onSendMessageWithText(transcript, 'voice');
               }
             } catch (err) {
               console.error('Voice transcription failed:', err);

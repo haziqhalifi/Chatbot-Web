@@ -151,8 +151,13 @@ export const faqAPI = {
 // Chat API endpoints
 export const chatAPI = {
   // Create a new chat session
-  createSession: (title = null) => {
-    return api.post('/chat/sessions', { title });
+  createSession: (title = null, aiProvider = null) => {
+    return api.post('/chat/sessions', { title, ai_provider: aiProvider });
+  },
+
+  // Get available AI providers
+  getProviders: () => {
+    return api.get('/chat/providers');
   },
 
   // Get user's chat sessions
@@ -189,11 +194,12 @@ export const chatAPI = {
     return api.delete(`/chat/sessions/${sessionId}`);
   },
   // Generate AI response with session context
-  generateResponse: (sessionId, prompt, ragEnabled = true) => {
+  generateResponse: (sessionId, prompt, ragEnabled = true, messageType = 'text') => {
     return api.post('/chat/generate', {
       session_id: sessionId,
       prompt: prompt,
       rag_enabled: ragEnabled,
+      message_type: messageType,
     });
   },
 };

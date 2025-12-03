@@ -6,6 +6,8 @@ import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
+import ChatHistory from './ChatHistory';
+import useUserProfile from '../../hooks/useUserProfile';
 
 const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const { token } = useAuth();
@@ -21,12 +23,12 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     isCreatingSession,
     canSendMessage,
     loadSession,
+    availableProviders,
+    providerDescriptions,
+    preferredProvider,
+    setPreferredProvider,
   } = useChat();
-
-  const [userProfile, setUserProfile] = useState(() => {
-    const saved = localStorage.getItem('tiara_user_profile');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const { userProfile } = useUserProfile();
 
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -41,6 +43,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const [exportType, setExportType] = useState('chat');
 
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -77,6 +80,28 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
   };
 
+  const activeProvider = currentSession?.ai_provider || preferredProvider;
+  const providerTooltip = providerDescriptions[preferredProvider] || 'Select AI provider';
+
+  const handleProviderChange = async (event) => {
+    const newProvider = event.target.value;
+    if (!availableProviders.includes(newProvider)) {
+      return;
+    }
+
+    const previousProvider = preferredProvider;
+    setPreferredProvider(newProvider);
+
+    if (!currentSession || currentSession.ai_provider !== newProvider) {
+      try {
+        await startNewChat(newProvider);
+      } catch (err) {
+        console.error('Failed to switch AI provider:', err);
+        setPreferredProvider(previousProvider);
+      }
+    }
+  };
+
   // Handle new chat button
   const handleNewChatClick = async () => {
     try {
@@ -103,60 +128,19 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   };
 
   // Handle voice message with text
-  const handleSendMessageWithText = async (text) => {
+  const handleSendMessageWithText = async (text, messageType = 'text') => {
     if (text.trim() === '' || !canSendMessage) return;
 
     const messageToSend = text.trim();
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+      await sendMessageWithSessionHandling(messageToSend, isRagEnabled, messageType);
     } catch (error) {
       console.error('Failed to send voice message:', error);
       setInputValue(messageToSend);
     }
   };
-
-  // Fetch user profile for avatar
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!token) return;
-
-      const savedProfile = localStorage.getItem('tiara_user_profile');
-      const profileTimestamp = localStorage.getItem('tiara_user_profile_timestamp');
-      const now = Date.now();
-      const CACHE_DURATION = 24 * 60 * 60 * 1000;
-
-      if (savedProfile && profileTimestamp && now - parseInt(profileTimestamp) < CACHE_DURATION) {
-        const cachedProfile = JSON.parse(savedProfile);
-        setUserProfile(cachedProfile);
-        return;
-      }
-
-      try {
-        console.log('Fetching fresh user profile data...');
-        const response = await api.get('/profile', {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 5000,
-        });
-
-        const profileData = response.data;
-        setUserProfile(profileData);
-        localStorage.setItem('tiara_user_profile', JSON.stringify(profileData));
-        localStorage.setItem('tiara_user_profile_timestamp', now.toString());
-        console.log('User profile cached in localStorage');
-      } catch (error) {
-        console.error('Failed to fetch user profile for chat:', error);
-        if (savedProfile) {
-          console.log('Using expired cached profile data as fallback');
-          const cachedProfile = JSON.parse(savedProfile);
-          setUserProfile(cachedProfile);
-        }
-      }
-    };
-
-    fetchUserProfile();
-  }, [token]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
@@ -205,68 +189,93 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     if (e.key === 'Enter' && canSendMessage) handleSendMessage();
   };
 
+  const handleOpenHistory = () => {
+    setShowHistory(true);
+  };
+
+  const handleCloseHistory = () => {
+    setShowHistory(false);
+  };
+
   return (
-    <div
-      className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
-      style={{
-        width: width || 380,
-        height: height || 600,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 320,
-        minHeight: 450,
-      }}
-    >
-      <ChatHeader
-        onClose={() => onClose(messages)}
-        onNewChat={handleNewChatClick}
-        onRagToggle={handleRagToggle}
-        isRagEnabled={isRagEnabled}
-        showExportDropdown={showExportDropdown}
-        setShowExportDropdown={setShowExportDropdown}
-        isExporting={isExporting}
-        setIsExporting={setIsExporting}
-        messages={messages}
-        width={width}
-        mapView={mapView}
-        exportType={exportType}
-        setExportType={setExportType}
+    <>
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        isOpen={showHistory}
+        onClose={handleCloseHistory}
+        currentSessionId={currentSession?.id}
       />
 
-      <ChatMessages
-        ref={chatContainerRef}
-        displayMessages={displayMessages}
-        userProfile={userProfile}
-        isListening={isListening}
-        isTranscribing={isTranscribing}
-        chatEndRef={chatEndRef}
-        height={height}
-        width={width}
-      />
+      {/* Chat Box */}
+      <div
+        className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
+        style={{
+          width: width || 380,
+          height: height || 600,
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 320,
+          minHeight: 450,
+        }}
+      >
+        <ChatHeader
+          onClose={() => onClose(messages)}
+          onNewChat={handleNewChatClick}
+          onRagToggle={handleRagToggle}
+          isRagEnabled={isRagEnabled}
+          showExportDropdown={showExportDropdown}
+          setShowExportDropdown={setShowExportDropdown}
+          isExporting={isExporting}
+          setIsExporting={setIsExporting}
+          messages={messages}
+          width={width}
+          mapView={mapView}
+          exportType={exportType}
+          setExportType={setExportType}
+          aiProviders={availableProviders}
+          selectedProvider={preferredProvider}
+          activeProvider={activeProvider}
+          onProviderChange={handleProviderChange}
+          providerTooltip={providerTooltip}
+          disableProviderSelect={isSending || isCreatingSession}
+          onOpenHistory={handleOpenHistory}
+        />
 
-      <ChatInput
-        inputValue={inputValue}
-        onInputChange={handleInputChange}
-        onKeyPress={handleKeyPress}
-        onSendMessage={handleSendMessage}
-        onSendMessageWithText={handleSendMessageWithText}
-        isListening={isListening}
-        setIsListening={setIsListening}
-        audioLevel={audioLevel}
-        setAudioLevel={setAudioLevel}
-        canSendMessage={canSendMessage}
-        mediaRecorderRef={mediaRecorderRef}
-        audioChunksRef={audioChunksRef}
-        audioContextRef={audioContextRef}
-        analyserRef={analyserRef}
-        sourceRef={sourceRef}
-        animationFrameRef={animationFrameRef}
-        width={width}
-        isTranscribing={isTranscribing}
-        setIsTranscribing={setIsTranscribing}
-      />
-    </div>
+        <ChatMessages
+          ref={chatContainerRef}
+          displayMessages={displayMessages}
+          userProfile={userProfile}
+          isListening={isListening}
+          isTranscribing={isTranscribing}
+          chatEndRef={chatEndRef}
+          height={height}
+          width={width}
+        />
+
+        <ChatInput
+          inputValue={inputValue}
+          onInputChange={handleInputChange}
+          onKeyPress={handleKeyPress}
+          onSendMessage={handleSendMessage}
+          onSendMessageWithText={handleSendMessageWithText}
+          isListening={isListening}
+          setIsListening={setIsListening}
+          audioLevel={audioLevel}
+          setAudioLevel={setAudioLevel}
+          canSendMessage={canSendMessage}
+          mediaRecorderRef={mediaRecorderRef}
+          audioChunksRef={audioChunksRef}
+          audioContextRef={audioContextRef}
+          analyserRef={analyserRef}
+          sourceRef={sourceRef}
+          animationFrameRef={animationFrameRef}
+          width={width}
+          isTranscribing={isTranscribing}
+          setIsTranscribing={setIsTranscribing}
+        />
+      </div>
+    </>
   );
 };
 

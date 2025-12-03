@@ -20,6 +20,7 @@ const MapView = ({ onMapViewReady }) => {
   const [showLayerList, setShowLayerList] = useState(false);
   const [showLayerInfo, setShowLayerInfo] = useState(null);
   const [showOpacityControl, setShowOpacityControl] = useState(null);
+  const [apiEndpoints, setApiEndpoints] = useState([]);
   const [layers, setLayers] = useState([
     {
       id: 'malaysia-boundaries',
@@ -30,36 +31,7 @@ const MapView = ({ onMapViewReady }) => {
       description: 'Administrative boundaries of Malaysia states and districts',
       opacity: 0.8,
       color: [0, 0, 0, 0.8],
-    },
-    {
-      id: 'flood-risk-malaysia',
-      name: 'Flood Risk Zones (Malaysia)',
-      visible: true,
-      type: 'feature',
-      icon: 'Droplets',
-      description: 'Areas at risk of flooding during monsoon seasons in Malaysia',
-      opacity: 0.5,
-      color: [0, 0, 255, 0.3],
-    },
-    {
-      id: 'landslide-risk-malaysia',
-      name: 'Landslide Risk Areas (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'Mountain',
-      description: 'Areas prone to landslides and slope failures in Malaysia',
-      opacity: 0.6,
-      color: [139, 69, 19, 0.4],
-    },
-    {
-      id: 'forest-cover-malaysia',
-      name: 'Forest Cover (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'TreePine',
-      description: 'Forest cover and protected natural areas in Malaysia',
-      opacity: 0.6,
-      color: [0, 128, 0, 0.4],
+      isStatic: true, // Mark as static layer (not from API)
     },
     {
       id: 'emergency-services-malaysia',
@@ -70,46 +42,7 @@ const MapView = ({ onMapViewReady }) => {
       description: 'Hospitals, police stations, fire stations, and emergency response centers',
       opacity: 1.0,
       color: [0, 0, 255, 0.8],
-    },
-    {
-      id: 'earthquake-risk-malaysia',
-      name: 'Earthquake Risk Zones (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'AlertTriangle',
-      description: 'Areas at risk of earthquakes in Malaysia',
-      opacity: 0.7,
-      color: [255, 0, 0, 0.3],
-    },
-    {
-      id: 'tsunami-risk-malaysia',
-      name: 'Tsunami Risk Zones (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'AlertTriangle',
-      description: 'Coastal areas at risk of tsunamis in Malaysia',
-      opacity: 0.5,
-      color: [255, 165, 0, 0.4],
-    },
-    {
-      id: 'population-density-malaysia',
-      name: 'Population Density (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'Building',
-      description: 'Population density across Malaysia for evacuation planning',
-      opacity: 0.6,
-      color: [128, 0, 128, 0.3],
-    },
-    {
-      id: 'transportation-network-malaysia',
-      name: 'Transportation Network (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'MapPin',
-      description: 'Major roads, highways, and transportation infrastructure',
-      opacity: 0.8,
-      color: [255, 255, 0, 0.8],
+      isStatic: true, // Mark as static layer (not from API)
     },
   ]);
   const [layerGraphics, setLayerGraphics] = useState(new Map());
@@ -202,14 +135,182 @@ const MapView = ({ onMapViewReady }) => {
     }
   }, [mapView, onMapViewReady]);
 
+  // Fetch map endpoints from API and merge with existing layers
+  useEffect(() => {
+    const fetchMapEndpoints = async () => {
+      try {
+        console.log('Fetching map endpoints from API...');
+        const response = await fetch('http://localhost:8000/map/endpoints');
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Map endpoints fetched:', data.endpoints);
+
+        setApiEndpoints(data.endpoints);
+
+        // Map API endpoints to layer configuration
+        const apiLayers = data.endpoints.map((endpoint) => {
+          let icon = 'MapPin';
+          let color = [0, 0, 255, 0.3];
+
+          // Map endpoint types to icons and colors
+          switch (endpoint.type) {
+            case 'flood':
+              icon = 'Droplets';
+              color = [0, 0, 255, 0.3];
+              break;
+            case 'landslide':
+              icon = 'Mountain';
+              color = [139, 69, 19, 0.4];
+              break;
+            case 'poi':
+              icon = 'MapPin';
+              color = [255, 0, 0, 0.8];
+              break;
+            case 'population':
+              icon = 'Building';
+              color = [128, 0, 128, 0.3];
+              break;
+            default:
+              icon = 'AlertTriangle';
+              color = [255, 165, 0, 0.4];
+          }
+
+          return {
+            id: `api-${endpoint.type}`,
+            name: endpoint.name,
+            visible: endpoint.type === 'flood' || endpoint.type === 'landslide', // Show flood and landslide by default
+            type: 'api-feature',
+            icon: icon,
+            description: endpoint.description,
+            opacity: 0.5,
+            color: color,
+            url: endpoint.url, // Store the ArcGIS Feature Server URL
+            apiType: endpoint.type,
+          };
+        });
+
+        // Merge API layers with existing static layers
+        setLayers((prevLayers) => {
+          const staticLayers = prevLayers.filter((layer) => layer.isStatic);
+          return [...staticLayers, ...apiLayers];
+        });
+
+        console.log('Layers updated with API data');
+      } catch (error) {
+        console.error('Error fetching map endpoints:', error);
+        // Continue with existing layers if API fails
+      }
+    };
+
+    const fetchNadmaDisasters = async () => {
+      try {
+        console.log('Fetching NADMA disasters from API...');
+        const response = await fetch('http://localhost:8000/map/nadma/disasters', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('NADMA disasters fetched:', result);
+
+        // Add NADMA disasters as a layer
+        const nadmaLayer = {
+          id: 'nadma-disasters',
+          name: 'NADMA Real-time Disasters',
+          visible: true,
+          type: 'nadma-feature',
+          icon: 'AlertTriangle',
+          description: 'Real-time disaster data from NADMA MyDIMS',
+          opacity: 1.0,
+          color: [255, 0, 0, 0.8],
+          nadmaData: result.data,
+          isStatic: false,
+        };
+
+        setLayers((prevLayers) => [...prevLayers, nadmaLayer]);
+        console.log('NADMA layer added to map');
+      } catch (error) {
+        console.error('Error fetching NADMA disasters:', error);
+      }
+    };
+
+    fetchMapEndpoints();
+    fetchNadmaDisasters();
+  }, []); // Run once on mount
+
+  // Generate ArcGIS token for authentication
+  const generateArcGISToken = async () => {
+    try {
+      const params = new URLSearchParams({
+        username: 'kleos_dev',
+        password: 'Pass@1234',
+        client: 'referer',
+        referer: window.location.origin,
+        expiration: 120,
+        f: 'json',
+      });
+
+      const response = await fetch('https://www.arcgis.com/sharing/rest/generateToken', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params,
+      });
+
+      const json = await response.json();
+      console.log('ArcGIS Token generated successfully');
+      return json.token;
+    } catch (error) {
+      console.error('Failed to generate ArcGIS token:', error);
+      return null;
+    }
+  };
+
   const initializeMap = async () => {
     try {
       setLoading(true);
-      setLoadingMessage('Initializing map...');
+      setLoadingMessage('Authenticating with ArcGIS...');
       console.log('Initializing map...');
 
+      // Generate token first
+      const token = await generateArcGISToken();
+      if (!token) {
+        console.warn('Failed to generate token, continuing without authentication');
+      }
+
+      setLoadingMessage('Loading map modules...');
+
       // Import ArcGIS modules with different variable names to avoid conflicts
-      let ArcGISMapView, ArcGISMap, ArcGISBasemap;
+      let ArcGISMapView, ArcGISMap, ArcGISBasemap, ArcGISWebMap, esriConfig;
+
+      // Import esriConfig first to set up token authentication
+      try {
+        const esriConfigModule = await import('@arcgis/core/config');
+        esriConfig = esriConfigModule.default;
+        console.log('esriConfig imported successfully');
+
+        // Configure token authentication if token is available
+        if (token && esriConfig) {
+          esriConfig.request.interceptors.push({
+            urls: /arcgis\.com/,
+            before: function (params) {
+              params.requestOptions.query = params.requestOptions.query || {};
+              params.requestOptions.query.token = token;
+            },
+          });
+          console.log('Token interceptor configured successfully');
+        }
+      } catch (configError) {
+        console.error('Failed to import esriConfig:', configError);
+      }
 
       try {
         const mapViewModule = await import('@arcgis/core/views/MapView');
@@ -231,6 +332,16 @@ const MapView = ({ onMapViewReady }) => {
         throw mapError;
       }
 
+      // Import WebMap for secured web maps
+      try {
+        const webMapModule = await import('@arcgis/core/WebMap');
+        ArcGISWebMap = webMapModule.default || webMapModule.WebMap;
+        console.log('WebMap imported successfully');
+      } catch (webMapError) {
+        console.log('Failed to import WebMap:', webMapError);
+        ArcGISWebMap = null;
+      }
+
       // Try different ways to import Basemap
       try {
         const basemapModule = await import('@arcgis/core/Basemap');
@@ -244,72 +355,133 @@ const MapView = ({ onMapViewReady }) => {
       console.log('ArcGIS modules imported:', {
         MapView: ArcGISMapView,
         Map: ArcGISMap,
+        WebMap: ArcGISWebMap,
         Basemap: ArcGISBasemap,
+        esriConfig: esriConfig,
       });
 
-      // Validate that we have the required constructors
-      if (typeof ArcGISMap !== 'function') {
-        throw new Error(`ArcGISMap is not a constructor. Got: ${typeof ArcGISMap}`);
-      }
-      if (typeof ArcGISMapView !== 'function') {
-        throw new Error(`ArcGISMapView is not a constructor. Got: ${typeof ArcGISMapView}`);
-      }
+      setLoadingMessage('Creating map...');
 
-      // Create a simple map without basemap to avoid import issues
-      const map = new ArcGISMap();
-      console.log('Map created successfully');
+      // Use secured WebMap from index.html with all its layers
+      let map;
+      const useSecuredWebMap = true; // Using the WebMap from index.html by default
 
-      // Add a basemap after creation
-      try {
-        if (ArcGISBasemap && ArcGISBasemap.fromId) {
-          const basemap = ArcGISBasemap.fromId('streets-vector');
-          map.basemap = basemap;
-          console.log('Basemap added successfully');
-        } else {
-          console.log('Basemap.fromId not available, using default');
-          // Try using a simple basemap string
-          map.basemap = 'streets-vector';
-        }
-      } catch (basemapError) {
-        console.log('Failed to add basemap, using default:', basemapError);
-        // Final fallback
+      if (useSecuredWebMap && ArcGISWebMap && token) {
+        console.log('Creating secured WebMap with ID: 9186757d793f4b0d87d58a65ae16c736');
         try {
-          map.basemap = 'streets-vector';
-        } catch (finalError) {
-          console.log('All basemap methods failed, continuing without basemap');
+          map = new ArcGISWebMap({
+            portalItem: {
+              id: '9186757d793f4b0d87d58a65ae16c736', // WebMap ID from index.html
+            },
+          });
+          console.log(
+            'Secured WebMap created successfully - all layers will be loaded from WebMap'
+          );
+        } catch (webMapError) {
+          console.error('Failed to create WebMap, falling back to basic map:', webMapError);
+          map = new ArcGISMap();
+        }
+      } else {
+        console.log('Token not available or WebMap module not loaded, using basic map');
+
+        // Validate that we have the required constructors
+        if (typeof ArcGISMap !== 'function') {
+          throw new Error(`ArcGISMap is not a constructor. Got: ${typeof ArcGISMap}`);
+        }
+        if (typeof ArcGISMapView !== 'function') {
+          throw new Error(`ArcGISMapView is not a constructor. Got: ${typeof ArcGISMapView}`);
+        }
+
+        // Create a simple map without basemap to avoid import issues
+        map = new ArcGISMap();
+        console.log('Basic map created successfully');
+
+        // Add a basemap after creation
+        try {
+          if (ArcGISBasemap && ArcGISBasemap.fromId) {
+            const basemap = ArcGISBasemap.fromId('streets-vector');
+            map.basemap = basemap;
+            console.log('Basemap added successfully');
+          } else {
+            console.log('Basemap.fromId not available, using default');
+            // Try using a simple basemap string
+            map.basemap = 'streets-vector';
+          }
+        } catch (basemapError) {
+          console.log('Failed to add basemap, using default:', basemapError);
+          // Final fallback
+          try {
+            map.basemap = 'streets-vector';
+          } catch (finalError) {
+            console.log('All basemap methods failed, continuing without basemap');
+          }
         }
       }
 
-      // Create the view
+      // Create the view with settings from index.html
       const view = new ArcGISMapView({
         container: mapRef.current,
         map: map,
-        zoom: 6,
-        center: [101.6869, 3.139], // Kuala Lumpur
+        center: [101.58, 3.08], // Petaling (from index.html)
+        zoom: 11, // Zoom level from index.html
         constraints: {
           minZoom: 3, // Prevents zooming out too far
+        },
+        ui: {
+          components: [], // Remove all default UI components to avoid duplicates
         },
       });
 
       console.log('Map view created successfully');
       setMapView(view);
-      setLoadingMessage('Map view ready, initializing layers...');
+      setLoadingMessage('Map view ready, loading layers...');
 
       // Wait for view to be ready
       await view.when();
       console.log('View is ready');
 
-      // Initialize layers
-      await initializeLayers(view);
+      // Wait for map to load (especially important for WebMap)
+      if (map.load) {
+        await map.load();
+        console.log('Map loaded successfully');
+
+        // Log all layers from the WebMap
+        if (map.layers && map.layers.length > 0) {
+          console.log(`WebMap contains ${map.layers.length} layers:`);
+          map.layers.forEach((layer, index) => {
+            console.log(`  Layer ${index + 1}: ${layer.title || layer.id} (${layer.type})`);
+          });
+        }
+      }
+
+      // Initialize basic navigation widgets (like in index.html)
+      await initializeBasicWidgets(view);
+
+      // Only initialize custom layers if not using WebMap (WebMap has its own layers)
+      if (!useSecuredWebMap) {
+        await initializeLayers(view);
+      } else {
+        console.log('Using WebMap layers - skipping custom layer initialization');
+        setLoading(false);
+      }
 
       // Initialize Bookmarks widget
       await initializeBookmarks(view);
 
-      // Initialize LayerList widget
+      // Initialize LayerList widget (will show WebMap layers)
       await initializeLayerList(view);
 
       // Initialize BasemapGallery widget
       await initializeBasemapGallery(view);
+
+      // Initialize Search widget
+      await initializeSearchWidget(view);
+
+      // Initialize Legend widget (from index.html)
+      await initializeLegendWidget(view);
+
+      // Initialize coordinate display (like in index.html)
+      initializeCoordinateDisplay(view);
     } catch (error) {
       console.error('Failed to initialize map:', error);
       setLoading(false);
@@ -654,8 +826,100 @@ const MapView = ({ onMapViewReady }) => {
             });
             break;
 
+          case 'nadma-disasters':
+            // Handle NADMA disasters layer
+            console.log('Creating NADMA disasters layer...');
+            graphicsLayer = new GraphicsLayer({
+              title: layer.name,
+              visible: layer.visible,
+              opacity: layer.opacity,
+            });
+
+            // Add disaster points from NADMA data
+            if (layer.nadmaData && Array.isArray(layer.nadmaData)) {
+              console.log(`Adding ${layer.nadmaData.length} NADMA disaster points`);
+
+              layer.nadmaData.forEach((disaster) => {
+                // Extract coordinates - adjust these field names based on actual NADMA API response
+                const lat = disaster.latitude || disaster.lat || disaster.location?.latitude;
+                const lon =
+                  disaster.longitude ||
+                  disaster.lng ||
+                  disaster.lon ||
+                  disaster.location?.longitude;
+
+                if (lat && lon) {
+                  const point = new Point({
+                    longitude: lon,
+                    latitude: lat,
+                    spatialReference: { wkid: 4326 },
+                  });
+
+                  const symbol = new SimpleMarkerSymbol({
+                    style: 'circle',
+                    color: [255, 0, 0, 0.8],
+                    size: '12px',
+                    outline: {
+                      color: [255, 255, 255],
+                      width: 2,
+                    },
+                  });
+
+                  const graphic = new Graphic({
+                    geometry: point,
+                    symbol: symbol,
+                    attributes: {
+                      name: disaster.name || disaster.title || 'Disaster',
+                      type: disaster.type || disaster.disaster_type || 'Unknown',
+                      description: disaster.description || disaster.details || '',
+                      status: disaster.status || 'Active',
+                      ...disaster,
+                    },
+                    popupTemplate: {
+                      title: '{name}',
+                      content: `
+                        <b>Type:</b> {type}<br>
+                        <b>Status:</b> {status}<br>
+                        <b>Description:</b> {description}
+                      `,
+                    },
+                  });
+
+                  graphicsLayer.add(graphic);
+                }
+              });
+
+              console.log(`Added ${graphicsLayer.graphics.length} disaster points to map`);
+            }
+            break;
+
           default:
-            // Create a generic polygon for other layers
+            // Check if this is an API-based layer with a URL
+            if (layer.type === 'api-feature' && layer.url) {
+              console.log(`Creating API-based FeatureLayer for: ${layer.name}`);
+              console.log(`Using URL: ${layer.url}`);
+
+              // Create a FeatureLayer from the API endpoint URL
+              const apiLayer = new FeatureLayer({
+                url: layer.url,
+                title: layer.name,
+                visible: layer.visible,
+                opacity: layer.opacity,
+                outFields: ['*'],
+                popupTemplate: {
+                  title: layer.name,
+                  content: layer.description,
+                },
+              });
+
+              view.map.add(apiLayer);
+              newLayerGraphics.set(layer.id, apiLayer);
+              console.log(`Added API layer: ${layer.name}`);
+              break;
+            }
+
+            // Fallback: Create a generic placeholder polygon for other layers
+            console.log(`Creating generic placeholder for: ${layer.name}`);
             graphicsLayer = new GraphicsLayer({
               title: layer.name,
               visible: layer.visible,
@@ -709,6 +973,104 @@ const MapView = ({ onMapViewReady }) => {
     } finally {
       setLoading(false);
       console.log('Layer initialization complete');
+    }
+  };
+
+  // Initialize basic navigation widgets (Zoom, Home, Compass, ScaleBar)
+  const initializeBasicWidgets = async (view) => {
+    try {
+      console.log('Initializing basic navigation widgets...');
+      setLoadingMessage('Setting up navigation tools...');
+
+      // Import widget modules
+      const zoomModule = await import('@arcgis/core/widgets/Zoom');
+      const Zoom = zoomModule.default || zoomModule.Zoom;
+
+      const homeModule = await import('@arcgis/core/widgets/Home');
+      const Home = homeModule.default || homeModule.Home;
+
+      const compassModule = await import('@arcgis/core/widgets/Compass');
+      const Compass = compassModule.default || compassModule.Compass;
+
+      const scaleBarModule = await import('@arcgis/core/widgets/ScaleBar');
+      const ScaleBar = scaleBarModule.default || scaleBarModule.ScaleBar;
+
+      // Add Zoom widget
+      view.ui.add(new Zoom({ view }), 'top-left');
+
+      // Add Home widget
+      view.ui.add(new Home({ view }), 'top-left');
+
+      // Add Compass widget
+      view.ui.add(new Compass({ view }), 'top-left');
+
+      // Add ScaleBar widget
+      const scaleBar = new ScaleBar({ view, unit: 'metric' });
+      view.ui.add(scaleBar, 'bottom-left');
+
+      console.log('Basic navigation widgets initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize basic widgets:', error);
+    }
+  };
+
+  // Initialize Search widget
+  const initializeSearchWidget = async (view) => {
+    try {
+      console.log('Initializing Search widget...');
+
+      const searchModule = await import('@arcgis/core/widgets/Search');
+      const Search = searchModule.default || searchModule.Search;
+
+      const expandModule = await import('@arcgis/core/widgets/Expand');
+      const Expand = expandModule.default || expandModule.Expand;
+
+      const searchWidget = new Search({ view });
+
+      const searchExpand = new Expand({
+        view: view,
+        content: searchWidget,
+        expanded: false,
+        expandIconClass: 'esri-icon-search',
+        expandTooltip: 'Search',
+        mode: 'floating',
+      });
+
+      view.ui.add(searchExpand, 'top-left');
+      console.log('Search widget initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Search widget:', error);
+    }
+  };
+
+  // Initialize coordinate display (like in index.html)
+  const initializeCoordinateDisplay = (view) => {
+    try {
+      console.log('Initializing coordinate display...');
+
+      // Create coordinate display div
+      const coordDiv = document.createElement('div');
+      coordDiv.style.background = 'white';
+      coordDiv.style.padding = '6px';
+      coordDiv.style.fontFamily = 'Arial';
+      coordDiv.style.fontSize = '12px';
+      coordDiv.style.borderRadius = '4px';
+      coordDiv.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
+      coordDiv.innerHTML = 'Lon: 0.00000<br>Lat: 0.00000';
+
+      view.ui.add(coordDiv, 'bottom-right');
+
+      // Update coordinates on pointer move
+      view.on('pointer-move', (evt) => {
+        const point = view.toMap(evt);
+        if (point) {
+          coordDiv.innerHTML = `Lon: ${point.longitude.toFixed(5)}<br>Lat: ${point.latitude.toFixed(5)}`;
+        }
+      });
+
+      console.log('Coordinate display initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize coordinate display:', error);
     }
   };
 
@@ -832,7 +1194,7 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      // Add the widget to the top-left corner of the view
+      // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(layerListExpand, 'top-left');
 
       console.log('LayerList widget initialized successfully');
@@ -874,12 +1236,43 @@ const MapView = ({ onMapViewReady }) => {
         mode: 'floating',
       });
 
-      // Add the widget to the top-left corner of the view (below bookmarks)
+      // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(basemapExpand, 'top-left');
 
       console.log('BasemapGallery widget initialized successfully');
     } catch (error) {
       console.error('Failed to initialize BasemapGallery widget:', error);
+    }
+  };
+
+  // Initialize Legend widget (from index.html)
+  const initializeLegendWidget = async (view) => {
+    try {
+      console.log('Initializing Legend widget...');
+
+      const legendModule = await import('@arcgis/core/widgets/Legend');
+      const Legend = legendModule.default || legendModule.Legend;
+
+      const expandModule = await import('@arcgis/core/widgets/Expand');
+      const Expand = expandModule.default || expandModule.Expand;
+
+      const legend = new Legend({
+        view: view,
+      });
+
+      const legendExpand = new Expand({
+        view: view,
+        content: legend,
+        expanded: false,
+        expandIconClass: 'esri-icon-legend',
+        expandTooltip: 'Legend',
+        mode: 'floating',
+      });
+
+      view.ui.add(legendExpand, 'top-left');
+      console.log('Legend widget initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Legend widget:', error);
     }
   };
 
