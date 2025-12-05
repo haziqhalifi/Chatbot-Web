@@ -2,6 +2,7 @@ from .connection import DatabaseConnection
 from .users import update_users_table
 from .chat import create_chat_tables
 from .faq import create_faq_table, insert_default_faqs
+from .nadma import create_nadma_tables
 
 def update_database_schema():
     """Update database schema including all tables"""
@@ -20,6 +21,9 @@ def update_database_schema():
     
     # Create password reset tokens table
     create_password_reset_tokens_table()
+    
+    # Create NADMA disaster tables
+    create_nadma_tables()
 
 def create_notifications_table():
     """Create notifications table if it doesn't exist"""

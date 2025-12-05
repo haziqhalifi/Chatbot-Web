@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import httpx
 import os
 from dotenv import load_dotenv
+from ..services.nadma_service import nadma_service
 
 load_dotenv()
 
@@ -178,3 +179,120 @@ async def get_nadma_disasters_get():
         dict: Disaster data from NADMA API
     """
     return await get_nadma_disasters(filters=None)
+
+@router.post("/nadma/sync")
+async def sync_nadma_disasters(filters: Optional[Dict[str, Any]] = None):
+    """
+    Sync disaster data from NADMA API to database
+    
+    This endpoint fetches data from NADMA MyDIMS API and saves it to the local database.
+    
+    Args:
+        filters: Optional dictionary of filters to apply to the disaster data
+        
+    Returns:
+        dict: Sync statistics (success count, failed count, new records, updated records)
+    """
+    try:
+        result = await nadma_service.sync_from_api(filters)
+        
+        if not result["success"]:
+            raise HTTPException(
+                status_code=500,
+                detail=result.get("error", "Failed to sync disasters")
+            )
+        
+        return {
+            "success": True,
+            "message": result["message"],
+            "statistics": result["stats"]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error syncing NADMA data: {str(e)}"
+        )
+
+@router.get("/nadma/disasters/db")
+def get_nadma_disasters_from_db(
+    status: Optional[str] = None,
+    limit: int = 100
+):
+    """
+    Get disaster data from local database
+    
+    Args:
+        status: Filter by status (Aktif, Selesai, etc.)
+        limit: Maximum number of records to return (default 100)
+        
+    Returns:
+        dict: List of disasters from database
+    """
+    try:
+        disasters = nadma_service.get_disasters(status=status, limit=limit)
+        
+        return {
+            "success": True,
+            "count": len(disasters),
+            "data": disasters
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving disasters from database: {str(e)}"
+        )
+
+@router.get("/nadma/statistics")
+def get_nadma_statistics():
+    """
+    Get statistics about stored NADMA disasters
+    
+    Returns:
+        dict: Statistics including total, active, by category, by state, special cases
+    """
+    try:
+        stats = nadma_service.get_statistics()
+        
+        return {
+            "success": True,
+            "statistics": stats
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving statistics: {str(e)}"
+        )
+
+@router.post("/nadma/init-db")
+def initialize_nadma_database():
+    """
+    Initialize NADMA database tables
+    
+    Creates all necessary tables for storing NADMA disaster data.
+    Safe to call multiple times (checks if tables exist).
+    
+    Returns:
+        dict: Success status
+    """
+    try:
+        success = nadma_service.initialize_database()
+        
+        if success:
+            return {
+                "success": True,
+                "message": "NADMA database tables created successfully"
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to create NADMA database tables"
+            )
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error initializing database: {str(e)}"
+        )
