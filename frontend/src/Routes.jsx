@@ -17,12 +17,14 @@ import Report from './pages/Report';
 import NotificationSettings from './pages/NotificationSettings';
 import AdminNotifications from './pages/AdminPage/AdminNotifications';
 import ResetPassword from './pages/ResetPassword';
+import DisasterDashboard from './pages/DisasterDashboard';
 
 const AppRoutes = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/disaster-dashboard" element={<DisasterDashboard />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/signin" element={<AdminSignIn />} />
