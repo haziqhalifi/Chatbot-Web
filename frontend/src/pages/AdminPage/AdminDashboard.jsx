@@ -657,9 +657,7 @@ const AdminDashboard = () => {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <AlertTriangle className="h-6 w-6 text-orange-600" />
-                <h2 className="text-xl font-bold text-gray-900">
-                  Disaster #{selectedDisaster.id}
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900">Disaster #{selectedDisaster.id}</h2>
                 {selectedDisaster.bencana_khas?.toLowerCase() === 'ya' && (
                   <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                     SPECIAL CASE
@@ -803,15 +801,11 @@ const AdminDashboard = () => {
 
               {/* Additional Information */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                  Additional Information
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Information</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-600">Disaster ID:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      #{selectedDisaster.id}
-                    </span>
+                    <span className="ml-2 font-medium text-gray-900">#{selectedDisaster.id}</span>
                   </div>
                   <div>
                     <span className="text-gray-600">Special Case:</span>
