@@ -208,10 +208,17 @@ const MapView = ({ onMapViewReady }) => {
 
     const fetchNadmaDisasters = async () => {
       try {
-        console.log('Fetching NADMA disasters from API...');
-        const response = await fetch('http://localhost:8000/map/nadma/disasters', {
+        console.log('Fetching NADMA disasters directly from NADMA API...');
+        const NADMA_API_URL = 'https://mydims.nadma.gov.my/api/disasters';
+        const NADMA_TOKEN = '6571756|yN5L6StiHQOlyouD5FjmMFBOeywAxjPE79x0m7n843ac4e63';
+
+        const response = await fetch(NADMA_API_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            Authorization: `Bearer ${NADMA_TOKEN}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
           body: JSON.stringify({}),
         });
 
@@ -232,7 +239,7 @@ const MapView = ({ onMapViewReady }) => {
           description: 'Real-time disaster data from NADMA MyDIMS',
           opacity: 1.0,
           color: [255, 0, 0, 0.8],
-          nadmaData: result.data,
+          nadmaData: Array.isArray(result) ? result : result.data || [],
           isStatic: false,
         };
 
@@ -840,48 +847,149 @@ const MapView = ({ onMapViewReady }) => {
               console.log(`Adding ${layer.nadmaData.length} NADMA disaster points`);
 
               layer.nadmaData.forEach((disaster) => {
-                // Extract coordinates - adjust these field names based on actual NADMA API response
-                const lat = disaster.latitude || disaster.lat || disaster.location?.latitude;
-                const lon =
-                  disaster.longitude ||
-                  disaster.lng ||
-                  disaster.lon ||
-                  disaster.location?.longitude;
+                // Extract coordinates from NADMA API format
+                const lat = parseFloat(disaster.latitude);
+                const lon = parseFloat(disaster.longitude);
 
-                if (lat && lon) {
+                if (lat && lon && !isNaN(lat) && !isNaN(lon)) {
                   const point = new Point({
                     longitude: lon,
                     latitude: lat,
                     spatialReference: { wkid: 4326 },
                   });
 
+                  // Get disaster category color and icon
+                  const kategoriName = disaster.kategori?.name || 'Unknown';
+                  let symbolColor = [255, 0, 0, 0.8]; // Default red
+
+                  // Color code by disaster type
+                  if (
+                    kategoriName.toLowerCase().includes('banjir') ||
+                    kategoriName.toLowerCase().includes('flood')
+                  ) {
+                    symbolColor = [0, 123, 255, 0.8]; // Blue for floods
+                  } else if (
+                    kategoriName.toLowerCase().includes('tanah runtuh') ||
+                    kategoriName.toLowerCase().includes('landslide')
+                  ) {
+                    symbolColor = [255, 193, 7, 0.8]; // Amber for landslides
+                  } else if (
+                    kategoriName.toLowerCase().includes('kebakaran') ||
+                    kategoriName.toLowerCase().includes('fire')
+                  ) {
+                    symbolColor = [255, 87, 34, 0.8]; // Orange for fires
+                  } else if (
+                    kategoriName.toLowerCase().includes('ribut') ||
+                    kategoriName.toLowerCase().includes('storm')
+                  ) {
+                    symbolColor = [156, 39, 176, 0.8]; // Purple for storms
+                  }
+
+                  // Use different marker styles based on status
+                  const isActive = disaster.status?.toLowerCase() === 'aktif';
                   const symbol = new SimpleMarkerSymbol({
-                    style: 'circle',
-                    color: [255, 0, 0, 0.8],
-                    size: '12px',
+                    style: isActive ? 'circle' : 'square',
+                    color: symbolColor,
+                    size: disaster.bencana_khas?.toLowerCase() === 'ya' ? '16px' : '12px',
                     outline: {
-                      color: [255, 255, 255],
-                      width: 2,
+                      color:
+                        disaster.bencana_khas?.toLowerCase() === 'ya'
+                          ? [255, 255, 0]
+                          : [255, 255, 255],
+                      width: disaster.bencana_khas?.toLowerCase() === 'ya' ? 3 : 2,
                     },
                   });
+
+                  // Create detailed popup content
+                  const popupContent = `
+                    <div style="font-family: Arial, sans-serif;">
+                      <div style="margin-bottom: 12px;">
+                        <strong style="font-size: 16px; color: #1a73e8;">Disaster #${disaster.id}</strong>
+                        ${
+                          disaster.bencana_khas?.toLowerCase() === 'ya'
+                            ? '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">SPECIAL CASE</span>'
+                            : ''
+                        }
+                      </div>
+                      
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold; width: 40%;">Category:</td>
+                          <td style="padding: 4px 0;">${kategoriName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Status:</td>
+                          <td style="padding: 4px 0;">
+                            <span style="background: ${isActive ? '#ff9800' : '#4caf50'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">
+                              ${disaster.status || 'N/A'}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Location:</td>
+                          <td style="padding: 4px 0;">${disaster.district?.name || 'N/A'}, ${disaster.state?.name || 'N/A'}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Started:</td>
+                          <td style="padding: 4px 0;">${disaster.datetime_start ? new Date(disaster.datetime_start).toLocaleString() : 'N/A'}</td>
+                        </tr>
+                        ${
+                          disaster.case
+                            ? `
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Relief Centers:</td>
+                          <td style="padding: 4px 0;">${disaster.case.jumlah_pps || 0} centers</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Families Affected:</td>
+                          <td style="padding: 4px 0;">${disaster.case.jumlah_keluarga || 0} families</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 4px 0; font-weight: bold;">Total Victims:</td>
+                          <td style="padding: 4px 0;">${disaster.case.jumlah_mangsa || 0} people</td>
+                        </tr>
+                        `
+                            : ''
+                        }
+                        ${
+                          disaster.description
+                            ? `
+                        <tr>
+                          <td colspan="2" style="padding: 8px 0;">
+                            <strong>Description:</strong><br>
+                            ${disaster.description}
+                          </td>
+                        </tr>
+                        `
+                            : ''
+                        }
+                      </table>
+                      
+                      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #ddd;">
+                        <a href="https://maps.google.com/?q=${lat},${lon}" target="_blank" 
+                           style="color: #1a73e8; text-decoration: none; font-weight: bold;">
+                          📍 View on Google Maps
+                        </a>
+                      </div>
+                    </div>
+                  `;
 
                   const graphic = new Graphic({
                     geometry: point,
                     symbol: symbol,
                     attributes: {
-                      name: disaster.name || disaster.title || 'Disaster',
-                      type: disaster.type || disaster.disaster_type || 'Unknown',
-                      description: disaster.description || disaster.details || '',
-                      status: disaster.status || 'Active',
+                      id: disaster.id,
+                      name: `Disaster #${disaster.id}`,
+                      type: kategoriName,
+                      status: disaster.status,
+                      state: disaster.state?.name,
+                      district: disaster.district?.name,
+                      specialCase: disaster.bencana_khas,
                       ...disaster,
                     },
                     popupTemplate: {
-                      title: '{name}',
-                      content: `
-                        <b>Type:</b> {type}<br>
-                        <b>Status:</b> {status}<br>
-                        <b>Description:</b> {description}
-                      `,
+                      title: `${kategoriName} - #${disaster.id}`,
+                      content: popupContent,
                     },
                   });
 
@@ -1175,11 +1283,13 @@ const MapView = ({ onMapViewReady }) => {
       const layerList = new LayerList({
         view: view,
         listItemCreatedFunction: (event) => {
-          // Customize layer list items
           const item = event.item;
-          if (item.layer) {
-            // Add custom actions or styling if needed
-            console.log(`Layer list item created for: ${item.layer.title}`);
+          if (item.layer.type !== 'group') {
+            // Add panel for layer actions
+            item.panel = {
+              content: 'legend',
+              open: false,
+            };
           }
         },
       });
@@ -1188,10 +1298,9 @@ const MapView = ({ onMapViewReady }) => {
       const layerListExpand = new Expand({
         view: view,
         content: layerList,
-        expanded: false,
+        expanded: true,
         expandIconClass: 'esri-icon-layers',
         expandTooltip: 'Layer List',
-        mode: 'floating',
       });
 
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
