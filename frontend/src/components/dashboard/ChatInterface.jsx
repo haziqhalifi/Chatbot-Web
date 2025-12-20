@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLayer } from '../../contexts/LayerContext';
 import { ChatBox, ChatButton } from '../chat';
+import { Maximize2, Minimize2, Sidebar } from 'lucide-react';
 
-const ChatInterface = ({ mapView: parentMapView }) => {
+const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [savedChat, setSavedChat] = useState(null);
   const [chatKey, setChatKey] = useState(0);
@@ -10,6 +11,10 @@ const ChatInterface = ({ mapView: parentMapView }) => {
   const [isResizing, setIsResizing] = useState(false);
   const [showSizeIndicator, setShowSizeIndicator] = useState(false);
   const [mapView, setMapView] = useState(null);
+  const [displayMode, setDisplayMode] = useState(() => {
+    // Load saved preference from localStorage
+    return localStorage.getItem('chatDisplayMode') || 'popup';
+  });
   const fixedPosition = { right: 16, bottom: 16 };
   const resizingRef = useRef(false);
 
@@ -33,6 +38,17 @@ const ChatInterface = ({ mapView: parentMapView }) => {
     }
   }, [activeLayer, isChatOpen]);
 
+  // Notify parent component about sidebar width changes
+  useEffect(() => {
+    if (onSidebarChange) {
+      if (isChatOpen && displayMode === 'sidebar') {
+        onSidebarChange(chatSize.width);
+      } else {
+        onSidebarChange(0);
+      }
+    }
+  }, [isChatOpen, displayMode, chatSize.width, onSidebarChange]);
+
   const handleClose = () => {
     setIsChatOpen(false);
   };
@@ -47,6 +63,20 @@ const ChatInterface = ({ mapView: parentMapView }) => {
 
   const handleNewChat = () => {
     setChatKey((k) => k + 1);
+  };
+
+  // Toggle display mode between popup and sidebar
+  const toggleDisplayMode = () => {
+    const newMode = displayMode === 'popup' ? 'sidebar' : 'popup';
+    setDisplayMode(newMode);
+    localStorage.setItem('chatDisplayMode', newMode);
+    
+    // Reset size when switching modes
+    if (newMode === 'sidebar') {
+      setChatSize({ width: 420, height: window.innerHeight });
+    } else {
+      setChatSize({ width: 380, height: 600 });
+    }
   };
 
   // Enhanced mouse event handlers for resizing
@@ -74,25 +104,40 @@ const ChatInterface = ({ mapView: parentMapView }) => {
     const handleMouseMove = (e) => {
       if (!resizingRef.current) return;
 
-      const dx = resizingRef.current.startX - e.clientX;
-      const dy = resizingRef.current.startY - e.clientY;
+      if (displayMode === 'sidebar') {
+        // Sidebar resize - only width changes
+        const dx = resizingRef.current.startX - e.clientX;
+        const minWidth = 320;
+        const maxWidth = window.innerWidth * 0.5; // Max 50% of screen width
+        
+        const newWidth = Math.max(minWidth, Math.min(maxWidth, resizingRef.current.startWidth + dx));
+        
+        setChatSize({
+          width: newWidth,
+          height: window.innerHeight,
+        });
+      } else {
+        // Popup resize - width and height change
+        const dx = resizingRef.current.startX - e.clientX;
+        const dy = resizingRef.current.startY - e.clientY;
 
-      // Improved constraints with better minimum sizes
-      const minWidth = 320;
-      const minHeight = 450;
-      const maxWidth = window.innerWidth - fixedPosition.right - 20;
-      const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
+        // Improved constraints with better minimum sizes
+        const minWidth = 320;
+        const minHeight = 450;
+        const maxWidth = window.innerWidth - fixedPosition.right - 20;
+        const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
 
-      const newWidth = Math.max(minWidth, Math.min(maxWidth, resizingRef.current.startWidth + dx));
-      const newHeight = Math.max(
-        minHeight,
-        Math.min(maxHeight, resizingRef.current.startHeight + dy)
-      );
+        const newWidth = Math.max(minWidth, Math.min(maxWidth, resizingRef.current.startWidth + dx));
+        const newHeight = Math.max(
+          minHeight,
+          Math.min(maxHeight, resizingRef.current.startHeight + dy)
+        );
 
-      setChatSize({
-        width: newWidth,
-        height: newHeight,
-      });
+        setChatSize({
+          width: newWidth,
+          height: newHeight,
+        });
+      }
     };
 
     const handleMouseUp = () => {
@@ -112,15 +157,24 @@ const ChatInterface = ({ mapView: parentMapView }) => {
     // Handle window resize to keep chat in bounds
     const handleWindowResize = () => {
       setChatSize((prevSize) => {
-        const maxWidth = window.innerWidth - fixedPosition.right - 20;
-        const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
-        const minWidth = 320;
-        const minHeight = 450;
+        if (displayMode === 'sidebar') {
+          const maxWidth = window.innerWidth * 0.5;
+          const minWidth = 320;
+          return {
+            width: Math.max(minWidth, Math.min(prevSize.width, maxWidth)),
+            height: window.innerHeight,
+          };
+        } else {
+          const maxWidth = window.innerWidth - fixedPosition.right - 20;
+          const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
+          const minWidth = 320;
+          const minHeight = 450;
 
-        return {
-          width: Math.max(minWidth, Math.min(prevSize.width, maxWidth)),
-          height: Math.max(minHeight, Math.min(prevSize.height, maxHeight)),
-        };
+          return {
+            width: Math.max(minWidth, Math.min(prevSize.width, maxWidth)),
+            height: Math.max(minHeight, Math.min(prevSize.height, maxHeight)),
+          };
+        }
       });
     };
 
@@ -128,10 +182,17 @@ const ChatInterface = ({ mapView: parentMapView }) => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && resizingRef.current) {
         // Reset to original size
-        setChatSize({
-          width: resizingRef.current.startWidth,
-          height: resizingRef.current.startHeight,
-        });
+        if (displayMode === 'sidebar') {
+          setChatSize({
+            width: resizingRef.current.startWidth,
+            height: window.innerHeight,
+          });
+        } else {
+          setChatSize({
+            width: resizingRef.current.startWidth,
+            height: resizingRef.current.startHeight,
+          });
+        }
         handleMouseUp();
       }
     };
@@ -148,74 +209,133 @@ const ChatInterface = ({ mapView: parentMapView }) => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.classList.remove('chat-resizing');
     };
-  }, []);
+  }, [displayMode]);
 
   return (
     <>
-      {/* Chat interface - Expanded */}
+      {/* Chat interface - Popup or Sidebar Mode */}
       {isChatOpen && (
         <div
-          className={`fixed z-50 chat-window ${isResizing ? 'resizing' : ''}`}
-          style={{
-            right: `${fixedPosition.right}px`,
-            bottom: `${fixedPosition.bottom}px`,
-            width: chatSize.width,
-            height: chatSize.height,
-          }}
+          className={`fixed z-50 chat-window ${isResizing ? 'resizing' : ''} ${
+            displayMode === 'sidebar' 
+              ? 'top-0 right-0 h-full shadow-2xl' 
+              : 'chat-window'
+          }`}
+          style={
+            displayMode === 'sidebar'
+              ? {
+                  width: chatSize.width,
+                  height: '100vh',
+                  top: 0,
+                  right: 0,
+                }
+              : {
+                  right: `${fixedPosition.right}px`,
+                  bottom: `${fixedPosition.bottom}px`,
+                  width: chatSize.width,
+                  height: chatSize.height,
+                }
+          }
         >
-          {/* Enhanced Resize Handle - Top Left */}
+          {/* Display Mode Toggle Button */}
           <div
-            onMouseDown={handleResizeMouseDown}
-            className={`absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
-              isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
-            }`}
-            style={{
-              background: 'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.1) 50%)',
-            }}
+            className="absolute top-2 right-2 z-20 bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-md cursor-pointer transition-all duration-200"
+            onClick={toggleDisplayMode}
+            title={displayMode === 'popup' ? 'Switch to Sidebar' : 'Switch to Popup'}
           >
-            {/* Resize handle visual indicator */}
-            <div className="absolute top-1 left-1 w-4 h-4">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
-                <path
-                  d="M2 14L14 2M6 2H2V6M10 14H14V10"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-
-            {/* Hover effect */}
-            <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-tl-lg transition-opacity duration-200" />
+            {displayMode === 'popup' ? (
+              <Sidebar className="w-4 h-4 text-blue-600" />
+            ) : (
+              <Maximize2 className="w-4 h-4 text-blue-600" />
+            )}
           </div>
 
-          {/* Enhanced Resize Handle - Bottom Right */}
-          <div
-            onMouseDown={handleResizeMouseDown}
-            className={`absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
-              isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
-            }`}
-            style={{
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 50%, transparent 50%)',
-            }}
-          >
-            {/* Resize handle visual indicator */}
-            <div className="absolute bottom-1 right-1 w-4 h-4">
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
-                <path
-                  d="M2 14L14 2M6 2H2V6M10 14H14V10"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  fill="none"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
+          {/* Resize Handles - Only show for popup mode */}
+          {displayMode === 'popup' && (
+            <>
+              {/* Enhanced Resize Handle - Top Left */}
+              <div
+                onMouseDown={handleResizeMouseDown}
+                className={`absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
+                  isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                }`}
+                style={{
+                  background: 'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.1) 50%)',
+                }}
+              >
+                {/* Resize handle visual indicator */}
+                <div className="absolute top-1 left-1 w-4 h-4">
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
+                    <path
+                      d="M2 14L14 2M6 2H2V6M10 14H14V10"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
 
-            {/* Hover effect */}
-            <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-br-lg transition-opacity duration-200" />
-          </div>
+                {/* Hover effect */}
+                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-tl-lg transition-opacity duration-200" />
+              </div>
+
+              {/* Enhanced Resize Handle - Bottom Right */}
+              <div
+                onMouseDown={handleResizeMouseDown}
+                className={`absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
+                  isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                }`}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 50%, transparent 50%)',
+                }}
+              >
+                {/* Resize handle visual indicator */}
+                <div className="absolute bottom-1 right-1 w-4 h-4">
+                  <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
+                    <path
+                      d="M2 14L14 2M6 2H2V6M10 14H14V10"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+
+                {/* Hover effect */}
+                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-br-lg transition-opacity duration-200" />
+              </div>
+            </>
+          )}
+
+          {/* Resize Handle for Sidebar - Left Edge Only */}
+          {displayMode === 'sidebar' && (
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                resizingRef.current = {
+                  startX: e.clientX,
+                  startWidth: chatSize.width,
+                };
+
+                setIsResizing(true);
+                setShowSizeIndicator(true);
+                document.body.style.userSelect = 'none';
+                document.body.style.cursor = 'ew-resize';
+                document.body.classList.add('chat-resizing');
+              }}
+              className={`absolute top-0 left-0 w-2 h-full cursor-ew-resize z-10 group ${
+                isResizing ? 'bg-blue-600 bg-opacity-20' : 'hover:bg-blue-600 hover:bg-opacity-10'
+              }`}
+            >
+              <div className="absolute top-1/2 left-0 w-full h-12 transform -translate-y-1/2 flex items-center justify-center">
+                <div className="w-1 h-8 bg-blue-600 opacity-0 group-hover:opacity-50 rounded-full transition-opacity duration-200" />
+              </div>
+            </div>
+          )}
 
           {/* Size Indicator */}
           {showSizeIndicator && (
@@ -236,6 +356,7 @@ const ChatInterface = ({ mapView: parentMapView }) => {
             width={chatSize.width}
             height={chatSize.height}
             mapView={parentMapView}
+            displayMode={displayMode}
           />
         </div>
       )}

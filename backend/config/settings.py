@@ -31,12 +31,10 @@ OPENAI_ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
 OPENAI_ASSISTANT_ENABLED = bool(OPENAI_API_KEY and OPENAI_ASSISTANT_ID)
 
 # AI Model Provider Options
-AI_PROVIDERS = ["gemini"]
-if OPENAI_ASSISTANT_ENABLED and "openai" not in AI_PROVIDERS:
-	AI_PROVIDERS.append("openai")
+AI_PROVIDERS = ["openai"] if OPENAI_ASSISTANT_ENABLED else []
 
 _configured_default = os.getenv("DEFAULT_AI_PROVIDER")
 if _configured_default and _configured_default in AI_PROVIDERS:
 	DEFAULT_AI_PROVIDER = _configured_default
 else:
-	DEFAULT_AI_PROVIDER = AI_PROVIDERS[0] if AI_PROVIDERS else "gemini"
+	DEFAULT_AI_PROVIDER = AI_PROVIDERS[0] if AI_PROVIDERS else "openai"

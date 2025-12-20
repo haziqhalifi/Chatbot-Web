@@ -277,3 +277,73 @@ body.chat-resizing .chat-resize-handle {
     transform: scale(0.9);
   }
 }
+
+/* Chat Window Styles */
+.chat-window {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-window.resizing {
+  transition: none;
+}
+
+/* Sidebar mode transition */
+.chat-window[style*="right: 0px"] {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Resize handle styles */
+.chat-resize-handle {
+  transition: opacity 0.2s ease;
+}
+
+.chat-resizing .chat-resize-handle {
+  opacity: 1 !important;
+}
+
+/* Size indicator animation */
+.size-indicator {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Resize border animation */
+.resize-border {
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Sidebar specific styles */
+.chat-window[style*="height: 100vh"] {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+}
+

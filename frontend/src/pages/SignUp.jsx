@@ -186,7 +186,7 @@ const SignUpPage = () => {
         const data = await response.json();
         throw new Error(data.detail || 'Registration failed');
       }
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
@@ -264,7 +264,7 @@ const SignUpPage = () => {
         const data = await res.json();
         throw new Error(data.detail || 'Google sign up failed');
       }
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       setErrors((prev) => ({ ...prev, general: error.message || 'Google sign up failed.' }));
     } finally {

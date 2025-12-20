@@ -9,7 +9,7 @@ import ExportDropdown from './ExportDropdown';
 import ChatHistory from './ChatHistory';
 import useUserProfile from '../../hooks/useUserProfile';
 
-const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
+const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'popup' }) => {
   const { token } = useAuth();
   const {
     currentSession,
@@ -33,10 +33,6 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [isRagEnabled, setIsRagEnabled] = useState(() => {
-    const savedRagPreference = localStorage.getItem('tiara_rag_enabled');
-    return savedRagPreference !== null ? JSON.parse(savedRagPreference) : true;
-  });
 
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -73,35 +69,6 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     return messages;
   }, [messages, userProfile]);
 
-  // Handle RAG toggle changes
-  const handleRagToggle = () => {
-    const newRagState = !isRagEnabled;
-    setIsRagEnabled(newRagState);
-    localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
-  };
-
-  const activeProvider = currentSession?.ai_provider || preferredProvider;
-  const providerTooltip = providerDescriptions[preferredProvider] || 'Select AI provider';
-
-  const handleProviderChange = async (event) => {
-    const newProvider = event.target.value;
-    if (!availableProviders.includes(newProvider)) {
-      return;
-    }
-
-    const previousProvider = preferredProvider;
-    setPreferredProvider(newProvider);
-
-    if (!currentSession || currentSession.ai_provider !== newProvider) {
-      try {
-        await startNewChat(newProvider);
-      } catch (err) {
-        console.error('Failed to switch AI provider:', err);
-        setPreferredProvider(previousProvider);
-      }
-    }
-  };
-
   // Handle new chat button
   const handleNewChatClick = async () => {
     try {
@@ -120,7 +87,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+      await sendMessageWithSessionHandling(messageToSend);
     } catch (error) {
       console.error('Failed to send message:', error);
       setInputValue(messageToSend);
@@ -135,7 +102,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled, messageType);
+      await sendMessageWithSessionHandling(messageToSend, messageType);
     } catch (error) {
       console.error('Failed to send voice message:', error);
       setInputValue(messageToSend);
@@ -208,7 +175,9 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
 
       {/* Chat Box */}
       <div
-        className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
+        className={`bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col shadow-2xl overflow-hidden border border-blue-200 ${
+          displayMode === 'sidebar' ? 'rounded-none h-full' : 'rounded-[22px]'
+        }`}
         style={{
           width: width || 380,
           height: height || 600,
@@ -216,14 +185,12 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
           display: 'flex',
           flexDirection: 'column',
           minWidth: 320,
-          minHeight: 450,
+          minHeight: displayMode === 'sidebar' ? '100vh' : 450,
         }}
       >
         <ChatHeader
           onClose={() => onClose(messages)}
           onNewChat={handleNewChatClick}
-          onRagToggle={handleRagToggle}
-          isRagEnabled={isRagEnabled}
           showExportDropdown={showExportDropdown}
           setShowExportDropdown={setShowExportDropdown}
           isExporting={isExporting}
@@ -233,13 +200,8 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
           mapView={mapView}
           exportType={exportType}
           setExportType={setExportType}
-          aiProviders={availableProviders}
-          selectedProvider={preferredProvider}
-          activeProvider={activeProvider}
-          onProviderChange={handleProviderChange}
-          providerTooltip={providerTooltip}
-          disableProviderSelect={isSending || isCreatingSession}
           onOpenHistory={handleOpenHistory}
+          displayMode={displayMode}
         />
 
         <ChatMessages

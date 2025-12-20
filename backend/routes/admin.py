@@ -7,7 +7,6 @@ from database import (
     get_faq_by_id, add_faq, update_faq, delete_faq
 )
 from utils.chat import verify_api_key
-from utils.rag import get_rag_system
 from utils.performance import get_performance_stats
 
 router = APIRouter()
@@ -57,37 +56,7 @@ def get_admin_system_status(x_api_key: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# RAG management endpoints
-@router.post("/rebuild-rag")
-def rebuild_rag(x_api_key: str = Header(None)):
-    """Rebuild RAG embeddings (requires API key)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
-    
-    try:
-        rag = get_rag_system()
-        rag.initialize_or_update(force_rebuild=True)
-        return {"message": "RAG embeddings rebuilt successfully", "documents_count": len(rag.documents)}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to rebuild RAG: {str(e)}")
-
-@router.get("/rag-status")
-def get_rag_status(x_api_key: str = Header(None)):
-    """Get RAG system status (requires API key)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
-    
-    try:
-        rag = get_rag_system()
-        
-        return {
-            "documents_count": len(rag.documents) if rag.documents else 0,
-            "embeddings_loaded": rag.embeddings is not None,
-            "documents_path": rag.documents_path,
-            "available_files": [f for f in os.listdir(rag.documents_path) if f.endswith('.pdf')] if os.path.exists(rag.documents_path) else []
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get RAG status: {str(e)}")
+# RAG endpoints removed - RAG feature has been deprecated
 
 @router.get("/performance")
 def get_performance_metrics(x_api_key: str = Header(None)):
