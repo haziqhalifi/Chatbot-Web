@@ -20,9 +20,11 @@ const ChatHeader = ({
   const isCompact = width && width < 400;
 
   return (
-    <div className={`flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 ${
-      displayMode === 'sidebar' ? 'rounded-none' : 'rounded-t-[22px]'
-    }`}>
+    <div
+      className={`flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 ${
+        displayMode === 'sidebar' ? 'rounded-none' : 'rounded-t-[22px]'
+      }`}
+    >
       <div className="flex items-center min-w-0 flex-1">
         {/* Bot Avatar */}
         <div className="flex items-center flex-shrink-0">

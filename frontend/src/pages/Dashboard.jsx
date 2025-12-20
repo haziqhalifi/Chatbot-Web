@@ -19,14 +19,8 @@ const Dashboard = () => {
     <div className="flex flex-col h-screen w-screen bg-[#f4f4f4] relative overflow-hidden">
       <Header />
       <div className="flex-1 relative w-full overflow-hidden">
-        <MapView 
-          onMapViewReady={handleMapViewReady} 
-          chatSidebarWidth={chatSidebarWidth}
-        />
-        <ChatInterface 
-          mapView={mapView} 
-          onSidebarChange={handleChatSidebarChange}
-        />
+        <MapView onMapViewReady={handleMapViewReady} chatSidebarWidth={chatSidebarWidth} />
+        <ChatInterface mapView={mapView} onSidebarChange={handleChatSidebarChange} />
       </div>
     </div>
   );
