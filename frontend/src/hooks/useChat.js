@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { chatAPI } from '../api';
 
+// Create a custom event for map commands
+export const MAP_COMMAND_EVENT = 'mapCommand';
+
 export const useChat = () => {
   const [currentSession, setCurrentSession] = useState(() => {
     // Try to restore session from localStorage
@@ -26,12 +29,12 @@ export const useChat = () => {
   const [pendingMessage, setPendingMessage] = useState(null);
   const [sessionInitialized, setSessionInitialized] = useState(false);
 
-  const [availableProviders, setAvailableProviders] = useState(['gemini']);
-  const [defaultProvider, setDefaultProvider] = useState('gemini');
+  const [availableProviders, setAvailableProviders] = useState(['openai']);
+  const [defaultProvider, setDefaultProvider] = useState('openai');
   const [providerDescriptions, setProviderDescriptions] = useState({});
   const [preferredProvider, setPreferredProviderState] = useState(() => {
     const stored = localStorage.getItem('tiara_ai_provider');
-    return stored || 'gemini';
+    return stored || 'openai';
   });
 
   const setPreferredProvider = useCallback(
@@ -40,7 +43,7 @@ export const useChat = () => {
         Array.isArray(validProviders) && validProviders.length > 0
           ? validProviders
           : availableProviders;
-      const fallback = defaultProvider || providerList[0] || 'gemini';
+      const fallback = defaultProvider || providerList[0] || 'openai';
 
       if (!provider) {
         setPreferredProviderState(fallback);
@@ -78,7 +81,7 @@ export const useChat = () => {
         const data = response.data || {};
 
         const providerList =
-          Array.isArray(data.providers) && data.providers.length > 0 ? data.providers : ['gemini'];
+          Array.isArray(data.providers) && data.providers.length > 0 ? data.providers : ['openai'];
         const defaultFromApi =
           data.default && providerList.includes(data.default) ? data.default : providerList[0];
 
@@ -91,10 +94,10 @@ export const useChat = () => {
         setPreferredProvider(initial, providerList);
       } catch (err) {
         console.error('Failed to fetch AI providers:', err);
-        setAvailableProviders(['gemini']);
-        setDefaultProvider('gemini');
+        setAvailableProviders(['openai']);
+        setDefaultProvider('openai');
         setProviderDescriptions({});
-        setPreferredProvider('gemini', ['gemini']);
+        setPreferredProvider('openai', ['openai']);
       }
     };
 
@@ -150,7 +153,7 @@ export const useChat = () => {
           preferredProvider ||
           defaultProvider ||
           availableProviders[0] ||
-          'gemini';
+          'openai';
 
         const response = await chatAPI.createSession(title, providerToUse);
         const newSession = response.data;
@@ -249,7 +252,7 @@ export const useChat = () => {
   }, []);
   // Send a message and get AI response
   const sendMessage = useCallback(
-    async (messageText, ragEnabled = true, messageType = 'text') => {
+    async (messageText, messageType = 'text') => {
       if (!currentSession) {
         throw new Error('No active chat session');
       }
@@ -280,7 +283,6 @@ export const useChat = () => {
         const response = await chatAPI.generateResponse(
           currentSession.id,
           messageText,
-          ragEnabled,
           messageType
         );
         const aiResponse = response.data;
@@ -298,6 +300,16 @@ export const useChat = () => {
           updated[updated.length - 1] = botMessage; // Replace typing message
           return updated;
         });
+
+        // Handle map commands if present
+        if (aiResponse.ai_response.map_commands && aiResponse.ai_response.map_commands.length > 0) {
+          console.log('Dispatching map commands:', aiResponse.ai_response.map_commands);
+          window.dispatchEvent(
+            new CustomEvent(MAP_COMMAND_EVENT, {
+              detail: { commands: aiResponse.ai_response.map_commands },
+            })
+          );
+        }
 
         return aiResponse;
       } catch (err) {
@@ -442,11 +454,11 @@ export const useChat = () => {
   // Handle pending messages when session becomes available
   useEffect(() => {
     if (currentSession && !isCreatingSession && pendingMessage && !isSending) {
-      const { text, ragEnabled, messageType } = pendingMessage;
+      const { text, messageType } = pendingMessage;
       setPendingMessage(null);
 
       // Send the pending message
-      sendMessage(text, ragEnabled, messageType).catch((error) => {
+      sendMessage(text, messageType).catch((error) => {
         console.error('Failed to send pending message:', error);
       });
     }
@@ -454,16 +466,16 @@ export const useChat = () => {
 
   // Enhanced send message that can handle session creation
   const sendMessageWithSessionHandling = useCallback(
-    async (messageText, ragEnabled = true, messageType = 'text') => {
+    async (messageText, messageType = 'text') => {
       // If we're currently creating a session, queue the message
       if (isCreatingSession) {
-        setPendingMessage({ text: messageText, ragEnabled, messageType });
+        setPendingMessage({ text: messageText, messageType });
         return;
       }
 
       // If no session exists, create one and queue the message
       if (!currentSession) {
-        setPendingMessage({ text: messageText, ragEnabled, messageType });
+        setPendingMessage({ text: messageText, messageType });
         try {
           await createSession();
           // The message will be sent automatically via the useEffect above
@@ -474,7 +486,7 @@ export const useChat = () => {
         return;
       } // Session exists and ready, send immediately
       try {
-        return await sendMessage(messageText, ragEnabled, messageType);
+        return await sendMessage(messageText, messageType);
       } catch (error) {
         // If we get a 404 "Chat session not found", clear the invalid session and retry
         if (
@@ -486,7 +498,7 @@ export const useChat = () => {
           setSessionInitialized(false);
 
           // Queue the message and create new session
-          setPendingMessage({ text: messageText, ragEnabled, messageType });
+          setPendingMessage({ text: messageText, messageType });
           try {
             await createSession();
             // The message will be sent automatically via the useEffect above

@@ -133,18 +133,23 @@ class DatabaseConnectionPool:
                 try:
                     conn = self._create_connection()
                     self.active_connections += 1
+                    print(f"Created new connection. Active: {self.active_connections}/{self.max_connections}")
                     return conn
                 except Exception as e:
                     print(f"Failed to create new connection: {e}")
                     raise
-          # Wait for connection to become available with longer timeout
+        
+        # Wait for connection to become available with timeout
+        print(f"Waiting for connection... Active: {self.active_connections}/{self.max_connections}, Queue: {self.pool.qsize()}")
         try:
-            conn = self.pool.get(timeout=10)  # Increased from 5 to 10 seconds
+            conn = self.pool.get(timeout=5)  # Wait max 5 seconds
             conn_id = self.connection_ids.get(id(conn))
             if conn_id:
                 self.connection_times[conn_id] = time.time()
             return conn
         except Empty:
+            # Log detailed error for debugging
+            print(f"Connection pool exhausted! Active: {self.active_connections}/{self.max_connections}, Queue size: {self.pool.qsize()}")
             raise Exception(f"Connection pool exhausted - too many concurrent requests. Active: {self.active_connections}/{self.max_connections}")
     
     def return_connection(self, conn):
@@ -153,15 +158,34 @@ class DatabaseConnectionPool:
             return
             
         try:
+            # Test if connection is still alive before returning
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                cursor.close()
+            except:
+                # Connection is dead, close it instead of returning
+                self._cleanup_connection(conn)
+                return
+            
             # Reset connection state
             if not conn.autocommit:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except:
+                    self._cleanup_connection(conn)
+                    return
                 conn.autocommit = True
             
             # Return to pool if there's space
-            self.pool.put_nowait(conn)
-        except:
-            # Pool is full or connection is bad, close it
+            try:
+                self.pool.put_nowait(conn)
+            except:
+                # Pool is full, close the connection
+                self._cleanup_connection(conn)
+        except Exception as e:
+            # Any error, clean up the connection
+            print(f"Error returning connection: {e}")
             self._cleanup_connection(conn)
     
     def _cleanup_connection(self, conn):
@@ -218,9 +242,19 @@ def get_connection_pool():
         with _pool_lock:
             if _connection_pool is None:
                 try:
-                    # Increased pool size to handle more concurrent requests
-                    _connection_pool = DatabaseConnectionPool(min_connections=5, max_connections=100)
-                    print("Database connection pool initialized successfully")
+                    # Connection pool configuration:
+                    # - min: 5 connections always ready (increased for better responsiveness)
+                    # - max: 30 concurrent connections (increased to handle more load)
+                    # - timeout: 90 seconds (reduced to recycle faster)
+                    # 
+                    # Increase max_connections if you still see exhaustion errors
+                    # Decrease connection_timeout if connections are held too long
+                    _connection_pool = DatabaseConnectionPool(
+                        min_connections=5, 
+                        max_connections=30,
+                        connection_timeout=90
+                    )
+                    print("Database connection pool initialized: 5 min, 30 max, 90s timeout")
                 except Exception as e:
                     print(f"Warning: Failed to initialize connection pool: {e}")
                     # Return a minimal pool that will try to create connections on demand

@@ -4,8 +4,6 @@ import ExportDropdown from './ExportDropdown';
 const ChatHeader = ({
   onClose,
   onNewChat,
-  onRagToggle,
-  isRagEnabled,
   showExportDropdown,
   setShowExportDropdown,
   isExporting,
@@ -15,35 +13,18 @@ const ChatHeader = ({
   mapView,
   exportType,
   setExportType,
-  aiProviders,
-  selectedProvider,
-  activeProvider,
-  onProviderChange,
-  providerTooltip,
-  disableProviderSelect,
   onOpenHistory,
+  displayMode = 'popup',
 }) => {
   // Responsive design based on chat width
   const isCompact = width && width < 400;
 
-  const formatProviderLabel = (provider) => {
-    if (!provider) {
-      return '';
-    }
-
-    if (provider.toLowerCase() === 'openai') {
-      return 'ChatGPT';
-    }
-
-    if (provider.toLowerCase() === 'gemini') {
-      return 'Gemini';
-    }
-
-    return provider.charAt(0).toUpperCase() + provider.slice(1);
-  };
-
   return (
-    <div className="flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-t-[22px]">
+    <div
+      className={`flex justify-between items-center p-4 border-b border-blue-200 bg-gradient-to-r from-blue-600 to-indigo-600 ${
+        displayMode === 'sidebar' ? 'rounded-none' : 'rounded-t-[22px]'
+      }`}
+    >
       <div className="flex items-center min-w-0 flex-1">
         {/* Bot Avatar */}
         <div className="flex items-center flex-shrink-0">
@@ -67,11 +48,9 @@ const ChatHeader = ({
           <h2 className={`${isCompact ? 'text-lg' : 'text-xl'} font-bold text-white truncate`}>
             Ask Tiara
           </h2>
-          {activeProvider && (
-            <p className={`text-xs text-blue-100 ${isCompact ? 'mt-0.5' : 'mt-1'} truncate`}>
-              Using {formatProviderLabel(activeProvider)}
-            </p>
-          )}
+          <p className={`text-xs text-blue-100 ${isCompact ? 'mt-0.5' : 'mt-1'} truncate`}>
+            Using ChatGPT
+          </p>
         </div>
       </div>
 
@@ -99,31 +78,6 @@ const ChatHeader = ({
           </svg>
         </button>
 
-        {aiProviders && aiProviders.length > 0 && (
-          <div className="flex items-center bg-white/15 border border-white/20 rounded-full px-3 py-1 mr-1">
-            <label
-              htmlFor="tiara-provider-select"
-              className="text-xs uppercase tracking-wide text-blue-100 mr-2"
-            >
-              Model
-            </label>
-            <select
-              id="tiara-provider-select"
-              value={selectedProvider}
-              onChange={onProviderChange}
-              disabled={disableProviderSelect}
-              className="bg-white text-blue-700 text-xs font-medium rounded-full px-2 py-1 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-              title={providerTooltip}
-            >
-              {aiProviders.map((provider) => (
-                <option key={provider} value={provider}>
-                  {formatProviderLabel(provider)}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         {/* Export Dropdown - Always visible */}
         <ExportDropdown
           showExportDropdown={showExportDropdown}
@@ -135,47 +89,6 @@ const ChatHeader = ({
           setExportType={setExportType}
           mapView={mapView}
         />
-
-        {/* RAG Toggle Button */}
-        <div className="relative">
-          <button
-            onClick={onRagToggle}
-            className={`${
-              isRagEnabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-500 hover:bg-gray-600'
-            } text-white rounded-full p-2 transition-colors duration-200 ${
-              isCompact ? 'p-1.5' : 'p-2'
-            }`}
-            aria-label={`RAG ${isRagEnabled ? 'Enabled' : 'Disabled'}`}
-            title={`RAG (Retrieval-Augmented Generation) is ${isRagEnabled ? 'ON' : 'OFF'}`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width={isCompact ? '14' : '16'}
-              height={isCompact ? '14' : '16'}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {isRagEnabled ? (
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              ) : (
-                <>
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                  <path d="m14.5 7-5 5" />
-                  <path d="m9.5 7 5 5" />
-                </>
-              )}
-            </svg>
-          </button>
-          <div
-            className={`absolute -top-1 -right-1 w-3 h-3 rounded-full ${
-              isRagEnabled ? 'bg-green-400' : 'bg-red-400'
-            }`}
-          ></div>
-        </div>
 
         {/* New Chat Button */}
         <button

@@ -4,9 +4,7 @@ from database import (
     save_chat_message, get_chat_messages, update_chat_session_title,
     delete_chat_session
 )
-from utils.chat import generate_response
 from services.openai_assistant_service import get_openai_assistant_service
-from utils.rag import retrieve_context
 from config.settings import AI_PROVIDERS, DEFAULT_AI_PROVIDER, OPENAI_ASSISTANT_ENABLED
 import logging
 import time
@@ -102,7 +100,7 @@ class ChatService:
             raise HTTPException(status_code=500, detail="Failed to save bot message")
     
     @staticmethod
-    def process_chat_message(session_id, user_id, prompt, rag_enabled=True, x_api_key=None, api_key_credits=None, message_type="text"):
+    def process_chat_message(session_id, user_id, prompt, x_api_key=None, api_key_credits=None, message_type="text"):
         """Process a chat message and generate AI response"""
         start_time = time.time()
         
@@ -118,19 +116,6 @@ class ChatService:
             
             # Save user message with correct message_type
             user_message = ChatService.save_user_message(session_id, user_id, prompt, message_type)
-            
-            # Retrieve RAG context if enabled
-            context = None
-            rag_duration = 0
-            if rag_enabled:
-                rag_start = time.time()
-                try:
-                    context = retrieve_context(prompt)
-                    rag_duration = time.time() - rag_start
-                    logger.info(f"RAG retrieval took {rag_duration:.2f}s")
-                except Exception as e:
-                    logger.error(f"Error retrieving RAG context: {e}")
-                    context = None
             
             # Generate AI response based on provider
             if ai_provider == "openai":
@@ -148,8 +133,6 @@ class ChatService:
                 try:
                     ai_response_data = openai_service.generate_response(
                         prompt=prompt,
-                        rag_enabled=rag_enabled,
-                        context=context,
                         thread_id=openai_thread_id
                     )
                 except Exception as exc:
@@ -165,22 +148,14 @@ class ChatService:
 
                 ai_response = {
                     'response': ai_response_data['response'],
+                    'map_commands': ai_response_data.get('map_commands', []),
                     'provider': 'openai',
                     'duration': ai_response_data['duration']
                 }
                 
             else:
-                # Use default Gemini/Ollama provider
-                from pydantic import BaseModel
-                
-                class PromptRequest(BaseModel):
-                    prompt: str
-                    rag_enabled: bool = True
-                    session_id: int = None
-                
-                request = PromptRequest(prompt=prompt, rag_enabled=rag_enabled, session_id=session_id)
-                ai_response = generate_response(request, x_api_key, api_key_credits)
-                ai_response['provider'] = 'gemini'
+                # Fallback to OpenAI if no provider specified
+                raise HTTPException(status_code=400, detail="OpenAI is the only supported provider. Please ensure OPENAI_API_KEY and OPENAI_ASSISTANT_ID are configured.")
             
             # Save bot response
             bot_message = ChatService.save_bot_message(session_id, ai_response['response'])

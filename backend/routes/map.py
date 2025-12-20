@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import httpx
 import os
 from dotenv import load_dotenv
-from ..services.nadma_service import nadma_service
+from services.nadma_service import nadma_service
 
 load_dotenv()
 
