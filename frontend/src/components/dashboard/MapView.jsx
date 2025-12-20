@@ -1456,7 +1456,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
   };
 
   return (
-    <div 
+    <div
       className="relative h-full transition-all duration-300 ease-in-out"
       style={{
         width: chatSidebarWidth > 0 ? `calc(100% - ${chatSidebarWidth}px)` : '100%',

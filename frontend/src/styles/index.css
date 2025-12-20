@@ -288,7 +288,7 @@ body.chat-resizing .chat-resize-handle {
 }
 
 /* Sidebar mode transition */
-.chat-window[style*="right: 0px"] {
+.chat-window[style*='right: 0px'] {
   animation: slideInFromRight 0.3s ease-out;
 }
 
@@ -334,7 +334,8 @@ body.chat-resizing .chat-resize-handle {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.3;
   }
   50% {
@@ -343,7 +344,6 @@ body.chat-resizing .chat-resize-handle {
 }
 
 /* Sidebar specific styles */
-.chat-window[style*="height: 100vh"] {
+.chat-window[style*='height: 100vh'] {
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
 }
-

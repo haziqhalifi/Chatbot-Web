@@ -70,7 +70,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
     const newMode = displayMode === 'popup' ? 'sidebar' : 'popup';
     setDisplayMode(newMode);
     localStorage.setItem('chatDisplayMode', newMode);
-    
+
     // Reset size when switching modes
     if (newMode === 'sidebar') {
       setChatSize({ width: 420, height: window.innerHeight });
@@ -109,9 +109,12 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         const dx = resizingRef.current.startX - e.clientX;
         const minWidth = 320;
         const maxWidth = window.innerWidth * 0.5; // Max 50% of screen width
-        
-        const newWidth = Math.max(minWidth, Math.min(maxWidth, resizingRef.current.startWidth + dx));
-        
+
+        const newWidth = Math.max(
+          minWidth,
+          Math.min(maxWidth, resizingRef.current.startWidth + dx)
+        );
+
         setChatSize({
           width: newWidth,
           height: window.innerHeight,
@@ -127,7 +130,10 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         const maxWidth = window.innerWidth - fixedPosition.right - 20;
         const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
 
-        const newWidth = Math.max(minWidth, Math.min(maxWidth, resizingRef.current.startWidth + dx));
+        const newWidth = Math.max(
+          minWidth,
+          Math.min(maxWidth, resizingRef.current.startWidth + dx)
+        );
         const newHeight = Math.max(
           minHeight,
           Math.min(maxHeight, resizingRef.current.startHeight + dy)
@@ -217,9 +223,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
       {isChatOpen && (
         <div
           className={`fixed z-50 chat-window ${isResizing ? 'resizing' : ''} ${
-            displayMode === 'sidebar' 
-              ? 'top-0 right-0 h-full shadow-2xl' 
-              : 'chat-window'
+            displayMode === 'sidebar' ? 'top-0 right-0 h-full shadow-2xl' : 'chat-window'
           }`}
           style={
             displayMode === 'sidebar'
@@ -260,7 +264,8 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
                   isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
                 }`}
                 style={{
-                  background: 'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.1) 50%)',
+                  background:
+                    'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.1) 50%)',
                 }}
               >
                 {/* Resize handle visual indicator */}
@@ -287,7 +292,8 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
                   isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
                 }`}
                 style={{
-                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 50%, transparent 50%)',
+                  background:
+                    'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 50%, transparent 50%)',
                 }}
               >
                 {/* Resize handle visual indicator */}
