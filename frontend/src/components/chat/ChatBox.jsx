@@ -8,6 +8,7 @@ import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
 import ChatHistory from './ChatHistory';
 import useUserProfile from '../../hooks/useUserProfile';
+import { MapController } from '../../utils/mapController';
 
 const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'popup' }) => {
   const { token } = useAuth();
@@ -49,6 +50,42 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'po
   const animationFrameRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const mapControllerRef = useRef(null);
+
+  // Initialize map controller when mapView is available
+  useEffect(() => {
+    if (mapView) {
+      mapControllerRef.current = new MapController(mapView);
+      console.log('Map controller initialized');
+    }
+  }, [mapView]);
+
+  // Listen for map commands from AI responses
+  useEffect(() => {
+    const handleMapCommands = async (event) => {
+      const { commands } = event.detail;
+      if (commands && commands.length > 0 && mapControllerRef.current) {
+        console.log('Executing map commands:', commands);
+        try {
+          const results = await mapControllerRef.current.executeCommands(commands);
+          console.log('Map command results:', results);
+
+          // Optionally, you can add a system message to chat showing the command results
+          const successCount = results.filter((r) => r.success).length;
+          if (successCount > 0) {
+            console.log(`Successfully executed ${successCount} of ${commands.length} map commands`);
+          }
+        } catch (error) {
+          console.error('Error executing map commands:', error);
+        }
+      }
+    };
+
+    window.addEventListener('mapCommand', handleMapCommands);
+    return () => {
+      window.removeEventListener('mapCommand', handleMapCommands);
+    };
+  }, []);
 
   // Computed messages with personalized welcome message
   const displayMessages = useMemo(() => {

@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any
 import httpx
 import os
 from dotenv import load_dotenv
-from ..database.nadma import (
+from database.nadma import (
     create_nadma_tables,
     save_disaster,
     save_disasters_batch,

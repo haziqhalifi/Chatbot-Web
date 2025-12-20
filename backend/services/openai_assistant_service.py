@@ -3,10 +3,12 @@ OpenAI Assistant API Service
 Handles communication with OpenAI's Assistant API for chat functionality
 """
 from openai import OpenAI
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 import time
+import json
 from config.settings import OPENAI_API_KEY, OPENAI_ASSISTANT_ID, OPENAI_ASSISTANT_ENABLED
+from services.map_tools import MAP_TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ class OpenAIAssistantService:
             message: User's message
             
         Returns:
-            Dict containing response and metadata
+            Dict containing response, map_commands, and metadata
         """
         start_time = time.time()
         
@@ -61,19 +63,51 @@ class OpenAIAssistantService:
                 content=message
             )
             
-            # Run the assistant
+            # Run the assistant with map tools
             run = self.client.beta.threads.runs.create(
                 thread_id=thread_id,
-                assistant_id=self.assistant_id
+                assistant_id=self.assistant_id,
+                tools=MAP_TOOLS
             )
             
-            # Wait for completion
-            while run.status in ["queued", "in_progress"]:
+            # Wait for completion and handle tool calls
+            map_commands = []
+            while run.status in ["queued", "in_progress", "requires_action"]:
                 time.sleep(0.5)
                 run = self.client.beta.threads.runs.retrieve(
                     thread_id=thread_id,
                     run_id=run.id
                 )
+                
+                # Handle tool calls (map commands)
+                if run.status == "requires_action":
+                    tool_calls = run.required_action.submit_tool_outputs.tool_calls
+                    tool_outputs = []
+                    
+                    for tool_call in tool_calls:
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments)
+                        
+                        # Store map command for frontend execution
+                        map_commands.append({
+                            "function": function_name,
+                            "arguments": function_args,
+                            "call_id": tool_call.id
+                        })
+                        
+                        # Acknowledge tool call
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": json.dumps({"status": "queued", "message": f"{function_name} command queued for execution"})
+                        })
+                    
+                    # Submit tool outputs
+                    if tool_outputs:
+                        run = self.client.beta.threads.runs.submit_tool_outputs(
+                            thread_id=thread_id,
+                            run_id=run.id,
+                            tool_outputs=tool_outputs
+                        )
             
             if run.status == "completed":
                 # Retrieve the assistant's messages
@@ -88,10 +122,11 @@ class OpenAIAssistantService:
                     message_content = messages.data[0].content[0].text.value
                     
                     duration = time.time() - start_time
-                    logger.info(f"OpenAI Assistant response generated in {duration:.2f}s")
+                    logger.info(f"OpenAI Assistant response generated in {duration:.2f}s with {len(map_commands)} map commands")
                     
                     return {
                         "response": message_content,
+                        "map_commands": map_commands,
                         "thread_id": thread_id,
                         "provider": "openai",
                         "duration": duration,
