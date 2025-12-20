@@ -39,8 +39,7 @@ class OpenAIAssistantService:
     def send_message(
         self, 
         thread_id: str, 
-        message: str, 
-        context: Optional[str] = None
+        message: str
     ) -> Dict[str, Any]:
         """
         Send a message to the assistant and get response
@@ -48,7 +47,6 @@ class OpenAIAssistantService:
         Args:
             thread_id: The OpenAI thread ID
             message: User's message
-            context: Optional RAG context to include
             
         Returns:
             Dict containing response and metadata
@@ -56,22 +54,11 @@ class OpenAIAssistantService:
         start_time = time.time()
         
         try:
-            # Prepare the message with context if provided
-            full_message = message
-            if context:
-                full_message = f"""Based on the following relevant information:
-
-{context}
-
----
-
-User question: {message}"""
-            
             # Add message to thread
             self.client.beta.threads.messages.create(
                 thread_id=thread_id,
                 role="user",
-                content=full_message
+                content=message
             )
             
             # Run the assistant
@@ -143,8 +130,6 @@ User question: {message}"""
     def generate_response(
         self, 
         prompt: str, 
-        rag_enabled: bool = True, 
-        context: Optional[str] = None,
         thread_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -152,8 +137,6 @@ User question: {message}"""
         
         Args:
             prompt: User's prompt/question
-            rag_enabled: Whether to use RAG context
-            context: Pre-retrieved RAG context (if rag_enabled)
             thread_id: Optional existing thread ID for conversation continuity
             
         Returns:
@@ -163,11 +146,8 @@ User question: {message}"""
             # Get or create thread
             thread = self.get_or_create_thread(thread_id)
             
-            # Use context only if RAG is enabled
-            rag_context = context if rag_enabled else None
-            
             # Send message and get response
-            result = self.send_message(thread, prompt, rag_context)
+            result = self.send_message(thread, prompt)
             
             return result
             

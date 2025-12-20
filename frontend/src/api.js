@@ -194,11 +194,10 @@ export const chatAPI = {
     return api.delete(`/chat/sessions/${sessionId}`);
   },
   // Generate AI response with session context
-  generateResponse: (sessionId, prompt, ragEnabled = true, messageType = 'text') => {
+  generateResponse: (sessionId, prompt, messageType = 'text') => {
     return api.post('/chat/generate', {
       session_id: sessionId,
       prompt: prompt,
-      rag_enabled: ragEnabled,
       message_type: messageType,
     });
   },

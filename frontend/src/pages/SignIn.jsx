@@ -102,7 +102,7 @@ const SignInPage = () => {
 
       const data = await response.json();
       login(data.token, data.user);
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
@@ -196,7 +196,7 @@ const SignInPage = () => {
 
       const data = await res.json();
       login(data.token, { email: data.email, name: data.name });
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       setErrors((prev) => ({ ...prev, general: error.message || 'Google sign in failed.' }));
     } finally {

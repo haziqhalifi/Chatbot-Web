@@ -2,7 +2,7 @@ from datetime import datetime
 from .connection import DatabaseConnection, format_timestamp
 import json
 
-def create_chat_session(user_id, title=None, ai_provider="gemini"):
+def create_chat_session(user_id, title=None, ai_provider="openai"):
     """Create a new chat session for a user"""
     try:
         with DatabaseConnection() as conn:
@@ -306,7 +306,7 @@ def create_chat_tables():
                     id INT IDENTITY(1,1) PRIMARY KEY,
                     user_id INT NOT NULL,
                     title VARCHAR(500),
-                    ai_provider VARCHAR(50) DEFAULT 'gemini',
+                    ai_provider VARCHAR(50) DEFAULT 'openai',
                     metadata NVARCHAR(MAX),
                     created_at DATETIME DEFAULT GETDATE(),
                     updated_at DATETIME DEFAULT GETDATE(),
@@ -322,7 +322,7 @@ def create_chat_tables():
                               WHERE object_id = OBJECT_ID('chat_sessions') 
                               AND name = 'ai_provider')
                 BEGIN
-                    ALTER TABLE chat_sessions ADD ai_provider VARCHAR(50) DEFAULT 'gemini'
+                    ALTER TABLE chat_sessions ADD ai_provider VARCHAR(50) DEFAULT 'openai'
                 END
             """)
             

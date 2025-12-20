@@ -15,7 +15,7 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 
-const MapView = ({ onMapViewReady }) => {
+const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
   const [mapView, setMapView] = useState(null);
   const [showLayerList, setShowLayerList] = useState(false);
   const [showLayerInfo, setShowLayerInfo] = useState(null);
@@ -134,6 +134,26 @@ const MapView = ({ onMapViewReady }) => {
       onMapViewReady(mapView);
     }
   }, [mapView, onMapViewReady]);
+
+  // Update map view size when sidebar width changes
+  useEffect(() => {
+    if (mapView) {
+      // Small delay to allow CSS transition to complete
+      const timeoutId = setTimeout(() => {
+        // Force the map to recalculate its size
+        if (mapView.container) {
+          mapView.container.style.width = '100%';
+          mapView.container.style.height = '100%';
+        }
+        // This is a crucial call to make ArcGIS aware of the size change
+        if (typeof mapView.resize === 'function') {
+          mapView.resize();
+        }
+      }, 350); // Slightly longer than CSS transition (300ms)
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [chatSidebarWidth, mapView]);
 
   // Fetch map endpoints from API and merge with existing layers
   useEffect(() => {
@@ -1436,7 +1456,12 @@ const MapView = ({ onMapViewReady }) => {
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div 
+      className="relative h-full transition-all duration-300 ease-in-out"
+      style={{
+        width: chatSidebarWidth > 0 ? `calc(100% - ${chatSidebarWidth}px)` : '100%',
+      }}
+    >
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full" id="real-map-container"></div>
       {/* Fallback Map Container */}

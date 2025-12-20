@@ -69,7 +69,7 @@ class ChatService {
   /**
    * Send a message and get AI response
    */
-  async sendMessage(sessionId, prompt, ragEnabled = true) {
+  async sendMessage(sessionId, prompt) {
     try {
       // Validate inputs
       if (!sessionId || typeof sessionId !== 'number' || sessionId <= 0) { // Added more specific check for sessionId
@@ -81,7 +81,7 @@ class ChatService {
       }
 
       // Generate AI response using the chat/generate endpoint
-      const response = await chatAPI.generateResponse(sessionId, prompt.trim(), ragEnabled);
+      const response = await chatAPI.generateResponse(sessionId, prompt.trim());
       
       return {
         success: true,
