@@ -73,7 +73,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
 
     // Reset size when switching modes
     if (newMode === 'sidebar') {
-      setChatSize({ width: 420, height: window.innerHeight });
+      setChatSize({ width: 420, height: window.innerHeight - 64 }); // Subtract header height
     } else {
       setChatSize({ width: 380, height: 600 });
     }
@@ -117,7 +117,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
 
         setChatSize({
           width: newWidth,
-          height: window.innerHeight,
+          height: window.innerHeight - 64, // Subtract header height
         });
       } else {
         // Popup resize - width and height change
@@ -168,7 +168,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
           const minWidth = 320;
           return {
             width: Math.max(minWidth, Math.min(prevSize.width, maxWidth)),
-            height: window.innerHeight,
+            height: window.innerHeight - 64, // Subtract header height
           };
         } else {
           const maxWidth = window.innerWidth - fixedPosition.right - 20;
@@ -191,7 +191,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         if (displayMode === 'sidebar') {
           setChatSize({
             width: resizingRef.current.startWidth,
-            height: window.innerHeight,
+            height: window.innerHeight - 64, // Subtract header height
           });
         } else {
           setChatSize({
@@ -223,14 +223,14 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
       {isChatOpen && (
         <div
           className={`fixed z-50 chat-window ${isResizing ? 'resizing' : ''} ${
-            displayMode === 'sidebar' ? 'top-0 right-0 h-full shadow-2xl' : 'chat-window'
+            displayMode === 'sidebar' ? 'right-0 shadow-2xl' : 'chat-window'
           }`}
           style={
             displayMode === 'sidebar'
               ? {
                   width: chatSize.width,
-                  height: '100vh',
-                  top: 0,
+                  height: 'calc(100vh - 64px)', // Subtract header height (64px)
+                  top: '64px', // Start below the header
                   right: 0,
                 }
               : {

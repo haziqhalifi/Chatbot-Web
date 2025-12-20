@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { chatAPI } from '../api';
 
+// Create a custom event for map commands
+export const MAP_COMMAND_EVENT = 'mapCommand';
+
 export const useChat = () => {
   const [currentSession, setCurrentSession] = useState(() => {
     // Try to restore session from localStorage
@@ -297,6 +300,16 @@ export const useChat = () => {
           updated[updated.length - 1] = botMessage; // Replace typing message
           return updated;
         });
+
+        // Handle map commands if present
+        if (aiResponse.ai_response.map_commands && aiResponse.ai_response.map_commands.length > 0) {
+          console.log('Dispatching map commands:', aiResponse.ai_response.map_commands);
+          window.dispatchEvent(
+            new CustomEvent(MAP_COMMAND_EVENT, {
+              detail: { commands: aiResponse.ai_response.map_commands },
+            })
+          );
+        }
 
         return aiResponse;
       } catch (err) {

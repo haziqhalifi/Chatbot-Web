@@ -148,6 +148,7 @@ class ChatService:
 
                 ai_response = {
                     'response': ai_response_data['response'],
+                    'map_commands': ai_response_data.get('map_commands', []),
                     'provider': 'openai',
                     'duration': ai_response_data['duration']
                 }
