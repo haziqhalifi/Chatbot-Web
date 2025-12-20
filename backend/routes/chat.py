@@ -16,7 +16,7 @@ JWT_ALGORITHM = "HS256"
 # Chat-related models
 class ChatSessionRequest(BaseModel):
     title: Optional[str] = None
-    ai_provider: Optional[str] = None  # "gemini" or "openai"
+    ai_provider: Optional[str] = None  # "openai"
 
 class ChatMessageRequest(BaseModel):
     content: str
@@ -25,7 +25,6 @@ class ChatMessageRequest(BaseModel):
 class ChatGenerateRequest(BaseModel):
     session_id: int
     prompt: str
-    rag_enabled: bool = True
     message_type: str = "text"  # Add message_type for text, voice, image
 
 class UpdateSessionTitleRequest(BaseModel):
@@ -63,7 +62,6 @@ def get_ai_providers():
     provider_descriptions = {
         k: v
         for k, v in {
-            "gemini": "Gemini/Ollama - Local AI model with RAG support",
             "openai": "ChatGPT (OpenAI Assistant) - Cloud-based AI assistant"
         }.items()
         if k in AI_PROVIDERS
@@ -131,7 +129,6 @@ def generate_chat_response(
         request.session_id, 
         user_id, 
         request.prompt, 
-        request.rag_enabled, 
         x_api_key, 
         API_KEY_CREDITS,
         request.message_type

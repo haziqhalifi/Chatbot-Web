@@ -93,7 +93,7 @@ const Header = () => {
     <>
       <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center">
+          <Link to="/dashboard" className="flex items-center">
             <Shield className="h-8 w-8 text-blue-500 mr-3" />
             <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch</h1>
           </Link>

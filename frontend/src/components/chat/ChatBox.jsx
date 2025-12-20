@@ -8,8 +8,9 @@ import ChatInput from './ChatInput';
 import ExportDropdown from './ExportDropdown';
 import ChatHistory from './ChatHistory';
 import useUserProfile from '../../hooks/useUserProfile';
+import { MapController } from '../../utils/mapController';
 
-const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
+const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'popup' }) => {
   const { token } = useAuth();
   const {
     currentSession,
@@ -33,10 +34,6 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [isRagEnabled, setIsRagEnabled] = useState(() => {
-    const savedRagPreference = localStorage.getItem('tiara_rag_enabled');
-    return savedRagPreference !== null ? JSON.parse(savedRagPreference) : true;
-  });
 
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -53,6 +50,42 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
   const animationFrameRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const mapControllerRef = useRef(null);
+
+  // Initialize map controller when mapView is available
+  useEffect(() => {
+    if (mapView) {
+      mapControllerRef.current = new MapController(mapView);
+      console.log('Map controller initialized');
+    }
+  }, [mapView]);
+
+  // Listen for map commands from AI responses
+  useEffect(() => {
+    const handleMapCommands = async (event) => {
+      const { commands } = event.detail;
+      if (commands && commands.length > 0 && mapControllerRef.current) {
+        console.log('Executing map commands:', commands);
+        try {
+          const results = await mapControllerRef.current.executeCommands(commands);
+          console.log('Map command results:', results);
+
+          // Optionally, you can add a system message to chat showing the command results
+          const successCount = results.filter((r) => r.success).length;
+          if (successCount > 0) {
+            console.log(`Successfully executed ${successCount} of ${commands.length} map commands`);
+          }
+        } catch (error) {
+          console.error('Error executing map commands:', error);
+        }
+      }
+    };
+
+    window.addEventListener('mapCommand', handleMapCommands);
+    return () => {
+      window.removeEventListener('mapCommand', handleMapCommands);
+    };
+  }, []);
 
   // Computed messages with personalized welcome message
   const displayMessages = useMemo(() => {
@@ -73,35 +106,6 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     return messages;
   }, [messages, userProfile]);
 
-  // Handle RAG toggle changes
-  const handleRagToggle = () => {
-    const newRagState = !isRagEnabled;
-    setIsRagEnabled(newRagState);
-    localStorage.setItem('tiara_rag_enabled', JSON.stringify(newRagState));
-  };
-
-  const activeProvider = currentSession?.ai_provider || preferredProvider;
-  const providerTooltip = providerDescriptions[preferredProvider] || 'Select AI provider';
-
-  const handleProviderChange = async (event) => {
-    const newProvider = event.target.value;
-    if (!availableProviders.includes(newProvider)) {
-      return;
-    }
-
-    const previousProvider = preferredProvider;
-    setPreferredProvider(newProvider);
-
-    if (!currentSession || currentSession.ai_provider !== newProvider) {
-      try {
-        await startNewChat(newProvider);
-      } catch (err) {
-        console.error('Failed to switch AI provider:', err);
-        setPreferredProvider(previousProvider);
-      }
-    }
-  };
-
   // Handle new chat button
   const handleNewChatClick = async () => {
     try {
@@ -120,7 +124,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled);
+      await sendMessageWithSessionHandling(messageToSend);
     } catch (error) {
       console.error('Failed to send message:', error);
       setInputValue(messageToSend);
@@ -135,7 +139,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
     setInputValue('');
 
     try {
-      await sendMessageWithSessionHandling(messageToSend, isRagEnabled, messageType);
+      await sendMessageWithSessionHandling(messageToSend, messageType);
     } catch (error) {
       console.error('Failed to send voice message:', error);
       setInputValue(messageToSend);
@@ -208,7 +212,9 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
 
       {/* Chat Box */}
       <div
-        className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-[22px] flex flex-col shadow-2xl overflow-hidden border border-blue-200"
+        className={`bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col shadow-2xl overflow-hidden border border-blue-200 ${
+          displayMode === 'sidebar' ? 'rounded-none h-full' : 'rounded-[22px]'
+        }`}
         style={{
           width: width || 380,
           height: height || 600,
@@ -216,14 +222,12 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
           display: 'flex',
           flexDirection: 'column',
           minWidth: 320,
-          minHeight: 450,
+          minHeight: displayMode === 'sidebar' ? '100vh' : 450,
         }}
       >
         <ChatHeader
           onClose={() => onClose(messages)}
           onNewChat={handleNewChatClick}
-          onRagToggle={handleRagToggle}
-          isRagEnabled={isRagEnabled}
           showExportDropdown={showExportDropdown}
           setShowExportDropdown={setShowExportDropdown}
           isExporting={isExporting}
@@ -233,13 +237,8 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView }) => {
           mapView={mapView}
           exportType={exportType}
           setExportType={setExportType}
-          aiProviders={availableProviders}
-          selectedProvider={preferredProvider}
-          activeProvider={activeProvider}
-          onProviderChange={handleProviderChange}
-          providerTooltip={providerTooltip}
-          disableProviderSelect={isSending || isCreatingSession}
           onOpenHistory={handleOpenHistory}
+          displayMode={displayMode}
         />
 
         <ChatMessages

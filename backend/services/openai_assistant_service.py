@@ -3,10 +3,12 @@ OpenAI Assistant API Service
 Handles communication with OpenAI's Assistant API for chat functionality
 """
 from openai import OpenAI
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 import time
+import json
 from config.settings import OPENAI_API_KEY, OPENAI_ASSISTANT_ID, OPENAI_ASSISTANT_ENABLED
+from services.map_tools import MAP_TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +41,7 @@ class OpenAIAssistantService:
     def send_message(
         self, 
         thread_id: str, 
-        message: str, 
-        context: Optional[str] = None
+        message: str
     ) -> Dict[str, Any]:
         """
         Send a message to the assistant and get response
@@ -48,45 +49,65 @@ class OpenAIAssistantService:
         Args:
             thread_id: The OpenAI thread ID
             message: User's message
-            context: Optional RAG context to include
             
         Returns:
-            Dict containing response and metadata
+            Dict containing response, map_commands, and metadata
         """
         start_time = time.time()
         
         try:
-            # Prepare the message with context if provided
-            full_message = message
-            if context:
-                full_message = f"""Based on the following relevant information:
-
-{context}
-
----
-
-User question: {message}"""
-            
             # Add message to thread
             self.client.beta.threads.messages.create(
                 thread_id=thread_id,
                 role="user",
-                content=full_message
+                content=message
             )
             
-            # Run the assistant
+            # Run the assistant with map tools
             run = self.client.beta.threads.runs.create(
                 thread_id=thread_id,
-                assistant_id=self.assistant_id
+                assistant_id=self.assistant_id,
+                tools=MAP_TOOLS
             )
             
-            # Wait for completion
-            while run.status in ["queued", "in_progress"]:
+            # Wait for completion and handle tool calls
+            map_commands = []
+            while run.status in ["queued", "in_progress", "requires_action"]:
                 time.sleep(0.5)
                 run = self.client.beta.threads.runs.retrieve(
                     thread_id=thread_id,
                     run_id=run.id
                 )
+                
+                # Handle tool calls (map commands)
+                if run.status == "requires_action":
+                    tool_calls = run.required_action.submit_tool_outputs.tool_calls
+                    tool_outputs = []
+                    
+                    for tool_call in tool_calls:
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments)
+                        
+                        # Store map command for frontend execution
+                        map_commands.append({
+                            "function": function_name,
+                            "arguments": function_args,
+                            "call_id": tool_call.id
+                        })
+                        
+                        # Acknowledge tool call
+                        tool_outputs.append({
+                            "tool_call_id": tool_call.id,
+                            "output": json.dumps({"status": "queued", "message": f"{function_name} command queued for execution"})
+                        })
+                    
+                    # Submit tool outputs
+                    if tool_outputs:
+                        run = self.client.beta.threads.runs.submit_tool_outputs(
+                            thread_id=thread_id,
+                            run_id=run.id,
+                            tool_outputs=tool_outputs
+                        )
             
             if run.status == "completed":
                 # Retrieve the assistant's messages
@@ -101,10 +122,11 @@ User question: {message}"""
                     message_content = messages.data[0].content[0].text.value
                     
                     duration = time.time() - start_time
-                    logger.info(f"OpenAI Assistant response generated in {duration:.2f}s")
+                    logger.info(f"OpenAI Assistant response generated in {duration:.2f}s with {len(map_commands)} map commands")
                     
                     return {
                         "response": message_content,
+                        "map_commands": map_commands,
                         "thread_id": thread_id,
                         "provider": "openai",
                         "duration": duration,
@@ -143,8 +165,6 @@ User question: {message}"""
     def generate_response(
         self, 
         prompt: str, 
-        rag_enabled: bool = True, 
-        context: Optional[str] = None,
         thread_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -152,8 +172,6 @@ User question: {message}"""
         
         Args:
             prompt: User's prompt/question
-            rag_enabled: Whether to use RAG context
-            context: Pre-retrieved RAG context (if rag_enabled)
             thread_id: Optional existing thread ID for conversation continuity
             
         Returns:
@@ -163,11 +181,8 @@ User question: {message}"""
             # Get or create thread
             thread = self.get_or_create_thread(thread_id)
             
-            # Use context only if RAG is enabled
-            rag_context = context if rag_enabled else None
-            
             # Send message and get response
-            result = self.send_message(thread, prompt, rag_context)
+            result = self.send_message(thread, prompt)
             
             return result
             

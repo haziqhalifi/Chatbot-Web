@@ -69,10 +69,11 @@ class ChatService {
   /**
    * Send a message and get AI response
    */
-  async sendMessage(sessionId, prompt, ragEnabled = true) {
+  async sendMessage(sessionId, prompt) {
     try {
       // Validate inputs
-      if (!sessionId || typeof sessionId !== 'number' || sessionId <= 0) { // Added more specific check for sessionId
+      if (!sessionId || typeof sessionId !== 'number' || sessionId <= 0) {
+        // Added more specific check for sessionId
         console.error('Invalid Session ID in sendMessage:', sessionId);
         throw new Error('Session ID is invalid or missing');
       }
@@ -81,18 +82,18 @@ class ChatService {
       }
 
       // Generate AI response using the chat/generate endpoint
-      const response = await chatAPI.generateResponse(sessionId, prompt.trim(), ragEnabled);
-      
+      const response = await chatAPI.generateResponse(sessionId, prompt.trim());
+
       return {
         success: true,
         data: response.data,
         userMessage: response.data.user_message,
         botMessage: response.data.bot_message,
-        aiResponse: response.data.ai_response
+        aiResponse: response.data.ai_response,
       };
     } catch (error) {
       console.error('Failed to send message:', error);
-      
+
       let errorMessage = 'Failed to send message';
       if (error.response?.status === 401) {
         errorMessage = 'Authentication failed. Please sign in again.';
@@ -101,10 +102,10 @@ class ChatService {
       } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       }
-      
+
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -131,13 +132,13 @@ class ChatService {
   async deleteSession(sessionId) {
     try {
       const response = await chatAPI.deleteSession(sessionId);
-      
+
       // Update local state
-      this.sessions = this.sessions.filter(session => session.id !== sessionId);
+      this.sessions = this.sessions.filter((session) => session.id !== sessionId);
       if (this.currentSession && this.currentSession.id === sessionId) {
         this.currentSession = null;
       }
-      
+
       return response.data;
     } catch (error) {
       console.error('Failed to delete session:', error);
@@ -182,7 +183,7 @@ class ChatService {
       content: message.content,
       sender: message.sender_type || message.sender,
       timestamp: new Date(message.timestamp || message.created_at),
-      type: message.message_type || 'text'
+      type: message.message_type || 'text',
     };
   }
 
@@ -195,7 +196,7 @@ class ChatService {
       title: session.title || 'Untitled Chat',
       createdAt: new Date(session.created_at),
       updatedAt: new Date(session.updated_at),
-      messageCount: session.message_count || 0
+      messageCount: session.message_count || 0,
     };
   }
 }
