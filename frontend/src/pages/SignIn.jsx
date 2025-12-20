@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const SignInPage = () => {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,19 +26,19 @@ const SignInPage = () => {
 
   // Real-time validation functions
   const validateEmail = (email) => {
-    if (!email) return 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Please enter a valid email address';
+    if (!email) return t('auth.emailRequired');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('auth.validEmail');
     return '';
   };
 
   const validatePassword = (password) => {
-    if (!password) return 'Password is required';
-    if (password.length < 8) return 'Password must be at least 8 characters';
-    if (!/(?=.*[a-z])/.test(password)) return 'Password must contain at least one lowercase letter';
-    if (!/(?=.*[A-Z])/.test(password)) return 'Password must contain at least one uppercase letter';
-    if (!/(?=.*\d)/.test(password)) return 'Password must contain at least one number';
+    if (!password) return t('auth.passwordRequired');
+    if (password.length < 8) return t('auth.passwordMinLength');
+    if (!/(?=.*[a-z])/.test(password)) return t('auth.passwordLowercase');
+    if (!/(?=.*[A-Z])/.test(password)) return t('auth.passwordUppercase');
+    if (!/(?=.*\d)/.test(password)) return t('auth.passwordNumber');
     if (!/(?=.*[@$!%*?&])/.test(password))
-      return 'Password must contain at least one special character';
+      return t('auth.passwordSpecial');
     return '';
   };
 
@@ -106,7 +108,7 @@ const SignInPage = () => {
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
-        general: error.message || 'Invalid email or password. Please try again.',
+        general: error.message || t('auth.invalidCredentials'),
       }));
     } finally {
       setIsLoading(false);
@@ -210,12 +212,12 @@ const SignInPage = () => {
       {showForgotModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold mb-2">Forgot Password</h3>
+            <h3 className="text-lg font-bold mb-2">{t('signin.forgotPasswordTitle')}</h3>
             <form onSubmit={handleForgotSubmit} className="space-y-3">
               <input
                 type="email"
                 className="w-full px-4 py-2 border rounded-md"
-                placeholder="Enter your email address"
+                placeholder={t('signin.enterEmailForReset')}
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
                 required
@@ -228,7 +230,7 @@ const SignInPage = () => {
                   className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                  {isLoading ? t('auth.sending') : t('auth.sendResetLink')}
                 </button>
                 <button
                   type="button"
@@ -236,7 +238,7 @@ const SignInPage = () => {
                   onClick={() => setShowForgotModal(false)}
                   disabled={isLoading}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -249,7 +251,7 @@ const SignInPage = () => {
           <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <User className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to DisasterWatch</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('signin.title')}</h1>
           {/* <p className="text-sm text-gray-600">
             Only login via government email, education email or personal email
           </p> */}
@@ -266,7 +268,7 @@ const SignInPage = () => {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              <span className="px-2 bg-white text-gray-500">{t('auth.continueWithEmail')}</span>
             </div>
           </div>
 
@@ -282,7 +284,7 @@ const SignInPage = () => {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
+                {t('auth.emailAddress')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -302,7 +304,7 @@ const SignInPage = () => {
                         ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
                         : 'border-gray-300'
                   }`}
-                  placeholder="Enter your email address"
+                  placeholder={t('auth.enterEmail')}
                 />
                 {isFieldValid('email') && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
@@ -321,7 +323,7 @@ const SignInPage = () => {
             {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -341,7 +343,7 @@ const SignInPage = () => {
                         ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
                         : 'border-gray-300'
                   }`}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.enterPassword')}
                 />
                 <button
                   type="button"
@@ -375,7 +377,7 @@ const SignInPage = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                  Remember me
+                  {t('common.rememberMe')}
                 </label>
               </div>
               <button
@@ -383,19 +385,19 @@ const SignInPage = () => {
                 onClick={handleForgotPassword}
                 className="text-sm text-blue-600 hover:text-blue-500 underline"
               >
-                Forgot password?
+                {t('auth.forgotPassword')}
               </button>
             </div>
 
             {/* Terms and Privacy */}
             <div className="text-xs text-gray-500 text-center">
-              By signing up or logging in, you consent to DisasterWatch's{' '}
+              {t('auth.agreeTo')}{' '}
               <a href="#" className="text-blue-600 hover:text-blue-500 underline">
-                Terms of Use
+                {t('auth.termsOfUse')}
               </a>{' '}
-              and{' '}
+              {t('auth.and')}{' '}
               <a href="#" className="text-blue-600 hover:text-blue-500 underline">
-                Privacy Policy
+                {t('auth.privacyPolicy')}
               </a>
               .
             </div>
@@ -413,22 +415,22 @@ const SignInPage = () => {
               {isLoading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Signing in...
+                  {t('auth.signingIn')}
                 </div>
               ) : (
-                'Sign In'
+                t('auth.signIn')
               )}
             </button>
 
             {/* Sign Up Link */}
             <div className="text-center">
-              <span className="text-sm text-gray-600">Don't have an account? </span>
+              <span className="text-sm text-gray-600">{t('auth.dontHaveAccount')} </span>
               <button
                 type="button"
                 onClick={handleSignUp}
                 className="text-sm text-blue-600 hover:text-blue-500 underline font-medium"
               >
-                Sign up here
+                {t('auth.signUpHere')}
               </button>
             </div>
           </div>
@@ -439,14 +441,14 @@ const SignInPage = () => {
             onClick={() => alert('Contact us clicked')}
             className="text-sm text-gray-600 hover:text-gray-500 underline"
           >
-            Contact us
+            {t('common.contactUs')}
           </button>
           <div className="text-xs text-gray-400">
             <button
               onClick={() => navigate('/admin/signin')}
               className="text-gray-400 hover:text-gray-600 underline"
             >
-              Emergency Management Access
+              {t('auth.emergencyManagementAccess')}
             </button>
           </div>
         </div>

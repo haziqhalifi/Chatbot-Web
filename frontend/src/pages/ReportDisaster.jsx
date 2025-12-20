@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Header from '../components/common/Header';
 import Button from '../components/ui/Button';
 import InputField from '../components/ui/InputField';
@@ -13,21 +14,22 @@ const initialForm = {
   description: '',
 };
 
-const disasterTypes = [
-  { value: '', label: 'Select type' },
-  { value: 'Flood', label: 'Flood' },
-  { value: 'Landslide', label: 'Landslide' },
-  { value: 'Earthquake', label: 'Earthquake' },
-  { value: 'Fire', label: 'Fire' },
-  { value: 'Storm', label: 'Storm' },
-  { value: 'Other', label: 'Other' },
-];
-
 const ReportDisaster = ({ onClose }) => {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
+
+  const disasterTypesTranslated = [
+    { value: '', label: t('disaster.selectType') },
+    { value: 'Flood', label: t('disaster.flood') },
+    { value: 'Landslide', label: t('disaster.landslide') },
+    { value: 'Earthquake', label: t('disaster.earthquake') },
+    { value: 'Fire', label: t('disaster.fire') },
+    { value: 'Storm', label: t('disaster.storm') },
+    { value: 'Other', label: t('disaster.other') },
+  ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -79,7 +81,7 @@ const ReportDisaster = ({ onClose }) => {
           />
         </svg>
       </button>
-      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">Report a Disaster</h2>{' '}
+      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">{t('disaster.reportADisaster')}</h2>{' '}
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
           <div className="flex justify-center mb-3">
@@ -99,23 +101,22 @@ const ReportDisaster = ({ onClose }) => {
               </svg>
             </div>
           </div>
-          <h3 className="text-green-800 font-bold text-lg mb-2">Report Submitted Successfully!</h3>
+          <h3 className="text-green-800 font-bold text-lg mb-2">{t('disaster.thankYou')}</h3>
           <p className="text-green-700 text-sm mb-4">
-            Thank you for your report. Our emergency response team will review and respond as
-            needed.
+            {t('disaster.reportSubmitted')}
           </p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setSubmitted(false)}
               className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
             >
-              Submit Another Report
+              {t('disaster.reportAnother')}
             </button>
             <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors duration-200 text-sm font-medium"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
@@ -137,14 +138,14 @@ const ReportDisaster = ({ onClose }) => {
                   d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                 />
               </svg>
-              Title
+              {t('disaster.title')}
             </label>
             <InputField
               type="text"
               name="title"
               value={form.title}
               onChange={handleChange}
-              placeholder="Enter a title for the report"
+              placeholder={t('disaster.enterTitle')}
               required
             />
           </div>{' '}
@@ -169,14 +170,14 @@ const ReportDisaster = ({ onClose }) => {
                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              Location
+              {t('disaster.location')}
             </label>
             <InputField
               type="text"
               name="location"
               value={form.location}
               onChange={handleChange}
-              placeholder="E.g. Bandar Kinrara, Selangor"
+              placeholder={t('disaster.enterLocation')}
               required
             />
           </div>{' '}
@@ -195,11 +196,11 @@ const ReportDisaster = ({ onClose }) => {
                   d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              Disaster Type
+              {t('disaster.disasterType')}
             </label>
             <Dropdown
-              options={disasterTypes}
-              selectedOption={disasterTypes.find((d) => d.value === form.disaster_type)}
+              options={disasterTypesTranslated}
+              selectedOption={disasterTypesTranslated.find((d) => d.value === form.disaster_type)}
               onSelect={handleTypeSelect}
               placeholder="Select disaster type"
               required
@@ -220,7 +221,7 @@ const ReportDisaster = ({ onClose }) => {
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              Description
+              {t('disaster.description')}
             </label>
             <textarea
               name="description"
@@ -228,7 +229,7 @@ const ReportDisaster = ({ onClose }) => {
               onChange={handleChange}
               required
               rows={4}
-              placeholder="Describe the disaster situation in detail..."
+              placeholder={t('disaster.describeDisaster')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0a4974] focus:border-transparent bg-white text-sm transition-all duration-200 hover:border-gray-400"
             />
           </div>{' '}
@@ -260,7 +261,7 @@ const ReportDisaster = ({ onClose }) => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Submitting...
+                  {t('disaster.submittingReport')}
                 </>
               ) : (
                 <>
@@ -277,7 +278,7 @@ const ReportDisaster = ({ onClose }) => {
                       d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
                     />
                   </svg>
-                  Submit Report
+                  {t('disaster.submitReport')}
                 </>
               )}{' '}
             </button>
