@@ -9,6 +9,7 @@ The DisasterWatch application now supports **bilingual functionality** with Engl
 ### Frontend Language Support
 
 1. **Complete UI Translation**
+
    - All pages, components, buttons, labels, and messages are translated
    - Real-time language switching without page reload
    - Language preference stored in browser localStorage
@@ -60,15 +61,15 @@ Translation files are located in `frontend/src/locales/`:
 #### Basic Usage
 
 ```jsx
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 function MyComponent() {
   const { t } = useTranslation();
-  
+
   return (
     <div>
-      <h1>{t('common.welcome')}</h1>
-      <button>{t('common.save')}</button>
+      <h1>{t("common.welcome")}</h1>
+      <button>{t("common.save")}</button>
     </div>
   );
 }
@@ -77,15 +78,15 @@ function MyComponent() {
 #### Advanced Usage with Custom Hook
 
 ```jsx
-import { useT } from '../hooks/useTranslation';
+import { useT } from "../hooks/useTranslation";
 
 function MyComponent() {
   const { t, common, auth, currentLanguage } = useT();
-  
+
   return (
     <div>
-      <h1>{common('welcome')}</h1>
-      <button>{auth('login')}</button>
+      <h1>{common("welcome")}</h1>
+      <button>{auth("login")}</button>
       <p>Current language: {currentLanguage}</p>
     </div>
   );
@@ -112,9 +113,9 @@ Users can click on the language selector to choose between English and Malay.
 The i18n configuration is in `frontend/src/i18n.js`:
 
 ```javascript
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 
 i18n
   .use(LanguageDetector)
@@ -124,10 +125,10 @@ i18n
       en: { translation: enTranslations },
       ms: { translation: msTranslations },
     },
-    fallbackLng: 'en',
+    fallbackLng: "en",
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
+      order: ["localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
     },
   });
 ```
@@ -182,32 +183,38 @@ The backend supports the following categories:
 ## Translation Categories
 
 ### Common Translations
+
 - Buttons: save, cancel, submit, delete, edit, close
 - Actions: search, filter, clear, refresh
 - States: loading, error, success
 
 ### Navigation
+
 - home, chat, profile, settings, notifications, help, logout
 - dashboard, reportDisaster, emergencySupport
 
 ### Authentication
+
 - login, register, signin, signup
 - email, password, username
 - Validation messages
 - Success/error messages
 
 ### Disaster Management
+
 - reportDisaster, emergencySupport
 - disasterType, location, description, severity
 - flood, landslide, earthquake, fire, storm
 - Status: pending, investigating, resolved
 
 ### Notifications
+
 - Types: floodWarning, evacuationNotice, weatherUpdate
 - Actions: markAllRead, clearAll
 - Settings and preferences
 
 ### Chat Interface
+
 - sendMessage, typeMessage, newChat
 - chatHistory, exportChat
 - Voice controls
@@ -219,6 +226,7 @@ The backend supports the following categories:
 Add the new key to both `en.json` and `ms.json`:
 
 **en.json**
+
 ```json
 {
   "myCategory": {
@@ -228,6 +236,7 @@ Add the new key to both `en.json` and `ms.json`:
 ```
 
 **ms.json**
+
 ```json
 {
   "myCategory": {
@@ -240,7 +249,7 @@ Add the new key to both `en.json` and `ms.json`:
 
 ```jsx
 const { t } = useTranslation();
-<p>{t('myCategory.myNewKey')}</p>
+<p>{t("myCategory.myNewKey")}</p>;
 ```
 
 ### 3. Add to Backend (if needed)
@@ -267,11 +276,13 @@ TRANSLATIONS = {
 ### 1. Use Descriptive Keys
 
 ❌ Bad:
+
 ```json
 { "text1": "Submit" }
 ```
 
 ✅ Good:
+
 ```json
 { "auth.submitButton": "Submit" }
 ```
@@ -279,6 +290,7 @@ TRANSLATIONS = {
 ### 2. Group Related Translations
 
 Group translations by feature or component:
+
 ```json
 {
   "profile": {
@@ -292,20 +304,22 @@ Group translations by feature or component:
 ### 3. Avoid Hardcoded Text
 
 ❌ Bad:
+
 ```jsx
 <button>Submit Report</button>
 ```
 
 ✅ Good:
+
 ```jsx
-<button>{t('disaster.submitReport')}</button>
+<button>{t("disaster.submitReport")}</button>
 ```
 
 ### 4. Handle Pluralization
 
 ```jsx
 // For dynamic content
-t('notification.count', { count: notifications.length })
+t("notification.count", { count: notifications.length });
 ```
 
 ### 5. Keep Translations Consistent
@@ -326,11 +340,11 @@ Use the same term for the same concept across all translations.
 
 ```javascript
 // Test language switching
-describe('Language Switching', () => {
-  it('should switch to Malay', () => {
-    i18n.changeLanguage('ms');
-    expect(i18n.language).toBe('ms');
-    expect(t('common.save')).toBe('Simpan');
+describe("Language Switching", () => {
+  it("should switch to Malay", () => {
+    i18n.changeLanguage("ms");
+    expect(i18n.language).toBe("ms");
+    expect(t("common.save")).toBe("Simpan");
   });
 });
 ```
@@ -340,6 +354,7 @@ describe('Language Switching', () => {
 ### Problem: Translations not showing
 
 **Solution:**
+
 1. Check if the key exists in both language files
 2. Verify the import of `useTranslation`
 3. Check browser console for i18n errors
@@ -347,6 +362,7 @@ describe('Language Switching', () => {
 ### Problem: Language not persisting
 
 **Solution:**
+
 1. Check localStorage is enabled
 2. Verify i18n detector configuration
 3. Clear browser cache
@@ -354,6 +370,7 @@ describe('Language Switching', () => {
 ### Problem: Some text still in English when Malay is selected
 
 **Solution:**
+
 1. Find the hardcoded text
 2. Add translation key to both language files
 3. Replace hardcoded text with `t('key')`
@@ -361,6 +378,7 @@ describe('Language Switching', () => {
 ## Components with Full Translation Support
 
 ### Pages
+
 - ✅ SignIn
 - ✅ SignUp
 - ✅ Dashboard
@@ -374,6 +392,7 @@ describe('Language Switching', () => {
 - ✅ Admin pages
 
 ### Components
+
 - ✅ Header
 - ✅ Navigation
 - ✅ LanguageDropdown
@@ -387,10 +406,10 @@ describe('Language Switching', () => {
 API responses can be localized by including the `Accept-Language` header:
 
 ```javascript
-fetch('/api/endpoint', {
+fetch("/api/endpoint", {
   headers: {
-    'Accept-Language': 'ms' // or 'en'
-  }
+    "Accept-Language": "ms", // or 'en'
+  },
 });
 ```
 
@@ -413,6 +432,7 @@ The backend will automatically detect and use the appropriate language for respo
 ## Support
 
 For issues or questions about the language system:
+
 1. Check this documentation
 2. Review translation files in `frontend/src/locales/`
 3. Check the i18n configuration in `frontend/src/i18n.js`

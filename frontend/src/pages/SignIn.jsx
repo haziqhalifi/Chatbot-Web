@@ -37,8 +37,7 @@ const SignInPage = () => {
     if (!/(?=.*[a-z])/.test(password)) return t('auth.passwordLowercase');
     if (!/(?=.*[A-Z])/.test(password)) return t('auth.passwordUppercase');
     if (!/(?=.*\d)/.test(password)) return t('auth.passwordNumber');
-    if (!/(?=.*[@$!%*?&])/.test(password))
-      return t('auth.passwordSpecial');
+    if (!/(?=.*[@$!%*?&])/.test(password)) return t('auth.passwordSpecial');
     return '';
   };
 

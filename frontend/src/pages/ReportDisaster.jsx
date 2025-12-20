@@ -81,7 +81,9 @@ const ReportDisaster = ({ onClose }) => {
           />
         </svg>
       </button>
-      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">{t('disaster.reportADisaster')}</h2>{' '}
+      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">
+        {t('disaster.reportADisaster')}
+      </h2>{' '}
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
           <div className="flex justify-center mb-3">
@@ -102,9 +104,7 @@ const ReportDisaster = ({ onClose }) => {
             </div>
           </div>
           <h3 className="text-green-800 font-bold text-lg mb-2">{t('disaster.thankYou')}</h3>
-          <p className="text-green-700 text-sm mb-4">
-            {t('disaster.reportSubmitted')}
-          </p>
+          <p className="text-green-700 text-sm mb-4">{t('disaster.reportSubmitted')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setSubmitted(false)}
