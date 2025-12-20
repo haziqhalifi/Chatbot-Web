@@ -46,7 +46,8 @@
     "emergencySupport": "Sokongan Kecemasan",
     "myReports": "Laporan Saya",
     "disasterMap": "Peta Bencana",
-    "disasterDashboard": "Papan Pemuka Bencana"
+    "disasterDashboard": "Papan Pemuka",
+    "report": "Lapor"
   },
   "header": {
     "disasterWatch": "DisasterWatch",

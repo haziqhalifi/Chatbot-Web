@@ -11,7 +11,7 @@ const Navigation = ({ onOpenReport, onOpenEmergency }) => {
         to="/disaster-dashboard"
         className="text-base font-semibold text-[#f0f0f0] hover:text-blue-400 transition-colors"
       >
-        Analytics
+        {t('navigation.disasterDashboard')}
       </Link>
       <button
         type="button"

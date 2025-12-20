@@ -46,7 +46,8 @@
     "emergencySupport": "Emergency Support",
     "myReports": "My Reports",
     "disasterMap": "Disaster Map",
-    "disasterDashboard": "Disaster Dashboard"
+    "disasterDashboard": "Dashboard",
+    "report": "Report"
   },
   "header": {
     "disasterWatch": "DisasterWatch",
