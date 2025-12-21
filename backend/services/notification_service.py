@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from database import get_db_conn
+from database.connection import DatabaseConnection
 from datetime import datetime
 from typing import List, Optional
 import json
@@ -7,115 +7,108 @@ import json
 def get_notifications(user_id: int, limit: int = 10, offset: int = 0, unread_only: bool = False):
     """Get notifications for a user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        where_clause = "WHERE user_id = ?"
-        params = [user_id]
-        
-        if unread_only:
-            where_clause += " AND is_read = 0"
-        
-        query = f"""
-            SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
-            FROM notifications 
-            {where_clause}
-            ORDER BY created_at DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """
-        
-        params.extend([offset, limit])
-        cursor.execute(query, params)
-        
-        notifications = []
-        for row in cursor.fetchall():
-            notifications.append({
-                "id": row[0],
-                "user_id": row[1],
-                "title": row[2],
-                "message": row[3],
-                "type": row[4],
-                "disaster_type": row[5],
-                "location": row[6],
-                "read": bool(row[7]),  # Convert BIT to boolean
-                "created_at": row[8].isoformat() if row[8] else None
-            })
-        
-        return notifications
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            where_clause = "WHERE user_id = ?"
+            params = [user_id]
+            
+            if unread_only:
+                where_clause += " AND is_read = 0"
+            
+            query = f"""
+                SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
+                FROM notifications 
+                {where_clause}
+                ORDER BY created_at DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """
+            
+            params.extend([offset, limit])
+            cursor.execute(query, params)
+            
+            notifications = []
+            for row in cursor.fetchall():
+                notifications.append({
+                    "id": row[0],
+                    "user_id": row[1],
+                    "title": row[2],
+                    "message": row[3],
+                    "type": row[4],
+                    "disaster_type": row[5],
+                    "location": row[6],
+                    "read": bool(row[7]),  # Convert BIT to boolean
+                    "created_at": row[8].isoformat() if row[8] else None
+                })
+            
+            return notifications
         
     except Exception as e:
         print(f"Error getting notifications: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    finally:
-        if 'conn' in locals():
-            conn.close()
 
 def create_notifications_table():
     """Create notifications table if it doesn't exist"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Check if table exists
-        cursor.execute("""
-            SELECT * FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_NAME = 'notifications'
-        """)
-        
-        if cursor.fetchone():
-            print("Notifications table already exists")
-            # Check if we need to add new columns
-            update_notifications_table_schema()
-            return
-              # Create notifications table with enhanced schema
-        cursor.execute("""
-            CREATE TABLE notifications (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                user_id INT NOT NULL,
-                title NVARCHAR(255) NOT NULL,
-                message NVARCHAR(1000) NOT NULL,
-                type NVARCHAR(50) DEFAULT 'info', -- info, warning, danger, success
-                disaster_type NVARCHAR(100) NULL, -- Type of disaster (flood, earthquake, etc.)
-                location NVARCHAR(255) NULL, -- Location of the disaster/event
-                is_read BIT DEFAULT 0,
-                created_at DATETIME DEFAULT GETDATE(),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        """)
-        
-        # Create index for better query performance
-        cursor.execute("""
-            CREATE INDEX IX_notifications_user_id ON notifications(user_id)
-        """)
-        cursor.execute("""
-            CREATE INDEX IX_notifications_is_read ON notifications(is_read)
-        """)
-        cursor.execute("""
-            CREATE INDEX IX_notifications_created_at ON notifications(created_at)
-        """)
-        cursor.execute("""
-            CREATE INDEX IX_notifications_disaster_type ON notifications(disaster_type)
-        """)
-        cursor.execute("""
-            CREATE INDEX IX_notifications_location ON notifications(location)
-        """)
-        
-        conn.commit()
-        print("Notifications table created successfully with enhanced schema")
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if table exists
+            cursor.execute("""
+                SELECT * FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_NAME = 'notifications'
+            """)
+            
+            if cursor.fetchone():
+                print("Notifications table already exists")
+                # Check if we need to add new columns
+                update_notifications_table_schema()
+                return
+            
+            # Create notifications table with enhanced schema
+            cursor.execute("""
+                CREATE TABLE notifications (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    title NVARCHAR(255) NOT NULL,
+                    message NVARCHAR(1000) NOT NULL,
+                    type NVARCHAR(50) DEFAULT 'info', -- info, warning, danger, success
+                    disaster_type NVARCHAR(100) NULL, -- Type of disaster (flood, earthquake, etc.)
+                    location NVARCHAR(255) NULL, -- Location of the disaster/event
+                    is_read BIT DEFAULT 0,
+                    created_at DATETIME DEFAULT GETDATE(),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
+            
+            # Create index for better query performance
+            cursor.execute("""
+                CREATE INDEX IX_notifications_user_id ON notifications(user_id)
+            """)
+            cursor.execute("""
+                CREATE INDEX IX_notifications_is_read ON notifications(is_read)
+            """)
+            cursor.execute("""
+                CREATE INDEX IX_notifications_created_at ON notifications(created_at)
+            """)
+            cursor.execute("""
+                CREATE INDEX IX_notifications_disaster_type ON notifications(disaster_type)
+            """)
+            cursor.execute("""
+                CREATE INDEX IX_notifications_location ON notifications(location)
+            """)
+            
+            conn.commit()
+            print("Notifications table created successfully with enhanced schema")
         
     except Exception as e:
         print(f"Error creating notifications table: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def update_notifications_table_schema():
     """Update existing notifications table to add disaster_type and location columns"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
         
         # Check if updated_at column exists and drop it
         cursor.execute("""
@@ -174,262 +167,217 @@ def update_notifications_table_schema():
                 CREATE INDEX IX_notifications_location ON notifications(location)
             """)
         
-        conn.commit()
-        print("Notifications table schema updated successfully")
+            conn.commit()
+            print("Notifications table schema updated successfully")
         
     except Exception as e:
         print(f"Error updating notifications table schema: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def create_notification(user_id: int, title: str, message: str, notification_type: str = "info", 
                       disaster_type: str = None, location: str = None):
     """Create a new notification for a user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            INSERT INTO notifications (user_id, title, message, type, disaster_type, location, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, GETDATE())
-        """, (user_id, title, message, notification_type, disaster_type, location))
-        
-        # Get the inserted notification ID
-        cursor.execute("SELECT @@IDENTITY")
-        notification_id = cursor.fetchone()[0]
-        
-        conn.commit()
-        return {"message": "Notification created successfully", "id": notification_id}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO notifications (user_id, title, message, type, disaster_type, location, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, GETDATE())
+            """, (user_id, title, message, notification_type, disaster_type, location))
+            
+            # Get the inserted notification ID
+            cursor.execute("SELECT @@IDENTITY")
+            notification_id = cursor.fetchone()[0]
+            
+            conn.commit()
+            return {"message": "Notification created successfully", "id": notification_id}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def get_user_notifications(user_id: int, limit: int = 50, offset: int = 0, unread_only: bool = False):
     """Get notifications for a specific user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-          # Build query based on filters
-        where_clause = "WHERE user_id = ?"
-        params = [user_id]
-        if unread_only:
-            where_clause += " AND is_read = 0"
-        
-        query = f"""
-            SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
-            FROM notifications
-            {where_clause}
-            ORDER BY created_at DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """
-        
-        params.extend([offset, limit])
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        
-        notifications = []
-        for row in rows:
-            notifications.append({
-                "id": row[0],
-                "user_id": row[1],
-                "title": row[2],
-                "message": row[3],
-                "type": row[4],
-                "disaster_type": row[5],
-                "location": row[6],
-                "read": bool(row[7]),
-                "timestamp": row[8].isoformat() if row[8] else None
-            })
-        
-        # Get total count for pagination
-        count_query = f"""
-            SELECT COUNT(*) FROM notifications {where_clause}
-        """
-        cursor.execute(count_query, params[:-2])  # Remove offset and limit params
-        total_count = cursor.fetchone()[0]
-        
-        return {
-            "notifications": notifications,
-            "total": total_count,
-            "unread_count": get_unread_count(user_id)
-        }
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+              # Build query based on filters
+            where_clause = "WHERE user_id = ?"
+            params = [user_id]
+            if unread_only:
+                where_clause += " AND is_read = 0"
+            
+            query = f"""
+                SELECT id, user_id, title, message, type, disaster_type, location, is_read, created_at
+                FROM notifications
+                {where_clause}
+                ORDER BY created_at DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """
+            
+            params.extend([offset, limit])
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            notifications = []
+            for row in rows:
+                notifications.append({
+                    "id": row[0],
+                    "user_id": row[1],
+                    "title": row[2],
+                    "message": row[3],
+                    "type": row[4],
+                    "disaster_type": row[5],
+                    "location": row[6],
+                    "read": bool(row[7]),
+                    "timestamp": row[8].isoformat() if row[8] else None
+                })
+            
+            # Get total count for pagination
+            count_query = f"""
+                SELECT COUNT(*) FROM notifications {where_clause}
+            """
+            cursor.execute(count_query, params[:-2])  # Remove offset and limit params
+            total_count = cursor.fetchone()[0]
+            
+            return {
+                "notifications": notifications,
+                "total": total_count,
+                "unread_count": get_unread_count(user_id)
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def get_unread_count(user_id: int):
     """Get count of unread notifications for a user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT COUNT(*) FROM notifications 
-            WHERE user_id = ? AND is_read = 0
-        """, (user_id,))
-        
-        count = cursor.fetchone()[0]
-        return count
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT COUNT(*) FROM notifications 
+                WHERE user_id = ? AND is_read = 0
+            """, (user_id,))
+            
+            count = cursor.fetchone()[0]
+            return count
         
     except Exception as e:
         return 0
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def mark_notification_as_read(notification_id: int, user_id: int):
     """Mark a specific notification as read"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE notifications 
-            SET is_read = 1
-            WHERE id = ? AND user_id = ?
-        """, (notification_id, user_id))
-        
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Notification not found")
-        
-        conn.commit()
-        return {"message": "Notification marked as read"}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE notifications 
+                SET is_read = 1
+                WHERE id = ? AND user_id = ?
+            """, (notification_id, user_id))
+            
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Notification not found")
+            
+            conn.commit()
+            return {"message": "Notification marked as read"}
         
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def mark_all_notifications_as_read(user_id: int):
     """Mark all notifications as read for a user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE notifications 
-            SET is_read = 1
-            WHERE user_id = ? AND is_read = 0
-        """, (user_id,))
-        
-        updated_count = cursor.rowcount
-        conn.commit()
-        
-        return {"message": f"{updated_count} notifications marked as read"}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE notifications 
+                SET is_read = 1
+                WHERE user_id = ? AND is_read = 0
+            """, (user_id,))
+            
+            updated_count = cursor.rowcount
+            conn.commit()
+            
+            return {"message": f"{updated_count} notifications marked as read"}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def delete_notification(notification_id: int, user_id: int):
     """Delete a specific notification"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            DELETE FROM notifications 
-            WHERE id = ? AND user_id = ?
-        """, (notification_id, user_id))
-        
-        if cursor.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Notification not found")
-        
-        conn.commit()
-        return {"message": "Notification deleted"}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                DELETE FROM notifications 
+                WHERE id = ? AND user_id = ?
+            """, (notification_id, user_id))
+            
+            if cursor.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Notification not found")
+            
+            conn.commit()
+            return {"message": "Notification deleted"}
         
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def clear_all_notifications(user_id: int):
     """Delete all notifications for a user"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            DELETE FROM notifications 
-            WHERE user_id = ?
-        """, (user_id,))
-        
-        deleted_count = cursor.rowcount
-        conn.commit()
-        
-        return {"message": f"{deleted_count} notifications deleted"}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                DELETE FROM notifications 
+                WHERE user_id = ?
+            """, (user_id,))
+            
+            deleted_count = cursor.rowcount
+            conn.commit()
+            
+            return {"message": f"{deleted_count} notifications deleted"}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def create_system_notification(title: str, message: str, notification_type: str = "info", user_ids: Optional[List[int]] = None):
     """Create system notifications for specific users or all users"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # If no specific user IDs provided, send to all users
-        if user_ids is None:
-            cursor.execute("SELECT id FROM users")
-            user_ids = [row[0] for row in cursor.fetchall()]
-          # Create notifications for each user
-        created_count = 0
-        for user_id in user_ids:
-            try:
-                cursor.execute("""
-                    INSERT INTO notifications (user_id, title, message, type, created_at)
-                    VALUES (?, ?, ?, ?, GETDATE())
-                """, (user_id, title, message, notification_type))
-                created_count += 1
-            except Exception as e:
-                print(f"Failed to create notification for user {user_id}: {e}")
-                continue
-        
-        conn.commit()
-        return {
-            "message": f"System notification sent to {created_count} users",
-            "users_notified": created_count,
-            "notifications_sent": created_count
-        }
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # If no specific user IDs provided, send to all users
+            if user_ids is None:
+                cursor.execute("SELECT id FROM users")
+                user_ids = [row[0] for row in cursor.fetchall()]
+              # Create notifications for each user
+            created_count = 0
+            for user_id in user_ids:
+                try:
+                    cursor.execute("""
+                        INSERT INTO notifications (user_id, title, message, type, created_at)
+                        VALUES (?, ?, ?, ?, GETDATE())
+                    """, (user_id, title, message, notification_type))
+                    created_count += 1
+                except Exception as e:
+                    print(f"Failed to create notification for user {user_id}: {e}")
+                    continue
+            
+            conn.commit()
+            return {
+                "message": f"System notification sent to {created_count} users",
+                "users_notified": created_count,
+                "notifications_sent": created_count
+            }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 # Utility functions for automatic notifications
 

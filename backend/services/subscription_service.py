@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-from database import get_db_conn
 from database.connection import DatabaseConnection
 from middleware.database_middleware import with_database_connection
 from datetime import datetime
@@ -165,71 +164,61 @@ def create_or_update_subscription(user_id: int, disaster_types: List[str],
 def delete_subscription(user_id: int):
     """Delete (deactivate) user's subscription"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE user_subscriptions 
-            SET is_active = 0, updated_at = GETDATE()
-            WHERE user_id = ? AND is_active = 1
-        """, (user_id,))
-        
-        conn.commit()
-        return {"message": "Subscription deleted successfully"}
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                UPDATE user_subscriptions 
+                SET is_active = 0, updated_at = GETDATE()
+                WHERE user_id = ? AND is_active = 1
+            """, (user_id,))
+            
+            conn.commit()
+            return {"message": "Subscription deleted successfully"}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def get_subscribed_users_for_alert(disaster_type: str, location: str) -> List[int]:
     """Get list of user IDs who should receive alerts for specific disaster type and location"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT DISTINCT user_id, disaster_types, locations 
-            FROM user_subscriptions 
-            WHERE is_active = 1
-        """)
-        
-        subscribed_users = []
-        rows = cursor.fetchall()
-        
-        for row in rows:
-            user_id = row[0]
-            user_disaster_types = json.loads(row[1]) if row[1] else []
-            user_locations = json.loads(row[2]) if row[2] else []
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
             
-            # Check if user is subscribed to this disaster type (case-insensitive)
-            disaster_match = any(
-                dt.lower() == disaster_type.lower() 
-                for dt in user_disaster_types
-            ) if user_disaster_types else True  # If no specific types, subscribe to all
+            cursor.execute("""
+                SELECT DISTINCT user_id, disaster_types, locations 
+                FROM user_subscriptions 
+                WHERE is_active = 1
+            """)
             
-            # Check if user is subscribed to this location (case-insensitive, partial match)
-            location_match = any(
-                loc.lower() in location.lower() or location.lower() in loc.lower()
-                for loc in user_locations
-            ) if user_locations else True  # If no specific locations, subscribe to all
+            subscribed_users = []
+            rows = cursor.fetchall()
             
-            if disaster_match and location_match:
-                subscribed_users.append(user_id)
-        
-        return subscribed_users
+            for row in rows:
+                user_id = row[0]
+                user_disaster_types = json.loads(row[1]) if row[1] else []
+                user_locations = json.loads(row[2]) if row[2] else []
+                
+                # Check if user is subscribed to this disaster type (case-insensitive)
+                disaster_match = any(
+                    dt.lower() == disaster_type.lower() 
+                    for dt in user_disaster_types
+                ) if user_disaster_types else True  # If no specific types, subscribe to all
+                
+                # Check if user is subscribed to this location (case-insensitive, partial match)
+                location_match = any(
+                    loc.lower() in location.lower() or location.lower() in loc.lower()
+                    for loc in user_locations
+                ) if user_locations else True  # If no specific locations, subscribe to all
+                
+                if disaster_match and location_match:
+                    subscribed_users.append(user_id)
+            
+            return subscribed_users
         
     except Exception as e:
         print(f"Error getting subscribed users: {e}")
         return []
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 def get_available_disaster_types() -> List[str]:
     """Get list of available disaster types for subscription"""
