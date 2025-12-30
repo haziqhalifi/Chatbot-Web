@@ -199,6 +199,19 @@ body.chat-resizing .chat-resize-handle {
   pointer-events: auto;
 }
 
+/* Text size preference (global) */
+html[data-text-size='Small'] {
+  font-size: 90%;
+}
+
+html[data-text-size='Medium'] {
+  font-size: 100%;
+}
+
+html[data-text-size='Large'] {
+  font-size: 110%;
+}
+
 /* Improved resize handle visibility */
 .chat-resize-handle {
   -webkit-backdrop-filter: blur(2px);

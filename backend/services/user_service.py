@@ -201,3 +201,79 @@ def update_last_login(user_id: int):
             conn.close()
         except:
             pass
+
+
+def delete_user_account(user_id: int):
+    """Delete a user and related data.
+
+    Notes:
+    - Some tables reference users without ON DELETE CASCADE (e.g., notifications, chat_sessions).
+    - This function deletes dependent rows first, then deletes the user.
+    """
+    conn = None
+    try:
+        conn = get_db_conn()
+        conn.autocommit = False
+        cursor = conn.cursor()
+
+        # Ensure user exists
+        cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Delete notifications (FK to users)
+        cursor.execute("DELETE FROM notifications WHERE user_id = ?", (user_id,))
+
+        # Delete system reports (FK to users)
+        cursor.execute("DELETE FROM system_reports WHERE user_id = ?", (user_id,))
+
+        # Delete disaster reports if table exists
+        cursor.execute(
+            """
+            IF OBJECT_ID('disaster_reports', 'U') IS NOT NULL
+                DELETE FROM disaster_reports WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+
+        # Delete password reset tokens (FK to users)
+        cursor.execute("DELETE FROM password_reset_tokens WHERE user_id = ?", (user_id,))
+
+        # Delete chat sessions (messages are ON DELETE CASCADE from sessions)
+        cursor.execute("DELETE FROM chat_sessions WHERE user_id = ?", (user_id,))
+
+        # Delete subscriptions (may have FK with ON DELETE CASCADE, but safe to delete explicitly)
+        cursor.execute(
+            """
+            IF OBJECT_ID('user_subscriptions', 'U') IS NOT NULL
+                DELETE FROM user_subscriptions WHERE user_id = ?
+            """,
+            (user_id,),
+        )
+
+        # Finally delete user
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+        conn.commit()
+        conn.autocommit = True
+        return {"message": "Account deleted successfully."}
+    except HTTPException:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise
+    except Exception as e:
+        if conn is not None:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass

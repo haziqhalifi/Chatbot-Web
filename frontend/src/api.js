@@ -228,6 +228,21 @@ export const authAPI = {
       adminCode,
     });
   },
+
+  // Change password (authenticated)
+  changePassword: (currentPassword, newPassword) => {
+    return api.post('/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+  },
+};
+
+// Profile API endpoints
+export const profileAPI = {
+  getProfile: () => api.get('/profile'),
+  updateProfile: (data) => api.put('/profile', data),
+  deleteAccount: () => api.delete('/account'),
 };
 
 export default api;
