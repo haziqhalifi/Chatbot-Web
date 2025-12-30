@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 import jwt
 import os
-from services.user_service import get_user_profile, update_user_profile
+from services.user_service import get_user_profile, update_user_profile, delete_user_account
 
 router = APIRouter()
 
@@ -48,3 +48,10 @@ def update_profile(request: UserProfileRequest, authorization: str = Header(None
         user_id, request.name, request.language, request.phone, 
         request.address, request.city, request.country, request.timezone
     )
+
+
+@router.delete("/account")
+def delete_account(authorization: str = Header(None)):
+    """Delete the authenticated user's account and related data."""
+    user_id = get_user_id_from_token(authorization)
+    return delete_user_account(user_id)
