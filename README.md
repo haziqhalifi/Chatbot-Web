@@ -146,6 +146,40 @@ See `frontend/src/examples/MapDataAPIExample.jsx` for complete usage examples.
 - Ensure the backend is running before using the frontend.
 - Update API endpoints in the frontend if the backend address/port changes.
 
+## Password Reset Email (SMTP)
+
+The backend endpoint `POST /forgot-password` can send a real password reset email when SMTP is configured.
+
+Set these environment variables before starting the backend:
+
+- `FRONTEND_BASE_URL` (example: `http://localhost:4028` or your deployed site)
+- `SMTP_HOST` (required to send email)
+- `SMTP_PORT` (default: `587`)
+- `SMTP_USER` (optional; if set, login is attempted)
+- `SMTP_PASSWORD` (required if `SMTP_USER` is set)
+- `SMTP_FROM` (optional; defaults to `SMTP_USER`)
+- `SMTP_TLS` (default: `true`) – use STARTTLS on port 587
+- `SMTP_SSL` (default: `false`) – set to `true` for implicit TLS (commonly port 465)
+- `SMTP_TIMEOUT` (default: `20` seconds)
+
+If `SMTP_HOST` is not set, the backend logs the reset link in the console (dev mode).
+
+### Brevo (Sendinblue) example
+
+1. In Brevo: create an SMTP key (SMTP credentials) and verify your sender email/domain.
+2. Set env vars (PowerShell):
+
+   `$env:FRONTEND_BASE_URL = "http://localhost:4028"
+$env:SMTP_HOST = "smtp-relay.brevo.com"
+$env:SMTP_PORT = "587"
+$env:SMTP_TLS = "true"
+$env:SMTP_SSL = "false"
+$env:SMTP_USER = "YOUR_BREVO_SMTP_LOGIN"
+$env:SMTP_PASSWORD = "YOUR_BREVO_SMTP_KEY"
+$env:SMTP_FROM = "verified-sender@yourdomain.com"`
+
+3. Restart the backend and use “Forgot password?” again.
+
 ## License
 
 This project is for educational purposes.
