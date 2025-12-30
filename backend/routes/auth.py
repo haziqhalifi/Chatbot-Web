@@ -12,6 +12,8 @@ from database import get_db_conn
 # Import new models and utilities
 from models import AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse, ForgotPasswordRequest
 from utils.security import generate_secure_token
+from utils.security import validate_password as validate_password_strength
+from utils.email_sender import send_password_reset_email
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -20,6 +22,28 @@ router = APIRouter()
 JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
 JWT_ALGORITHM = "HS256"
 GOOGLE_CLIENT_ID = "845615957730-ldlb837mjkqtvigr8d6pt8ruq1qab2jo.apps.googleusercontent.com"
+
+
+def _coerce_datetime(value) -> datetime:
+    if isinstance(value, datetime):
+        return value
+    if value is None:
+        raise ValueError("expires_at is null")
+
+    text = str(value).strip()
+
+    # SQL Server/pyodbc often returns: 'YYYY-MM-DD HH:MM:SS' or with microseconds
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            pass
+
+    # Fallback: ISO-ish parsing (e.g. 'YYYY-MM-DDTHH:MM:SS[.ffffff]')
+    try:
+        return datetime.fromisoformat(text.replace(" ", "T"))
+    except ValueError as e:
+        raise ValueError(f"Unrecognized datetime format: {text}") from e
 
 @router.post("/signup")
 def signup(request: AuthRequest):
@@ -109,6 +133,7 @@ def google_auth(data: GoogleAuthRequest):
 @router.post("/forgot-password")
 def forgot_password(request: ForgotPasswordRequest):
     email = request.email
+    conn = None
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
@@ -128,16 +153,29 @@ def forgot_password(request: ForgotPasswordRequest):
         """, (user_id, token, expires_at))
         conn.commit()
         # Log the reset link (simulate email)
-        reset_link = f"http://localhost:4028/reset-password?token={token}"
-        print(f"[FORGOT PASSWORD] Send this link to user: {reset_link}")
+        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:4028")
+        reset_link = f"{frontend_base_url}/reset-password?token={token}"
+        # Prefer real email if SMTP is configured; otherwise log link for dev.
+        if os.getenv("SMTP_HOST"):
+            try:
+                send_password_reset_email(to_email=email, reset_link=reset_link)
+                print(f"[FORGOT PASSWORD] Reset email sent to: {email}")
+            except Exception as e:
+                print(f"[FORGOT PASSWORD] Email send failed: {e}")
+                print(f"[FORGOT PASSWORD] Fallback link: {reset_link}")
+        else:
+            print(f"[FORGOT PASSWORD] Send this link to user: {reset_link}")
         return {"message": "If the email exists, a reset link has been sent."}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        try:
-            conn.close()
-        except:
-            pass
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
 class ResetPasswordRequest(BaseModel):
     token: str
@@ -147,7 +185,12 @@ class ResetPasswordRequest(BaseModel):
 def reset_password(request: ResetPasswordRequest):
     token = request.token
     new_password = request.new_password
+    conn = None
     try:
+        validation = validate_password_strength(new_password)
+        if not validation.get("valid", False):
+            raise HTTPException(status_code=400, detail="; ".join(validation.get("errors", [])) or "Invalid password")
+
         conn = get_db_conn()
         cursor = conn.cursor()
         # Find token
@@ -158,9 +201,10 @@ def reset_password(request: ResetPasswordRequest):
         if not row:
             raise HTTPException(status_code=400, detail="Invalid or expired token.")
         user_id, expires_at, used = row
-        if used:
+        if bool(used):
             raise HTTPException(status_code=400, detail="Token already used.")
-        if datetime.utcnow() > datetime.strptime(str(expires_at), '%Y-%m-%d %H:%M:%S'):
+        expires_at_dt = _coerce_datetime(expires_at)
+        if datetime.utcnow() > expires_at_dt:
             raise HTTPException(status_code=400, detail="Token expired.")
         # Update password
         hashed = pwd_context.hash(new_password)
@@ -169,10 +213,13 @@ def reset_password(request: ResetPasswordRequest):
         cursor.execute("UPDATE password_reset_tokens SET used = 1 WHERE token = ?", (token,))
         conn.commit()
         return {"message": "Password has been reset successfully."}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        try:
-            conn.close()
-        except:
-            pass
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
