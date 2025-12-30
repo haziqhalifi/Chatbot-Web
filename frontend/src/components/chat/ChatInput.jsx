@@ -75,10 +75,20 @@ const ChatInput = ({
 
             setIsTranscribing(true);
             try {
+              // Get user's preferred language from localStorage (default to auto-detect)
+              const voiceLanguage = localStorage.getItem('voiceLanguage') || 'auto';
+
               const res = await api.post('/transcribe', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
+                params: {
+                  language: voiceLanguage, // 'ms' for Malay, 'en' for English, 'auto' for auto-detect
+                  method: 'auto', // Use best available method (OpenAI API or local)
+                },
               });
               const transcript = res.data.transcript;
+              const method = res.data.method || 'unknown';
+              console.log(`Transcription successful using ${method}`);
+
               onInputChange({ target: { value: transcript } });
 
               if (transcript.trim()) {
@@ -86,7 +96,9 @@ const ChatInput = ({
               }
             } catch (err) {
               console.error('Voice transcription failed:', err);
-              alert('Voice transcription failed. Please try again.');
+              const errorMsg =
+                err.response?.data?.detail || 'Voice transcription failed. Please try again.';
+              alert(errorMsg);
             } finally {
               setIsTranscribing(false);
             }

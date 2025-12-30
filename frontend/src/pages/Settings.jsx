@@ -15,6 +15,9 @@ const SettingsPage = ({ onClose }) => {
   const [email, setEmail] = useState(user.email);
   const [language, setLanguage] = useState('English');
   const [voiceInput, setVoiceInput] = useState(true);
+  const [voiceLanguage, setVoiceLanguage] = useState(
+    localStorage.getItem('voiceLanguage') || 'auto'
+  );
   const [textSize, setTextSize] = useState('Medium');
   const [defaultChatLang, setDefaultChatLang] = useState('Auto-detect');
   const [chatHistoryLogging, setChatHistoryLogging] = useState(true);
@@ -178,6 +181,26 @@ const SettingsPage = ({ onClose }) => {
                   <span className="ml-2 text-gray-600">{voiceInput ? 'ON' : 'OFF'}</span>
                 </label>
               </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Voice Input Language</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={voiceLanguage}
+                  onChange={(e) => {
+                    setVoiceLanguage(e.target.value);
+                    localStorage.setItem('voiceLanguage', e.target.value);
+                  }}
+                >
+                  <option value="auto">Auto-detect</option>
+                  <option value="ms">Bahasa Melayu (Malay)</option>
+                  <option value="en">English</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the language for voice recognition. Auto-detect works for both languages.
+                </p>
+              </div>
+
               <div className="mb-4">
                 <label className="block text-gray-700 font-medium mb-1">Text Size</label>
                 <select
