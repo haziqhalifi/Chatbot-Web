@@ -85,7 +85,7 @@ Since the system validates against existing user accounts, you'll need to:
    {
      "email": "admin@gmail.com",
      "password": "AdminPassword123!",
-     "adminCode": "ADMIN123"
+     "admin_code": "ADMIN123"
    }
    ```
 
@@ -151,7 +151,7 @@ POST http://localhost:8000/admin/register
 {
   "email": "admin@admin.disasterwatch.com",
   "password": "AdminPassword123!",
-  "adminCode": "ADMIN123"
+  "admin_code": "ADMIN123"
 }
 ```
 

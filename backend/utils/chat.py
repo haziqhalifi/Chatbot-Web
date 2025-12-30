@@ -11,11 +11,22 @@ import logging
 
 # Optional whisper import for voice transcription
 try:
-    import whisper
+    import whisper as openai_whisper
     WHISPER_AVAILABLE = True
 except Exception as e:
     WHISPER_AVAILABLE = False
     print(f"Warning: Whisper not available for audio transcription: {e}")
+
+# OpenAI API for better speech recognition (supports Malay and English)
+try:
+    from openai import OpenAI
+    from config.settings import OPENAI_API_KEY
+    OPENAI_API_AVAILABLE = bool(OPENAI_API_KEY)
+    if OPENAI_API_AVAILABLE:
+        openai_client = OpenAI(api_key=OPENAI_API_KEY)
+except Exception as e:
+    OPENAI_API_AVAILABLE = False
+    print(f"Warning: OpenAI API not available for transcription: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -139,26 +150,80 @@ def md_table_to_html(md):
             i += 1
     return '\n'.join(html)
 
-def transcribe_audio_file(file: UploadFile):
-    if not WHISPER_AVAILABLE:
+def transcribe_audio_file(file: UploadFile, language: str = "auto", method: str = "auto"):
+    """
+    Transcribe audio file to text with language support.
+    
+    Args:
+        file: Audio file to transcribe
+        language: Language code ("ms" for Malay, "en" for English, "auto" for auto-detect)
+        method: Transcription method ("openai" for API, "local" for local Whisper, "auto" for best available)
+    """
+    # Determine which method to use
+    use_openai_api = False
+    if method == "openai" and OPENAI_API_AVAILABLE:
+        use_openai_api = True
+    elif method == "auto" and OPENAI_API_AVAILABLE:
+        # Prefer OpenAI API as it has better Malay support
+        use_openai_api = True
+    elif not WHISPER_AVAILABLE and not OPENAI_API_AVAILABLE:
         raise HTTPException(
-            status_code=503, 
-            detail="Audio transcription is not available. Whisper library is not properly installed."
+            status_code=503,
+            detail="Audio transcription is not available. Neither OpenAI API nor Whisper library is properly configured."
         )
     
     try:
         audio_bytes = file.file.read()
-        temp_dir = os.path.dirname(os.path.abspath(__file__))
-        import tempfile
-        temp_audio = tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir=temp_dir)
-        try:
-            temp_audio.write(audio_bytes)
-            temp_audio.flush()
-            temp_audio.close()
-            model = whisper.load_model("base")
-            result = model.transcribe(temp_audio.name)
-        finally:
-            os.unlink(temp_audio.name)
-        return {"transcript": result["text"]}
+        
+        if use_openai_api:
+            # Use OpenAI Whisper API (better for Malay and multilingual)
+            import tempfile
+            import io
+            
+            # OpenAI API requires file-like object with name attribute
+            audio_file = io.BytesIO(audio_bytes)
+            audio_file.name = "audio.wav"
+            
+            # Set language parameter for OpenAI API
+            transcription_params = {"model": "whisper-1", "file": audio_file}
+            
+            if language and language != "auto":
+                transcription_params["language"] = language
+            
+            logger.info(f"Using OpenAI Whisper API with language: {language}")
+            transcript = openai_client.audio.transcriptions.create(**transcription_params)
+            return {"transcript": transcript.text, "method": "openai_api"}
+        
+        else:
+            # Use local Whisper model
+            if not WHISPER_AVAILABLE:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Local Whisper model is not available. Please configure OpenAI API key or install openai-whisper."
+                )
+            
+            temp_dir = os.path.dirname(os.path.abspath(__file__))
+            import tempfile
+            temp_audio = tempfile.NamedTemporaryFile(delete=False, suffix=".wav", dir=temp_dir)
+            
+            try:
+                temp_audio.write(audio_bytes)
+                temp_audio.flush()
+                temp_audio.close()
+                
+                logger.info(f"Using local Whisper model with language: {language}")
+                model = openai_whisper.load_model("base")
+                
+                # Set language parameter for local Whisper
+                transcribe_params = {"audio": temp_audio.name}
+                if language and language != "auto":
+                    transcribe_params["language"] = language
+                
+                result = model.transcribe(**transcribe_params)
+                return {"transcript": result["text"], "method": "local_whisper"}
+            finally:
+                os.unlink(temp_audio.name)
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Transcription error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")

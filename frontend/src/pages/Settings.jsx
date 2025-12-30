@@ -21,14 +21,16 @@ const SettingsPage = ({ onClose }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [language, setLanguage] = useState('English');
-
-  const [voiceInput, setVoiceInput] = useState(initialSettings.voiceInputEnabled);
-  const [textSize, setTextSize] = useState(initialSettings.textSize);
-  const [defaultChatLang, setDefaultChatLang] = useState(initialSettings.defaultChatLang);
-  const [chatHistoryLogging, setChatHistoryLogging] = useState(initialSettings.chatHistoryLogging);
-  const [disasterAlerts, setDisasterAlerts] = useState(initialSettings.disasterAlerts);
-  const [notifySOP, setNotifySOP] = useState(initialSettings.notifySOP);
-  const [notifyNearby, setNotifyNearby] = useState(initialSettings.notifyNearby);
+  const [voiceInput, setVoiceInput] = useState(true);
+  const [voiceLanguage, setVoiceLanguage] = useState(
+    localStorage.getItem('voiceLanguage') || 'auto'
+  );
+  const [textSize, setTextSize] = useState('Medium');
+  const [defaultChatLang, setDefaultChatLang] = useState('Auto-detect');
+  const [chatHistoryLogging, setChatHistoryLogging] = useState(true);
+  const [disasterAlerts, setDisasterAlerts] = useState(true);
+  const [notifySOP, setNotifySOP] = useState(true);
+  const [notifyNearby, setNotifyNearby] = useState(false);
   const [twoFA, setTwoFA] = useState(false);
   const [privacy, setPrivacy] = useState(initialSettings.privacy);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -404,19 +406,155 @@ const SettingsPage = ({ onClose }) => {
           <TabButton id="data" icon={Database} label="Data" />
           <TabButton id="help" icon={HelpCircle} label="Help" />
         </div>
-      </div>
+        <div className="overflow-y-auto max-h-[65vh] pr-1">
+          {/* Profile Settings */}
+          {activeTab === 'profile' && (
+            <div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Full Name</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Email Address</label>
+                <input
+                  type="email"
+                  className="w-full border rounded px-3 py-2"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  readOnly
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">User Role</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2 bg-gray-100"
+                  value={user.role}
+                  readOnly
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Date Registered</label>
+                <input
+                  type="text"
+                  className="w-full border rounded px-3 py-2 bg-gray-100"
+                  value={user.dateRegistered}
+                  readOnly
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Language Preference</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                >
+                  <option>English</option>
+                  <option>Bahasa Melayu</option>
+                </select>
+              </div>
+              {/* Government user fields */}
+              {user.role === 'Government Officer' && (
+                <>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 font-medium mb-1">
+                      Assigned Department / Agency
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border rounded px-3 py-2 bg-gray-100"
+                      value={user.department}
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 font-medium mb-1">Access Scope</label>
+                    <input
+                      type="text"
+                      className="w-full border rounded px-3 py-2 bg-gray-100"
+                      value={user.accessScope}
+                      readOnly
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                      Go to Admin Dashboard
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {/* Interaction Preferences */}
+          {activeTab === 'interaction' && (
+            <div>
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-gray-700 font-medium">Voice Input</span>
+                <label className="inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={voiceInput}
+                    onChange={() => setVoiceInput((v) => !v)}
+                  />
+                  <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition"></div>
+                  <span className="ml-2 text-gray-600">{voiceInput ? 'ON' : 'OFF'}</span>
+                </label>
+              </div>
 
-      {/* Body */}
-      <div className={`px-6 pb-6 ${isModal ? 'max-h-[70vh] overflow-y-auto' : ''}`}>
-        {/* Profile Settings */}
-        {activeTab === 'profile' && (
-          <div>
-            {profileLoading ? (
-              <div className="text-gray-600">Loading profile...</div>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">Full Name</label>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Voice Input Language</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={voiceLanguage}
+                  onChange={(e) => {
+                    setVoiceLanguage(e.target.value);
+                    localStorage.setItem('voiceLanguage', e.target.value);
+                  }}
+                >
+                  <option value="auto">Auto-detect</option>
+                  <option value="ms">Bahasa Melayu (Malay)</option>
+                  <option value="en">English</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select the language for voice recognition. Auto-detect works for both languages.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">Text Size</label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={textSize}
+                  onChange={(e) => setTextSize(e.target.value)}
+                >
+                  <option>Small</option>
+                  <option>Medium</option>
+                  <option>Large</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 font-medium mb-1">
+                  Default Chat Language
+                </label>
+                <select
+                  className="w-full border rounded px-3 py-2"
+                  value={defaultChatLang}
+                  onChange={(e) => setDefaultChatLang(e.target.value)}
+                >
+                  <option>English</option>
+                  <option>BM</option>
+                  <option>Auto-detect</option>
+                </select>
+              </div>
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-gray-700 font-medium">Enable Chat History Logging</span>
+                <label className="inline-flex items-center cursor-pointer">
                   <input
                     type="text"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
