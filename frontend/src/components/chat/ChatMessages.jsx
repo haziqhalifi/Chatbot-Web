@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import UserAvatar from './UserAvatar';
+import renderMarkdown from '../../utils/renderMarkdown';
 
 const ChatMessages = forwardRef(
   (
@@ -87,12 +88,15 @@ const ChatMessages = forwardRef(
                     message.sender === 'user' ? 'text-white' : 'text-[#333333]'
                   }`}
                   style={{
-                    whiteSpace: 'pre-wrap',
+                    whiteSpace: message.sender === 'bot' ? 'normal' : 'pre-wrap',
                     wordBreak: 'break-word',
                   }}
                 >
                   {message.sender === 'bot' ? (
-                    <span dangerouslySetInnerHTML={{ __html: message.text }} />
+                    <div
+                      className="prose prose-sm prose-headings:font-semibold prose-headings:text-slate-900 prose-p:my-1 prose-ol:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:font-semibold prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:p-3 prose-pre:rounded-md max-w-none"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }}
+                    />
                   ) : (
                     message.text
                   )}

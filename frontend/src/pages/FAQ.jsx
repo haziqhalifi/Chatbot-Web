@@ -16,6 +16,7 @@ const FAQ = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchFAQs();
@@ -36,6 +37,17 @@ const FAQ = () => {
 
   const toggleFAQ = (faqId) => {
     setExpandedFAQ(expandedFAQ === faqId ? null : faqId);
+  };
+
+  const filterFAQs = (faqs, query) => {
+    if (!query.trim()) return faqs;
+    const lowerQuery = query.toLowerCase();
+    return faqs.filter((faq) => {
+      const questionMatch = faq.question?.toLowerCase().includes(lowerQuery);
+      const answerMatch = faq.answer?.toLowerCase().includes(lowerQuery);
+      const categoryMatch = faq.category?.toLowerCase().includes(lowerQuery);
+      return questionMatch || answerMatch || categoryMatch;
+    });
   };
 
   const formatAnswer = (answer) => {
@@ -106,8 +118,10 @@ const FAQ = () => {
     );
   }
 
+  // Filter FAQs based on search query
+  const filteredFaqs = filterFAQs(faqs, searchQuery);
   // Group FAQs by category
-  const groupedFaqs = groupFaqsByCategory(faqs);
+  const groupedFaqs = groupFaqsByCategory(filteredFaqs);
   const categoryOrder = Object.keys(groupedFaqs).sort();
 
   return (
@@ -120,11 +134,73 @@ const FAQ = () => {
               Find answers to common questions and get support.
             </p>
           </div>
+
+          {/* Search Bar */}
+          <div className="p-6 border-b border-gray-200 bg-gray-50">
+            <div className="max-w-2xl mx-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search FAQs by keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                />
+                <svg
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {searchQuery && (
+                <p className="mt-2 text-sm text-gray-600">
+                  Found {filteredFaqs.length} result{filteredFaqs.length !== 1 ? 's' : ''} for "
+                  {searchQuery}"
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="p-8 space-y-8">
-            {faqs.length === 0 ? (
+            {filteredFaqs.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-4">📝</div>
-                <p className="text-gray-500">No FAQs available at the moment.</p>
+                <div className="text-gray-400 text-4xl mb-4">{searchQuery ? '🔍' : '📝'}</div>
+                <p className="text-gray-500">
+                  {searchQuery
+                    ? `No FAQs found matching "${searchQuery}"`
+                    : 'No FAQs available at the moment.'}
+                </p>
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Clear search
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-8">
