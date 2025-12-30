@@ -66,6 +66,34 @@ npm install
 
    The frontend will be available at the address shown in the terminal (usually `http://localhost:5173`).
 
+## Voice Chat Feature (Malay & English Support) 🎤
+
+The chatbot now supports voice input with **Malay (Bahasa Melayu)** and **English** languages!
+
+### Quick Setup:
+
+1. **For best Malay support (Recommended):**
+
+   - Add OpenAI API key to `.env`:
+     ```env
+     OPENAI_API_KEY=sk-your-api-key-here
+     ```
+   - Restart backend server
+
+2. **Free alternative (Local):**
+   - Already configured! Uses local Whisper model
+   - No API key needed, but slower and less accurate for Malay
+
+### User Guide:
+
+- Click microphone icon 🎤 to record voice
+- Go to Settings → Interaction to select language:
+  - **Auto-detect** (recommended)
+  - **Bahasa Melayu** (Malay only)
+  - **English** (English only)
+
+📖 **Full documentation:** See [VOICE_CHAT_GUIDE.md](VOICE_CHAT_GUIDE.md)
+
 ## Usage
 
 - Open the frontend in your browser.
