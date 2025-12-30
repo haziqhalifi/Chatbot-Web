@@ -37,7 +37,7 @@ const AdminReports = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [severityFilter, setSeverityFilter] = useState('All');
-  const [dateFilter, setDateFilter] = useState('All');
+  const [sourceFilter, setSourceFilter] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
 
   // Pagination
@@ -107,7 +107,7 @@ const AdminReports = () => {
       }
 
       const data = await response.json();
-      setReports(data.reports || []);
+      setReports(Array.isArray(data.reports) ? data.reports : []);
     } catch (error) {
       console.error('Error fetching reports:', error);
       setError(error.message);
@@ -170,6 +170,9 @@ const AdminReports = () => {
 
   // Handle opening notification modal
   const handleSendNotification = (report) => {
+    if (report?.source === 'NADMA Realtime') {
+      return;
+    }
     setNotificationReport(report);
     setNotificationTitle(`${report.type} Alert - ${report.location}`);
     setNotificationMessage(
@@ -240,18 +243,34 @@ const AdminReports = () => {
 
   // Filter reports based on search and filters
   const filteredReports = reports.filter((report) => {
+    const title = String(report?.title || '');
+    const location = String(report?.location || '');
+    const reportedBy = String(report?.reportedBy || '');
+    const description = String(report?.description || '');
+    const source = String(report?.source || '');
+
     const matchesSearch =
-      report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description.toLowerCase().includes(searchTerm.toLowerCase());
+      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      source.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'All' || report.status === statusFilter;
     const matchesType = typeFilter === 'All' || report.type === typeFilter;
     const matchesSeverity = severityFilter === 'All' || report.severity === severityFilter;
 
-    return matchesSearch && matchesStatus && matchesType && matchesSeverity;
+    const matchesSource =
+      sourceFilter === 'All' ||
+      (sourceFilter === 'Disaster Reports' && report.source === 'Disaster Report') ||
+      (sourceFilter === 'NADMA Realtime' && report.source === 'NADMA Realtime');
+
+    return matchesSearch && matchesStatus && matchesType && matchesSeverity && matchesSource;
   });
+
+  const availableTypes = Array.from(
+    new Set((reports || []).map((r) => r?.type).filter((t) => typeof t === 'string' && t.trim()))
+  ).sort((a, b) => a.localeCompare(b));
 
   // Pagination logic
   const indexOfLastReport = currentPage * reportsPerPage;
@@ -535,10 +554,11 @@ const AdminReports = () => {
                     className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="All">All Types</option>
-                    <option value="Flood">Flood</option>
-                    <option value="Fire">Fire</option>
-                    <option value="Earthquake">Earthquake</option>
-                    <option value="Landslide">Landslide</option>
+                    {availableTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -556,16 +576,15 @@ const AdminReports = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
                   <select
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
+                    value={sourceFilter}
+                    onChange={(e) => setSourceFilter(e.target.value)}
                     className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="All">All Dates</option>
-                    <option value="Today">Today</option>
-                    <option value="Week">This Week</option>
-                    <option value="Month">This Month</option>
+                    <option value="All">All Sources</option>
+                    <option value="Disaster Reports">Disaster Reports</option>
+                    <option value="NADMA Realtime">NADMA Realtime</option>
                   </select>
                 </div>
               </div>
@@ -662,7 +681,11 @@ const AdminReports = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
                           <button
-                            onClick={() => fetchReportDetails(report.id)}
+                            onClick={() =>
+                              report?.source === 'NADMA Realtime'
+                                ? setSelectedReport(report)
+                                : fetchReportDetails(report.id)
+                            }
                             className="text-blue-600 hover:text-blue-900 flex items-center"
                             title="View Details"
                           >
@@ -671,8 +694,17 @@ const AdminReports = () => {
                           </button>
                           <button
                             onClick={() => handleSendNotification(report)}
-                            className="text-orange-600 hover:text-orange-900 flex items-center"
-                            title="Send Notification"
+                            disabled={report?.source === 'NADMA Realtime'}
+                            className={`flex items-center ${
+                              report?.source === 'NADMA Realtime'
+                                ? 'text-orange-300 cursor-not-allowed'
+                                : 'text-orange-600 hover:text-orange-900'
+                            }`}
+                            title={
+                              report?.source === 'NADMA Realtime'
+                                ? 'Notifications are available for user-submitted reports'
+                                : 'Send Notification'
+                            }
                           >
                             <Bell className="h-4 w-4 mr-1" />
                             Notify
