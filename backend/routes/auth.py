@@ -24,6 +24,24 @@ JWT_ALGORITHM = "HS256"
 GOOGLE_CLIENT_ID = "845615957730-ldlb837mjkqtvigr8d6pt8ruq1qab2jo.apps.googleusercontent.com"
 
 
+def _get_user_id_from_token(authorization: str) -> int:
+    """Extract user_id from Bearer token."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+
+    token = authorization.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("user_id")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return int(user_id)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
 def _coerce_datetime(value) -> datetime:
     if isinstance(value, datetime):
         return value
@@ -181,6 +199,11 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
 
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
 @router.post("/reset-password")
 def reset_password(request: ResetPasswordRequest):
     token = request.token
@@ -213,6 +236,65 @@ def reset_password(request: ResetPasswordRequest):
         cursor.execute("UPDATE password_reset_tokens SET used = 1 WHERE token = ?", (token,))
         conn.commit()
         return {"message": "Password has been reset successfully."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+@router.post("/change-password")
+def change_password(request: ChangePasswordRequest, authorization: str = Header(None)):
+    """Change password for authenticated (local) users."""
+    user_id = _get_user_id_from_token(authorization)
+
+    validation = validate_password_strength(request.new_password)
+    if not validation.get("valid", False):
+        raise HTTPException(
+            status_code=400,
+            detail="; ".join(validation.get("errors", [])) or "Invalid password",
+        )
+
+    conn = None
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT hashed_password, auth_provider FROM users WHERE id = ?",
+            (user_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        hashed_password, auth_provider = row
+        if auth_provider and str(auth_provider).lower() != "local":
+            raise HTTPException(
+                status_code=400,
+                detail="Password change is not available for this login method.",
+            )
+
+        if not hashed_password:
+            raise HTTPException(
+                status_code=400,
+                detail="No password is set for this account.",
+            )
+
+        if not pwd_context.verify(request.current_password, hashed_password):
+            raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+        new_hashed = pwd_context.hash(request.new_password)
+        cursor.execute(
+            "UPDATE users SET hashed_password = ?, updated_at = GETDATE() WHERE id = ?",
+            (new_hashed, user_id),
+        )
+        conn.commit()
+        return {"message": "Password changed successfully."}
     except HTTPException:
         raise
     except Exception as e:
