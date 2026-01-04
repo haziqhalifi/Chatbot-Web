@@ -14,6 +14,10 @@ google-auth>=2.23.0
 # Database
 pyodbc>=5.0.0
 
+# Export/Report Generation
+reportlab>=4.0.0
+pandas>=2.0.0
+
 # AI/ML
 openai>=1.3.0
 openai-whisper>=20231117  # For local speech-to-text (supports Malay & English)

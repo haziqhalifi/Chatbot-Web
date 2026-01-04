@@ -48,6 +48,9 @@ const AdminReports = () => {
 
   // Notification modal state
   const [showNotificationModal, setShowNotificationModal] = useState(false);
+
+  // Export dropdown state
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [notificationReport, setNotificationReport] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -125,6 +128,20 @@ const AdminReports = () => {
       fetchReports();
     }
   }, [user]);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExportDropdown && !event.target.closest('.relative')) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportDropdown]);
 
   // Function to refresh reports data
   const refreshReports = () => {
@@ -312,8 +329,8 @@ const AdminReports = () => {
     return new Date(timestamp).toLocaleString();
   };
 
-  const exportReports = () => {
-    // Export functionality
+  const exportReportsJSON = () => {
+    // Export as JSON functionality
     const dataStr = JSON.stringify(filteredReports, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     const exportFileDefaultName = `disaster_reports_${new Date().toISOString().split('T')[0]}.json`;
@@ -322,6 +339,103 @@ const AdminReports = () => {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+    setShowExportDropdown(false);
+  };
+
+  const exportReportsCSV = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Build query params based on current filters
+      const params = new URLSearchParams();
+      if (sourceFilter !== 'All') {
+        params.append('source', sourceFilter.toLowerCase());
+      }
+      if (searchTerm) {
+        params.append('q', searchTerm);
+      }
+
+      const response = await fetch(
+        `http://localhost:8000/admin/reports/export/csv?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-API-Key': 'secretkey',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to export CSV: ${response.status}`);
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `disaster_reports_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setShowExportDropdown(false);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
+  const exportReportsPDF = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Build query params based on current filters
+      const params = new URLSearchParams();
+      if (sourceFilter !== 'All') {
+        params.append('source', sourceFilter.toLowerCase());
+      }
+      if (searchTerm) {
+        params.append('q', searchTerm);
+      }
+
+      const response = await fetch(
+        `http://localhost:8000/admin/reports/export/pdf?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: {
+            'X-API-Key': 'secretkey',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to export PDF: ${response.status}`);
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `disaster_reports_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setShowExportDropdown(false);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
   };
   // Show loading or check authentication
   if (!user && !localStorage.getItem('token')) {
@@ -511,13 +625,36 @@ const AdminReports = () => {
                     className={`h-4 w-4 ml-2 transform ${showFilters ? 'rotate-180' : ''}`}
                   />
                 </button>
-                <button
-                  onClick={exportReports}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </button>{' '}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportDropdown(!showExportDropdown)}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </button>
+                  {showExportDropdown && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                      <div className="py-1">
+                        <button
+                          onClick={exportReportsCSV}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export as CSV
+                        </button>
+                        <button
+                          onClick={exportReportsPDF}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export as PDF
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={fetchReports}
                   className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
