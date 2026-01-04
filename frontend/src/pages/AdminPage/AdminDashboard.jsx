@@ -14,6 +14,7 @@ import {
   RefreshCw,
   X,
   ExternalLink,
+  Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,6 +39,10 @@ const AdminDashboard = () => {
   });
   const [nadmaDisasters, setNadmaDisasters] = useState([]);
   const [nadmaLoading, setNadmaLoading] = useState(false);
+  const [nadmaSearchTerm, setNadmaSearchTerm] = useState('');
+  const [nadmaStatusFilter, setNadmaStatusFilter] = useState('All');
+  const [nadmaCategoryFilter, setNadmaCategoryFilter] = useState('All');
+  const [nadmaStateFilter, setNadmaStateFilter] = useState('All');
   const [selectedDisaster, setSelectedDisaster] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -81,6 +86,53 @@ const AdminDashboard = () => {
     setShowDetailModal(false);
     setSelectedDisaster(null);
   };
+
+  const availableNadmaStatuses = Array.from(
+    new Set(
+      (nadmaDisasters || [])
+        .map((d) => d?.status)
+        .filter((s) => typeof s === 'string' && s.trim())
+        .map((s) => s.trim())
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const availableNadmaCategories = Array.from(
+    new Set(
+      (nadmaDisasters || [])
+        .map((d) => d?.kategori?.name)
+        .filter((c) => typeof c === 'string' && c.trim())
+        .map((c) => c.trim())
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const availableNadmaStates = Array.from(
+    new Set(
+      (nadmaDisasters || [])
+        .map((d) => d?.state?.name)
+        .filter((s) => typeof s === 'string' && s.trim())
+        .map((s) => s.trim())
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filteredNadmaDisasters = (nadmaDisasters || []).filter((disaster) => {
+    const status = String(disaster?.status || '');
+    const category = String(disaster?.kategori?.name || '');
+    const district = String(disaster?.district?.name || '');
+    const state = String(disaster?.state?.name || '');
+    const description = String(disaster?.description || disaster?.special_report || '');
+    const id = String(disaster?.id ?? '');
+
+    const needle = nadmaSearchTerm.trim().toLowerCase();
+    const matchesSearch =
+      !needle ||
+      [id, status, category, district, state, description].join(' ').toLowerCase().includes(needle);
+
+    const matchesStatus = nadmaStatusFilter === 'All' || status === nadmaStatusFilter;
+    const matchesCategory = nadmaCategoryFilter === 'All' || category === nadmaCategoryFilter;
+    const matchesState = nadmaStateFilter === 'All' || state === nadmaStateFilter;
+
+    return matchesSearch && matchesStatus && matchesCategory && matchesState;
+  });
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -482,14 +534,23 @@ const AdminDashboard = () => {
         <div className="mt-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-medium text-gray-900">NADMA Real-time Disasters</h2>
-            <button
-              onClick={fetchNadmaDisasters}
-              disabled={nadmaLoading}
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
-              {nadmaLoading ? 'Loading...' : 'Refresh'}
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/admin/nadma-history')}
+                className="text-sm text-green-600 hover:text-green-700 flex items-center px-3 py-1 border border-green-600 rounded-md hover:bg-green-50"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View All History
+              </button>
+              <button
+                onClick={fetchNadmaDisasters}
+                disabled={nadmaLoading}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
+                {nadmaLoading ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="p-6">
             {nadmaLoading ? (
@@ -499,6 +560,64 @@ const AdminDashboard = () => {
               </div>
             ) : nadmaDisasters.length > 0 ? (
               <div className="overflow-x-auto">
+                {/* Search + Filters */}
+                <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search NADMA disasters..."
+                      value={nadmaSearchTerm}
+                      onChange={(e) => setNadmaSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                    <select
+                      value={nadmaStatusFilter}
+                      onChange={(e) => setNadmaStatusFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by status"
+                    >
+                      <option value="All">All Status</option>
+                      {availableNadmaStatuses.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={nadmaCategoryFilter}
+                      onChange={(e) => setNadmaCategoryFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by category"
+                    >
+                      <option value="All">All Categories</option>
+                      {availableNadmaCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={nadmaStateFilter}
+                      onChange={(e) => setNadmaStateFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by state"
+                    >
+                      <option value="All">All States</option>
+                      {availableNadmaStates.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -526,7 +645,7 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {nadmaDisasters.slice(0, 10).map((disaster) => (
+                    {filteredNadmaDisasters.slice(0, 10).map((disaster) => (
                       <tr
                         key={disaster.id}
                         onClick={() => handleRowClick(disaster)}
@@ -550,7 +669,9 @@ const AdminDashboard = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {disaster.district?.name}, {disaster.state?.name}
+                          {[disaster.district?.name, disaster.state?.name]
+                            .filter(Boolean)
+                            .join(', ') || 'N/A'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
@@ -575,11 +696,24 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
-                {nadmaDisasters.length > 10 && (
+                {filteredNadmaDisasters.length === 0 ? (
                   <div className="text-center mt-4 text-sm text-gray-500">
-                    Showing 10 of {nadmaDisasters.length} disasters
+                    No disasters match your search/filters
                   </div>
-                )}
+                ) : filteredNadmaDisasters.length > 10 ? (
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-gray-500 mb-3">
+                      Showing 10 of {filteredNadmaDisasters.length} disasters
+                    </p>
+                    <button
+                      onClick={() => navigate('/admin/nadma-history')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
+                    >
+                      View All {filteredNadmaDisasters.length} Disasters in History
+                      <ExternalLink className="h-4 w-4 ml-1" />
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-8">
