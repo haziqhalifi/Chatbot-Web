@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from typing import Dict, List, Optional, Any
 from pydantic import BaseModel
 import httpx
@@ -96,10 +96,11 @@ def get_map_types():
 @router.post("/nadma/disasters")
 async def get_nadma_disasters(filters: Optional[Dict[str, Any]] = None):
     """
-    Get disaster data from NADMA MyDIMS API
+    Get disaster data from NADMA MyDIMS API and automatically sync to database
     
     This endpoint fetches real-time disaster information from Malaysia's
-    National Disaster Management Agency (NADMA) MyDIMS system.
+    National Disaster Management Agency (NADMA) MyDIMS system and stores it
+    in the local database for historical tracking.
     
     Args:
         filters: Optional dictionary of filters to apply to the disaster data
@@ -146,6 +147,15 @@ async def get_nadma_disasters(filters: Optional[Dict[str, Any]] = None):
             
             response.raise_for_status()
             data = response.json()
+            
+            # Automatically sync to database for history
+            try:
+                disasters_list = data if isinstance(data, list) else [data]
+                sync_result = await nadma_service.sync_from_api(filters)
+                print(f"Auto-sync to DB: {sync_result.get('message', 'completed')}")
+            except Exception as sync_error:
+                print(f"Warning: Failed to auto-sync to database: {sync_error}")
+                # Continue even if sync fails - real-time data is priority
             
             return {
                 "success": True,
@@ -242,6 +252,59 @@ def get_nadma_disasters_from_db(
         raise HTTPException(
             status_code=500,
             detail=f"Error retrieving disasters from database: {str(e)}"
+        )
+
+@router.get("/admin/nadma/history")
+def get_nadma_history(
+    status: Optional[str] = None,
+    category: Optional[str] = None,
+    state: Optional[str] = None,
+    limit: int = 500,
+    x_api_key: str = Header(None)
+):
+    """
+    Get all NADMA disaster history from database (Admin only)
+    
+    Args:
+        status: Filter by status (Aktif, Selesai, etc.)
+        category: Filter by category name
+        state: Filter by state name
+        limit: Maximum number of records to return (default 500)
+        x_api_key: Admin API key
+        
+    Returns:
+        dict: List of historical disasters from database
+    """
+    from config.settings import API_KEY_CREDITS
+    from utils.chat import verify_api_key
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        disasters = nadma_service.get_disasters(status=status, limit=limit)
+        
+        # Apply additional filters if provided
+        if category:
+            disasters = [
+                d for d in disasters
+                if d.get('kategori', {}).get('name', '').lower() == category.lower()
+            ]
+        
+        if state:
+            disasters = [
+                d for d in disasters
+                if d.get('state', {}).get('name', '').lower() == state.lower()
+            ]
+        
+        return {
+            "success": True,
+            "count": len(disasters),
+            "data": disasters
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error retrieving disaster history: {str(e)}"
         )
 
 @router.get("/nadma/statistics")

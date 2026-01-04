@@ -534,14 +534,23 @@ const AdminDashboard = () => {
         <div className="mt-8 bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-medium text-gray-900">NADMA Real-time Disasters</h2>
-            <button
-              onClick={fetchNadmaDisasters}
-              disabled={nadmaLoading}
-              className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
-              {nadmaLoading ? 'Loading...' : 'Refresh'}
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => navigate('/admin/nadma-history')}
+                className="text-sm text-green-600 hover:text-green-700 flex items-center px-3 py-1 border border-green-600 rounded-md hover:bg-green-50"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View All History
+              </button>
+              <button
+                onClick={fetchNadmaDisasters}
+                disabled={nadmaLoading}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
+                {nadmaLoading ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="p-6">
             {nadmaLoading ? (
@@ -692,8 +701,17 @@ const AdminDashboard = () => {
                     No disasters match your search/filters
                   </div>
                 ) : filteredNadmaDisasters.length > 10 ? (
-                  <div className="text-center mt-4 text-sm text-gray-500">
-                    Showing 10 of {filteredNadmaDisasters.length} disasters
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-gray-500 mb-3">
+                      Showing 10 of {filteredNadmaDisasters.length} disasters
+                    </p>
+                    <button
+                      onClick={() => navigate('/admin/nadma-history')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
+                    >
+                      View All {filteredNadmaDisasters.length} Disasters in History
+                      <ExternalLink className="h-4 w-4 ml-1" />
+                    </button>
                   </div>
                 ) : null}
               </div>
