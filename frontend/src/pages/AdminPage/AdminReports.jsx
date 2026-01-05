@@ -20,6 +20,7 @@ import {
   Bell,
   Send,
   X,
+  CheckCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -54,7 +55,16 @@ const AdminReports = () => {
   const [notificationReport, setNotificationReport] = useState(null);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationTitle, setNotificationTitle] = useState('');
-  const [sendingNotification, setSendingNotification] = useState(false); // Redirect if not authenticated
+  const [sendingNotification, setSendingNotification] = useState(false);
+
+  // Status update modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusModalReport, setStatusModalReport] = useState(null);
+  const [newStatus, setNewStatus] = useState('Active');
+  const [adminNotes, setAdminNotes] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Redirect if not authenticated
   useEffect(() => {
     // Check if user is authenticated
     const token = localStorage.getItem('token');
@@ -437,6 +447,76 @@ const AdminReports = () => {
       alert('Failed to export PDF. Please try again.');
     }
   };
+
+  const handleStatusUpdate = async () => {
+    try {
+      setUpdatingStatus(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Ensure report ID is properly formatted
+      const reportId = String(statusModalReport.id);
+      console.log('Updating report status for ID:', reportId, 'Type:', typeof reportId);
+
+      const response = await fetch(`http://localhost:8000/admin/reports/${reportId}/status`, {
+        method: 'PUT',
+        headers: {
+          'X-API-Key': 'secretkey',
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          admin_notes: adminNotes,
+        }),
+      });
+
+      const responseData = await response.json();
+      console.log('Status update response:', responseData);
+
+      if (!response.ok) {
+        const errorDetail =
+          responseData?.detail || `Failed to update report status: ${response.status}`;
+        throw new Error(errorDetail);
+      }
+
+      // Update the report in the list
+      setReports(
+        reports.map((report) =>
+          report.id === statusModalReport.id
+            ? { ...report, status: newStatus, admin_notes: adminNotes }
+            : report
+        )
+      );
+
+      // Update selected report view
+      if (selectedReport && selectedReport.id === statusModalReport.id) {
+        setSelectedReport({ ...selectedReport, status: newStatus, admin_notes: adminNotes });
+      }
+
+      alert('Report status updated successfully!');
+      setShowStatusModal(false);
+      setStatusModalReport(null);
+      setNewStatus('Active');
+      setAdminNotes('');
+    } catch (error) {
+      console.error('Error updating report status:', error);
+      console.error('Status modal report:', statusModalReport);
+      alert(`Failed to update report status: ${error.message}`);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const openStatusModal = (report) => {
+    setStatusModalReport(report);
+    setNewStatus(report.status || 'Active');
+    setAdminNotes(report.admin_notes || '');
+    setShowStatusModal(true);
+  };
+
   // Show loading or check authentication
   if (!user && !localStorage.getItem('token')) {
     return null; // Will redirect to signin
@@ -846,6 +926,14 @@ const AdminReports = () => {
                             <Bell className="h-4 w-4 mr-1" />
                             Notify
                           </button>
+                          <button
+                            onClick={() => openStatusModal(report)}
+                            className="text-blue-600 hover:text-blue-900 flex items-center"
+                            title="Update Status"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Status
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1171,6 +1259,119 @@ const AdminReports = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal */}
+      {showStatusModal && statusModalReport && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Update Report Status</h2>
+                <button
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setStatusModalReport(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Report Summary */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Report Details</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Title:</span>
+                    <p className="font-medium text-gray-900">{statusModalReport.title}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Type:</span>
+                    <p className="font-medium text-gray-900">{statusModalReport.type}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Location:</span>
+                    <p className="font-medium text-gray-900">{statusModalReport.location}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Current Status:</span>
+                    <p className="font-medium text-gray-900">{statusModalReport.status}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Selection */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select New Status
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {['Active', 'Escalated', 'Approved', 'Declined', 'Resolved', 'On Hold'].map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => setNewStatus(status)}
+                        className={`px-4 py-2 rounded-lg border-2 font-medium transition-colors ${
+                          newStatus === status
+                            ? 'border-blue-600 bg-blue-50 text-blue-600'
+                            : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        {status}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Admin Notes (Optional)
+                </label>
+                <textarea
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  rows={4}
+                  placeholder="Add any notes or comments about this status update..."
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowStatusModal(false);
+                    setStatusModalReport(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleStatusUpdate}
+                  disabled={updatingStatus}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center"
+                >
+                  {updatingStatus ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Update Status
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

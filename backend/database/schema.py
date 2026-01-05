@@ -9,6 +9,9 @@ def update_database_schema():
     # Update users table with new columns
     update_users_table()
     
+    # Update disaster_reports table with new columns
+    update_disaster_reports_table()
+    
     # Create notifications table
     create_notifications_table()
     
@@ -62,6 +65,40 @@ def create_notifications_table():
             
     except Exception as e:
         print(f"Error creating notifications table: {e}")
+
+def update_disaster_reports_table():
+    """Update disaster_reports table with status and admin_notes columns if they don't exist"""
+    try:
+        with DatabaseConnection() as conn:
+            conn.autocommit = False
+            cursor = conn.cursor()
+            
+            # Add status column if it doesn't exist
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'disaster_reports' AND COLUMN_NAME = 'status')
+                ALTER TABLE disaster_reports ADD status NVARCHAR(50) DEFAULT 'Active'
+            """)
+            
+            # Add admin_notes column if it doesn't exist
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'disaster_reports' AND COLUMN_NAME = 'admin_notes')
+                ALTER TABLE disaster_reports ADD admin_notes NVARCHAR(MAX)
+            """)
+            
+            # Add updated_at column if it doesn't exist
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'disaster_reports' AND COLUMN_NAME = 'updated_at')
+                ALTER TABLE disaster_reports ADD updated_at DATETIME DEFAULT GETDATE()
+            """)
+            
+            conn.commit()
+            conn.autocommit = True
+            cursor.close()
+            print("disaster_reports table updated successfully")
+            
+    except Exception as e:
+        print(f"Error updating disaster_reports table: {e}")
+
 
 def migrate_reports_tables():
     """Migrate the reports table structure - rename reports to disaster_reports and create system_reports"""

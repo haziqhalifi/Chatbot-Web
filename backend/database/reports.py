@@ -7,8 +7,8 @@ def insert_report(report):
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO disaster_reports (user_id, title, location, disaster_type, description, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO disaster_reports (user_id, title, location, disaster_type, description, created_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'Active')
                 """,
                 (
                     report.user_id,
@@ -26,6 +26,32 @@ def insert_report(report):
     except Exception as e:
         raise Exception(f"Database error: {e}")
 
+def update_report_status(report_id, status, admin_notes=None):
+    """Update a disaster report's status and admin notes"""
+    try:
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            # First check if report exists
+            cursor.execute("SELECT id FROM disaster_reports WHERE id = ?", (report_id,))
+            if not cursor.fetchone():
+                raise Exception(f"Report with ID {report_id} not found in database")
+            
+            cursor.execute(
+                """
+                UPDATE disaster_reports 
+                SET status = ?, admin_notes = ?, updated_at = GETDATE()
+                WHERE id = ?
+                """,
+                (status, admin_notes, report_id)
+            )
+            if not conn.autocommit:
+                conn.commit()
+            cursor.close()
+            return {"message": "Report status updated successfully", "report_id": report_id}
+    except Exception as e:
+        raise Exception(f"Database error: {str(e)}")
+
+
 def get_all_reports():
     """Fetch all disaster reports from the database with user information"""
     try:
@@ -42,7 +68,9 @@ def get_all_reports():
                     r.user_id,
                     u.name as reporter_name,
                     u.email as reporter_email,
-                    u.phone as reporter_phone
+                    u.phone as reporter_phone,
+                    r.status,
+                    r.admin_notes
                 FROM disaster_reports r
                 LEFT JOIN users u ON r.user_id = u.id
                 ORDER BY r.created_at DESC
@@ -51,7 +79,7 @@ def get_all_reports():
             reports = []
             for row in cursor.fetchall():
                 report = {
-                    "id": row[0],
+                    "id": int(row[0]),  # Ensure ID is integer
                     "title": row[1],
                     "location": row[2],
                     "type": row[3],  # disaster_type
@@ -61,9 +89,10 @@ def get_all_reports():
                     "reportedBy": row[7] or "Unknown User",
                     "reporterEmail": row[8] or "",
                     "reporterPhone": row[9] or "",
+                    "status": row[10] or "Active",
+                    "admin_notes": row[11],
                     # Default values for fields not in database yet
                     "severity": "Medium",  # Default severity
-                    "status": "Active",   # Default status
                     "coordinates": "",    # Not stored yet
                     "affectedPeople": 0,  # Not stored yet
                     "estimatedDamage": "Unknown", # Not stored yet
@@ -94,7 +123,9 @@ def get_report_by_id(report_id):
                     r.user_id,
                     u.name as reporter_name,
                     u.email as reporter_email,
-                    u.phone as reporter_phone
+                    u.phone as reporter_phone,
+                    r.status,
+                    r.admin_notes
                 FROM disaster_reports r
                 LEFT JOIN users u ON r.user_id = u.id
                 WHERE r.id = ?
@@ -107,7 +138,7 @@ def get_report_by_id(report_id):
                 return None
                 
             report = {
-                "id": row[0],
+                "id": int(row[0]),  # Ensure ID is integer
                 "title": row[1],
                 "location": row[2],
                 "type": row[3],
@@ -117,9 +148,10 @@ def get_report_by_id(report_id):
                 "reportedBy": row[7] or "Unknown User",
                 "reporterEmail": row[8] or "",
                 "reporterPhone": row[9] or "",
+                "status": row[10] or "Active",
+                "admin_notes": row[11],
                 # Default values
                 "severity": "Medium",
-                "status": "Active",
                 "coordinates": "",
                 "affectedPeople": 0,
                 "estimatedDamage": "Unknown",
@@ -132,4 +164,4 @@ def get_report_by_id(report_id):
     except Exception as e:
         raise Exception(f"Database error: {e}")
 
-__all__ = ['insert_report', 'get_all_reports', 'get_report_by_id']
+__all__ = ['insert_report', 'get_all_reports', 'get_report_by_id', 'update_report_status']

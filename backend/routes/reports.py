@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 import jwt
 import os
-from database import insert_report, get_all_reports, get_report_by_id, get_db_conn, insert_system_report, migrate_reports_tables, get_all_system_reports
+from database import insert_report, get_all_reports, get_report_by_id, get_db_conn, insert_system_report, migrate_reports_tables, get_all_system_reports, update_report_status
 from utils.chat import verify_api_key
 from services.notification_service import create_report_confirmation_notification
 from services.subscription_service import create_targeted_disaster_notification
@@ -37,6 +37,10 @@ class ReportRequest(BaseModel):
 class SystemReportRequest(BaseModel):
     subject: str
     message: str
+
+class UpdateReportStatusRequest(BaseModel):
+    status: str
+    admin_notes: Optional[str] = None
 
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""
@@ -259,6 +263,45 @@ def get_report(report_id: int, x_api_key: str = Header(None)):
         return report
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/admin/reports/{report_id}/status")
+def update_report_status_endpoint(
+    report_id: int,
+    request: UpdateReportStatusRequest,
+    x_api_key: str = Header(None),
+):
+    """Update the status of a disaster report"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    # Valid status values
+    valid_statuses = ["Active", "Escalated", "Approved", "Declined", "Resolved", "On Hold"]
+    
+    if request.status not in valid_statuses:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid status. Valid statuses are: {', '.join(valid_statuses)}"
+        )
+    
+    try:
+        # First verify the report exists
+        report = get_report_by_id(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail=f"Report with ID {report_id} not found")
+        
+        result = update_report_status(report_id, request.status, request.admin_notes)
+        return {
+            "message": "Report status updated successfully",
+            "report_id": report_id,
+            "status": request.status,
+            "admin_notes": request.admin_notes
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating report status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error updating report status: {str(e)}")
+
 
 @router.post("/migrate-database")
 def migrate_database(x_api_key: str = Header(None)):
