@@ -8,6 +8,7 @@ This guide helps you maintain and develop the project efficiently with the new s
 
 **Step 1:** Create the route handler  
 File: `backend/app/api/[feature]_routes.py`
+
 ```python
 @router.post("/endpoint")
 async def handle_endpoint(data: YourSchema):
@@ -16,6 +17,7 @@ async def handle_endpoint(data: YourSchema):
 
 **Step 2:** Create business logic in service  
 File: `backend/app/services/[feature]_service.py`
+
 ```python
 async def process(data):
     # Business logic here
@@ -24,6 +26,7 @@ async def process(data):
 
 **Step 3:** Add database layer if needed  
 File: `backend/app/database/[feature].py`
+
 ```python
 async def save_data(db, data):
     # Database operations here
@@ -32,6 +35,7 @@ async def save_data(db, data):
 
 **Step 4:** Create Pydantic schema  
 File: `backend/app/models/[feature].py`
+
 ```python
 class YourSchema(BaseModel):
     field: str
@@ -149,12 +153,14 @@ components/
 ```
 
 **Keep components:**
+
 - Focused (do one thing)
 - Reusable (not tied to specific pages)
 - Styled (own CSS module)
 - Well-documented (prop types, usage examples)
 
 **Don't put in components:**
+
 - API calls (use services/)
 - Global state management (use contexts/)
 - Page-specific logic (use pages/)
@@ -164,11 +170,13 @@ components/
 ## 🔄 Git Workflow with New Structure
 
 ### When starting feature work:
+
 ```bash
 git checkout -b feature/new-feature
 ```
 
 ### Typical files you'll modify:
+
 ```
 backend/app/api/
 backend/app/services/
@@ -180,6 +188,7 @@ docs/guides/ or docs/features/
 ```
 
 ### Before committing:
+
 ```bash
 # Don't commit:
 git rm backend/.env          # Only track .env.example
@@ -196,6 +205,7 @@ git add frontend/src/        # Code changes
 ## 🧪 Testing Strategy
 
 ### Backend Tests
+
 Location: `backend/tests/`
 
 ```bash
@@ -210,6 +220,7 @@ pytest --cov=backend/app backend/tests/
 ```
 
 ### Frontend Tests
+
 Location: `frontend/src/__tests__/` (or using Vitest)
 
 ---
@@ -221,6 +232,7 @@ Location: `frontend/src/__tests__/` (or using Vitest)
 Every time you add code, ask:
 
 1. **Is it in the right folder?**
+
    - API code → `api/`
    - Business logic → `services/`
    - DB queries → `database/`
@@ -228,11 +240,13 @@ Every time you add code, ask:
    - Utilities → `utils/`
 
 2. **Is it well-named?**
+
    - Functions: `get_user()`, `create_chat()`
    - Files: `user_service.py`, `chat_routes.py`
    - Classes: `UserSchema`, `ChatRepository`
 
 3. **Is it documented?**
+
    - Docstrings for functions
    - Type hints for functions
    - Comments for complex logic
@@ -265,6 +279,7 @@ Before deploying:
 ### "Where should I put this code?"
 
 Use this flowchart:
+
 ```
 Is it handling HTTP?
   ├─ Yes → app/api/routes.py

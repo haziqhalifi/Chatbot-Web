@@ -50,6 +50,7 @@ docs/
 ```
 
 ### When to add docs:
+
 - **guides/**: Setup instructions, API keys, deployment procedures
 - **architecture/**: System design, component interaction, flow diagrams
 - **features/**: Feature-specific documentation and how-to guides
@@ -123,6 +124,7 @@ backend/
 ```
 
 ### Module Responsibilities:
+
 - **app/main.py**: FastAPI app initialization and route mounting
 - **app/config.py**: Environment variables, settings, constants
 - **app/api/**: HTTP endpoint handlers (decorators, request handling)
@@ -194,6 +196,7 @@ frontend/
 ```
 
 ### Directory Purposes:
+
 - **components/**: Reusable UI components (buttons, forms, cards)
 - **pages/**: Full page components that map to routes
 - **services/**: API calls and external integrations
@@ -241,6 +244,7 @@ diagrams/
 ## 🌍 Environment Configuration
 
 ### `.env` (Local - DO NOT commit)
+
 ```
 # Backend
 DATABASE_URL=...
@@ -251,6 +255,7 @@ VITE_API_URL=...
 ```
 
 ### `.env.example` (Template - commit this)
+
 ```
 # Backend
 DATABASE_URL=your_database_url_here
@@ -267,6 +272,7 @@ VITE_API_URL=http://localhost:8000
 ### Adding a New Feature (e.g., "User Notifications")
 
 1. **Backend**:
+
    - Create `backend/app/services/notification_service.py` (business logic)
    - Create `backend/app/api/notification_routes.py` (API endpoints)
    - Add database operations in `backend/app/database/notifications.py`
@@ -274,6 +280,7 @@ VITE_API_URL=http://localhost:8000
    - Write tests in `backend/tests/test_notifications.py`
 
 2. **Frontend**:
+
    - Create `frontend/src/components/NotificationCenter/` (UI components)
    - Create `frontend/src/services/notificationApi.js` (API calls)
    - Create `frontend/src/hooks/useNotifications.js` (custom hook)
@@ -289,6 +296,7 @@ VITE_API_URL=http://localhost:8000
 ## 📝 Best Practices
 
 ✅ **DO:**
+
 - Keep related code in the same directory
 - Use descriptive file and folder names
 - Maintain consistent naming conventions (kebab-case for files, camelCase for variables)
@@ -297,6 +305,7 @@ VITE_API_URL=http://localhost:8000
 - Group related tests together
 
 ❌ **DON'T:**
+
 - Mix concerns (keep API routes out of services)
 - Scatter related code across multiple directories
 - Put utility functions in random locations
