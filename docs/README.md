@@ -5,11 +5,13 @@ Welcome to the Chatbot Web documentation! Use this index to find what you need.
 ## 🚀 Quick Start
 
 ### For First-Time Setup
+
 1. [Backend Setup Guide](guides/api-keys.md) - Configure API keys
 2. [OpenAI Setup](guides/openai-quickstart.md) - Initialize OpenAI
 3. [Main README](../README.md) - Project overview
 
 ### For Running the Application
+
 - Backend: See [Backend README](../backend/README.md)
 - Frontend: See [Frontend README](../frontend/README.md)
 
@@ -19,18 +21,18 @@ Welcome to the Chatbot Web documentation! Use this index to find what you need.
 
 Complete step-by-step guides for various tasks.
 
-| Guide | Purpose |
-|-------|---------|
-| [Admin Sign-In](guides/ADMIN_SIGNIN_GUIDE.md) | Admin authentication setup |
-| [API Key Configuration](guides/API_KEY_GUIDE.md) | Configure API keys and tokens |
-| [OpenAI Assistant](guides/OPENAI_ASSISTANT_GUIDE.md) | OpenAI assistant configuration |
-| [OpenAI Setup](guides/OPENAI_ASSISTANT_SETUP.md) | Complete OpenAI integration |
-| [OpenAI Quick Start](guides/OPENAI_QUICKSTART.md) | Quick OpenAI setup |
-| [Voice Chat](guides/VOICE_CHAT_GUIDE.md) | Voice chat feature guide |
-| [Voice Chat Testing](guides/VOICE_CHAT_TEST.md) | Test voice chat functionality |
-| [Chat History](guides/CHAT_HISTORY_FEATURE.md) | Chat history feature |
-| [Chat History User Guide](guides/CHAT_HISTORY_USER_GUIDE.md) | Using chat history |
-| [Testing Guide](guides/TESTING_GUIDE.md) | How to test the application |
+| Guide                                                        | Purpose                        |
+| ------------------------------------------------------------ | ------------------------------ |
+| [Admin Sign-In](guides/ADMIN_SIGNIN_GUIDE.md)                | Admin authentication setup     |
+| [API Key Configuration](guides/API_KEY_GUIDE.md)             | Configure API keys and tokens  |
+| [OpenAI Assistant](guides/OPENAI_ASSISTANT_GUIDE.md)         | OpenAI assistant configuration |
+| [OpenAI Setup](guides/OPENAI_ASSISTANT_SETUP.md)             | Complete OpenAI integration    |
+| [OpenAI Quick Start](guides/OPENAI_QUICKSTART.md)            | Quick OpenAI setup             |
+| [Voice Chat](guides/VOICE_CHAT_GUIDE.md)                     | Voice chat feature guide       |
+| [Voice Chat Testing](guides/VOICE_CHAT_TEST.md)              | Test voice chat functionality  |
+| [Chat History](guides/CHAT_HISTORY_FEATURE.md)               | Chat history feature           |
+| [Chat History User Guide](guides/CHAT_HISTORY_USER_GUIDE.md) | Using chat history             |
+| [Testing Guide](guides/TESTING_GUIDE.md)                     | How to test the application    |
 
 ---
 
@@ -38,8 +40,8 @@ Complete step-by-step guides for various tasks.
 
 Understand how the system is built and how components interact.
 
-| Document | Purpose |
-|----------|---------|
+| Document                                                                 | Purpose                      |
+| ------------------------------------------------------------------------ | ---------------------------- |
 | [Client-Server Architecture](architecture/CLIENT_SERVER_ARCHITECTURE.md) | System architecture overview |
 
 ### System Diagrams
@@ -52,12 +54,12 @@ View detailed sequence and component diagrams in [diagrams/](../diagrams/)
 
 Detailed documentation about specific features.
 
-| Feature | Purpose |
-|---------|---------|
-| [Notifications](features/NOTIFICATION_SYSTEM.md) | Notification system overview |
-| [Notification Optimization](features/NOTIFICATION_OPTIMIZATION_GUIDE.md) | Optimize notifications |
-| [Map Integration](features/MAP_INTEGRATION_GUIDE.md) | Maps and location features |
-| [MapView Integration](features/MAPVIEW_INTEGRATION_GUIDE.md) | MapView component setup |
+| Feature                                                                  | Purpose                      |
+| ------------------------------------------------------------------------ | ---------------------------- |
+| [Notifications](features/NOTIFICATION_SYSTEM.md)                         | Notification system overview |
+| [Notification Optimization](features/NOTIFICATION_OPTIMIZATION_GUIDE.md) | Optimize notifications       |
+| [Map Integration](features/MAP_INTEGRATION_GUIDE.md)                     | Maps and location features   |
+| [MapView Integration](features/MAPVIEW_INTEGRATION_GUIDE.md)             | MapView component setup      |
 
 ---
 
@@ -65,11 +67,11 @@ Detailed documentation about specific features.
 
 Guide to integrating external APIs.
 
-| API | Purpose |
-|-----|---------|
-| [ArcGIS Integration](api/ARCGIS_TOKEN_INTEGRATION.md) | ArcGIS token and authentication |
-| [Map Data API Implementation](api/MAP_DATA_API_IMPLEMENTATION.md) | Implementing map data API |
-| [Map Data API Quick Start](api/MAP_DATA_API_QUICKSTART.md) | Quick setup for map data API |
+| API                                                               | Purpose                         |
+| ----------------------------------------------------------------- | ------------------------------- |
+| [ArcGIS Integration](api/ARCGIS_TOKEN_INTEGRATION.md)             | ArcGIS token and authentication |
+| [Map Data API Implementation](api/MAP_DATA_API_IMPLEMENTATION.md) | Implementing map data API       |
+| [Map Data API Quick Start](api/MAP_DATA_API_QUICKSTART.md)        | Quick setup for map data API    |
 
 ---
 
@@ -91,11 +93,13 @@ Guide to integrating external APIs.
 ## 💭 How to Use This Documentation
 
 1. **Finding Information**:
+
    - Start with the Quick Start section if you're new
    - Use the table of contents in this file to navigate
    - Use Ctrl+F to search for keywords
 
 2. **Following Guides**:
+
    - Read from top to bottom
    - Follow numbered steps carefully
    - Check prerequisites before starting

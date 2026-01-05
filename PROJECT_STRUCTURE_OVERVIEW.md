@@ -57,24 +57,31 @@ Chatbot-Web/
 ## 🎯 Quick Navigation
 
 ### 📖 I want to read documentation
+
 → Start in `docs/README.md` (documentation index)
 
 ### 🚀 I want to set up the project
+
 → Follow `docs/guides/api-keys.md`
 
 ### 💻 I want to develop the backend
+
 → See `backend/README.md` and `backend/app/` code
 
 ### 🎨 I want to develop the frontend
+
 → See `frontend/README.md` and `frontend/src/` code
 
 ### 📚 I want to understand the architecture
+
 → Read `docs/architecture/` and review `diagrams/`
 
 ### 🔗 I want to integrate an external API
+
 → Find the guide in `docs/api/`
 
 ### 🧪 I want to run tests
+
 → See `backend/tests/` and check `docs/guides/TESTING_GUIDE.md`
 
 ---
@@ -82,6 +89,7 @@ Chatbot-Web/
 ## 🗂️ File Organization Tips
 
 ### Backend Python Files
+
 ```
 backend/app/
 ├─ api/routes.py              ← HTTP endpoints only
@@ -94,6 +102,7 @@ backend/app/
 **Bad**: Mixing SQL, logic, and routes in one file
 
 ### Frontend React Files
+
 ```
 frontend/src/
 ├─ components/ChatBox.jsx     ← Reusable UI component
@@ -106,6 +115,7 @@ frontend/src/
 **Bad**: API calls mixed with UI components
 
 ### Documentation Files
+
 ```
 docs/
 ├─ guides/setup.md            ← "How to" documentation
@@ -122,7 +132,7 @@ docs/
 ✅ **Easier Maintenance**: Changes are localized  
 ✅ **Better Onboarding**: New developers understand the structure  
 ✅ **Scalability**: Easy to add new features  
-✅ **Documentation**: Clear guides for each part  
+✅ **Documentation**: Clear guides for each part
 
 ---
 
