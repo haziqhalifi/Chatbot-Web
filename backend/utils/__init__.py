@@ -30,17 +30,7 @@ try:
 except ImportError:
     pass
 
-# Import performance utilities
-try:
-    from .performance import should_use_rag, perf_monitor, is_general_question
-except ImportError:
-    pass
-
-# Import RAG utilities
-try:
-    from .rag import retrieve_context, initialize_rag
-except ImportError:
-    pass
+# Performance and RAG utilities removed
 
 # Development database utilities
 try:
@@ -64,15 +54,6 @@ __all__ = [
     # Language utilities (if available)
     'detect_language',
     'get_language_instruction',
-    
-    # Performance utilities (if available)
-    'should_use_rag',
-    'perf_monitor',
-    'is_general_question',
-    
-    # RAG utilities (if available)
-    'retrieve_context',
-    'initialize_rag',
     
     # Development utilities (if available)
     'get_database_connection'
