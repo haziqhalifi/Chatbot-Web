@@ -138,7 +138,7 @@ describe('useSubscriptions Hook', () => {
       { id: 2, type: 'info' },
     ];
 
-    const filtered = subscriptions.filter(s => s.id !== 1);
+    const filtered = subscriptions.filter((s) => s.id !== 1);
     expect(filtered).toHaveLength(1);
   });
 });

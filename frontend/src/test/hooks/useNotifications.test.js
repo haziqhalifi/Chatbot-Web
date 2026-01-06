@@ -33,9 +33,7 @@ describe('useNotifications Hook', () => {
   });
 
   it('should mark notification as read', () => {
-    const notifications = [
-      { id: 1, read: false, message: 'Unread' },
-    ];
+    const notifications = [{ id: 1, read: false, message: 'Unread' }];
 
     notifications[0].read = true;
     expect(notifications[0].read).toBe(true);
@@ -47,7 +45,7 @@ describe('useNotifications Hook', () => {
       { id: 2, message: 'Second' },
     ];
 
-    const filtered = notifications.filter(n => n.id !== 1);
+    const filtered = notifications.filter((n) => n.id !== 1);
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe(2);
   });
@@ -59,7 +57,7 @@ describe('useNotifications Hook', () => {
       { id: 3, read: false },
     ];
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = notifications.filter((n) => !n.read).length;
     expect(unreadCount).toBe(2);
   });
 
@@ -80,9 +78,7 @@ describe('useNotifications Hook', () => {
       { id: 3, timestamp: new Date('2024-01-02').toISOString() },
     ];
 
-    const sorted = [...notifications].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
+    const sorted = [...notifications].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     expect(sorted[0].id).toBe(2);
     expect(sorted[1].id).toBe(3);
@@ -103,7 +99,7 @@ describe('useNotifications Hook', () => {
       { id: 3, type: 'alert' },
     ];
 
-    const alerts = notifications.filter(n => n.type === 'alert');
+    const alerts = notifications.filter((n) => n.type === 'alert');
     expect(alerts).toHaveLength(2);
   });
 
