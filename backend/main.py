@@ -22,7 +22,6 @@ logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 # Import database and services
 from database import update_database_schema, create_faq_table, insert_default_faqs
 from services.subscription_service import create_subscriptions_table
-from utils.rag import initialize_rag
 
 # Import route modules
 from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, health, map
@@ -47,15 +46,6 @@ create_subscriptions_table()
 # Initialize FAQ table and data
 create_faq_table()
 insert_default_faqs()
-
-# Initialize RAG system
-print("Initializing RAG system...")
-try:
-    initialize_rag()
-    print("RAG system initialized successfully!")
-except Exception as e:
-    print(f"Warning: RAG system initialization failed: {str(e)}")
-    print("The application will continue without RAG functionality.")
 
 # Create FastAPI app
 app = FastAPI()

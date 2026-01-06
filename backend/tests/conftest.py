@@ -1,11 +1,16 @@
-"""
-Test configuration and fixtures
-"""
+"""Test configuration and fixtures"""
+import os
+import sys
+from pathlib import Path
+from unittest.mock import Mock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch
-import tempfile
-import os
+
+# Ensure backend root is importable during collection
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
 
 # Test database configuration
 TEST_DB_CONFIG = {
@@ -15,10 +20,23 @@ TEST_DB_CONFIG = {
     "SQL_PASSWORD": "test_password"
 }
 
+@pytest.fixture(autouse=True)
+def add_repo_to_path():
+    """Ensure backend root is on sys.path for absolute imports."""
+    root = Path(__file__).resolve().parent.parent
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+        added = True
+    else:
+        added = False
+    yield
+    if added and str(root) in sys.path:
+        sys.path.remove(str(root))
+
+
 @pytest.fixture
 def test_client():
     """Create a test client for the FastAPI app"""
-    # Import here to avoid circular imports
     from main import app
     return TestClient(app)
 
@@ -63,7 +81,10 @@ def setup_test_env():
         "SQL_SERVER": TEST_DB_CONFIG["SQL_SERVER"],
         "SQL_DATABASE": TEST_DB_CONFIG["SQL_DATABASE"],
         "SQL_USER": TEST_DB_CONFIG["SQL_USER"],
-        "SQL_PASSWORD": TEST_DB_CONFIG["SQL_PASSWORD"]
+        "SQL_PASSWORD": TEST_DB_CONFIG["SQL_PASSWORD"],
+        "API_KEY": "k",
+        "OPENAI_API_KEY": "",
+        "OPENAI_ASSISTANT_ID": "",
     }
     
     # Set environment variables
