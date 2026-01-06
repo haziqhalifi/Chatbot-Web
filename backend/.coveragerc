@@ -1,0 +1,15 @@
+[run]
+branch = True
+source = .
+omit =
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */.venv/*
+    main.py
+    config/database.py
+    tests/*
+
+[report]
+show_missing = True
+skip_covered = False
