@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { loadSettings, saveSettings, updateSetting, DEFAULT_SETTINGS, SETTINGS_UPDATED_EVENT } from '../../utils/settingsStorage';
+import {
+  loadSettings,
+  saveSettings,
+  updateSetting,
+  DEFAULT_SETTINGS,
+  SETTINGS_UPDATED_EVENT,
+} from '../../utils/settingsStorage';
 
 describe('settingsStorage', () => {
   beforeEach(() => {

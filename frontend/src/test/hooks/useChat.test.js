@@ -79,15 +79,13 @@ describe('useChat Hook - Core Functionality', () => {
       { id: 2, title: 'Chat 2' },
     ];
 
-    const filtered = sessions.filter(s => s.id !== 1);
+    const filtered = sessions.filter((s) => s.id !== 1);
     expect(filtered).toHaveLength(1);
     expect(filtered[0].id).toBe(2);
   });
 
   it('should handle updating session title', () => {
-    const sessions = [
-      { id: 1, title: 'Old Title' },
-    ];
+    const sessions = [{ id: 1, title: 'Old Title' }];
 
     sessions[0].title = 'New Title';
     expect(sessions[0].title).toBe('New Title');
