@@ -5,6 +5,7 @@ Comprehensive security testing for the Chatbot Web application.
 ## Overview
 
 This security testing suite includes:
+
 - **Authentication & Authorization Tests** - JWT validation, token security, RBAC
 - **Injection Attack Prevention** - SQL, XSS, Command, LDAP injection tests
 - **CORS & CSRF Protection** - Cross-origin and cross-site request forgery tests
@@ -34,6 +35,7 @@ tests/security/
 Tests for JWT token validation, authentication bypass, role-based access control, and session security.
 
 **Test Classes:**
+
 - `TestJWTTokenValidation` - JWT token validation
 - `TestAuthenticationBypass` - Authentication bypass attempts
 - `TestRoleBasedAccessControl` - RBAC enforcement
@@ -42,6 +44,7 @@ Tests for JWT token validation, authentication bypass, role-based access control
 - `TestBruteForceProtection` - Brute-force attack prevention
 
 **Key Tests:**
+
 - ✓ Valid/invalid/expired token handling
 - ✓ Token tampering detection
 - ✓ Role elevation prevention
@@ -54,6 +57,7 @@ Tests for JWT token validation, authentication bypass, role-based access control
 Tests for SQL, XSS, command, LDAP injection, and path traversal prevention.
 
 **Test Classes:**
+
 - `TestSQLInjectionPrevention` - SQL injection prevention
 - `TestXSSPrevention` - Cross-Site Scripting prevention
 - `TestCommandInjectionPrevention` - Command injection prevention
@@ -62,6 +66,7 @@ Tests for SQL, XSS, command, LDAP injection, and path traversal prevention.
 - `TestInputValidationGeneral` - General input validation
 
 **Key Tests:**
+
 - ✓ SQL injection payload detection
 - ✓ Parameterized query usage
 - ✓ Script tag escaping
@@ -76,6 +81,7 @@ Tests for SQL, XSS, command, LDAP injection, and path traversal prevention.
 Tests for CORS configuration, CSRF token validation, and security header presence.
 
 **Test Classes:**
+
 - `TestCORSValidation` - CORS configuration validation
 - `TestCSRFProtection` - CSRF token validation
 - `TestSecurityHeaders` - HTTP security headers
@@ -84,6 +90,7 @@ Tests for CORS configuration, CSRF token validation, and security header presenc
 - `TestHTTPParameterPollution` - HTTP parameter handling
 
 **Key Tests:**
+
 - ✓ Allowed origins configuration
 - ✓ Wildcard CORS prevention
 - ✓ CSRF token generation and validation
@@ -96,6 +103,7 @@ Tests for CORS configuration, CSRF token validation, and security header presenc
 Tests for input validation, rate limiting, DOS prevention, and resource limits.
 
 **Test Classes:**
+
 - `TestDataValidation` - Input validation and sanitization
 - `TestRateLimiting` - Rate limiting enforcement
 - `TestBruteForceProtection` - Brute-force protection
@@ -103,6 +111,7 @@ Tests for input validation, rate limiting, DOS prevention, and resource limits.
 - `TestResourceLimits` - Resource quotas and limits
 
 **Key Tests:**
+
 - ✓ Email/URL/phone validation
 - ✓ String length limits
 - ✓ Null byte prevention
@@ -207,6 +216,7 @@ python -m pytest tests/security/ -n 4
 For manual testing, refer to [MANUAL_TESTING_CHECKLIST.md](MANUAL_TESTING_CHECKLIST.md).
 
 The checklist covers:
+
 1. Authentication & Authorization
 2. Injection Attacks
 3. CSRF & CORS
@@ -266,7 +276,7 @@ def test_basic_sql_injection_attempt(sql_injection_payloads):
     for payload in sql_injection_payloads:
         # Check for dangerous patterns
         dangerous_patterns = [...]
-        is_dangerous = any(re.search(pattern, payload, re.IGNORECASE) 
+        is_dangerous = any(re.search(pattern, payload, re.IGNORECASE)
                           for pattern in dangerous_patterns)
         assert is_dangerous
 ```
@@ -295,18 +305,18 @@ def test_script_tags_escaped(xss_payloads):
 
 ## OWASP Top 10 Coverage
 
-| Vulnerability | Coverage |
-|---|---|
-| Broken Access Control | ✓ RBAC tests, permission tests |
-| Cryptographic Failures | ✓ Token validation, SSL/TLS tests |
-| Injection | ✓ SQL, XSS, Command, LDAP tests |
-| Insecure Design | ✓ Security headers, CSRF tests |
-| Security Misconfiguration | ✓ Headers, CORS, HTTPS tests |
-| Vulnerable Components | Manual dependency review needed |
-| Authentication Failures | ✓ Token, session, brute-force tests |
-| Data Integrity Failures | ✓ Input validation tests |
-| Logging & Monitoring Failures | Manual review needed |
-| SSRF | Manual testing needed |
+| Vulnerability                 | Coverage                            |
+| ----------------------------- | ----------------------------------- |
+| Broken Access Control         | ✓ RBAC tests, permission tests      |
+| Cryptographic Failures        | ✓ Token validation, SSL/TLS tests   |
+| Injection                     | ✓ SQL, XSS, Command, LDAP tests     |
+| Insecure Design               | ✓ Security headers, CSRF tests      |
+| Security Misconfiguration     | ✓ Headers, CORS, HTTPS tests        |
+| Vulnerable Components         | Manual dependency review needed     |
+| Authentication Failures       | ✓ Token, session, brute-force tests |
+| Data Integrity Failures       | ✓ Input validation tests            |
+| Logging & Monitoring Failures | Manual review needed                |
+| SSRF                          | Manual testing needed               |
 
 ## Continuous Integration
 
@@ -316,10 +326,10 @@ Add to your CI/CD pipeline:
 # .github/workflows/security.yml
 - name: Run security tests
   run: pytest tests/security/ -v --cov=tests/security
-  
+
 - name: Check for vulnerabilities
   run: pip-audit
-  
+
 - name: Run SAST scan
   uses: github/super-linter@v4
 ```
@@ -327,6 +337,7 @@ Add to your CI/CD pipeline:
 ## Reporting Issues
 
 When reporting security vulnerabilities:
+
 1. Document clearly with reproduction steps
 2. Explain the impact
 3. Suggest remediation if possible

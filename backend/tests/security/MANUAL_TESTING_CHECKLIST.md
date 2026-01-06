@@ -7,6 +7,7 @@ This document provides a comprehensive security checklist for manual testing and
 ### 1. Authentication & Authorization
 
 #### Authentication
+
 - [ ] Can users register with weak passwords? (Should reject)
 - [ ] Can users login with SQL injection in username field?
 - [ ] Does password field mask input correctly?
@@ -19,6 +20,7 @@ This document provides a comprehensive security checklist for manual testing and
 - [ ] Is token refresh working correctly?
 
 #### Authorization
+
 - [ ] Can regular users access admin endpoints?
 - [ ] Can users modify other users' data?
 - [ ] Can users elevate their role from user to admin?
@@ -29,6 +31,7 @@ This document provides a comprehensive security checklist for manual testing and
 ### 2. Injection Attacks
 
 #### SQL Injection
+
 - [ ] Test login with: `' OR '1'='1`
 - [ ] Test username with: `'; DROP TABLE users; --`
 - [ ] Test with: `admin' --`
@@ -38,12 +41,14 @@ This document provides a comprehensive security checklist for manual testing and
 - [ ] Test with time-based blind SQL injection
 
 #### Command Injection
+
 - [ ] Test file upload with: `; rm -rf /`
 - [ ] Test search with: `| whoami`
 - [ ] Test with: `$(whoami)`
 - [ ] Test with backticks: `` `whoami` ``
 
 #### XSS (Cross-Site Scripting)
+
 - [ ] Can users inject `<script>alert('xss')</script>` in chat?
 - [ ] Can users inject event handlers: `<img onerror=alert(1)>`
 - [ ] Can users inject JavaScript protocol: `javascript:alert(1)`
@@ -55,6 +60,7 @@ This document provides a comprehensive security checklist for manual testing and
 ### 3. CSRF & CORS
 
 #### CSRF Protection
+
 - [ ] Are CSRF tokens present in forms?
 - [ ] Are CSRF tokens validated on form submission?
 - [ ] Can you perform state-changing operations from different domain?
@@ -63,8 +69,9 @@ This document provides a comprehensive security checklist for manual testing and
 - [ ] Is SameSite cookie attribute set?
 
 #### CORS
+
 - [ ] What origins are allowed in CORS policy?
-- [ ] Is wildcard (*) origin allowed? (Should not be)
+- [ ] Is wildcard (\*) origin allowed? (Should not be)
 - [ ] Can cross-origin requests include credentials?
 - [ ] Are preflight requests properly handled?
 - [ ] Can you make requests from unexpected origins?
@@ -84,6 +91,7 @@ This document provides a comprehensive security checklist for manual testing and
 ### 5. Data Protection
 
 #### Input Validation
+
 - [ ] Are email addresses validated?
 - [ ] Are phone numbers validated?
 - [ ] Are URLs validated?
@@ -94,6 +102,7 @@ This document provides a comprehensive security checklist for manual testing and
 - [ ] Is null byte injection prevented?
 
 #### Output Encoding
+
 - [ ] Are user inputs properly encoded before display?
 - [ ] Are JSON responses properly escaped?
 - [ ] Are URLs properly encoded?
@@ -204,6 +213,7 @@ This document provides a comprehensive security checklist for manual testing and
 ## Testing Tools
 
 ### Automated Security Testing
+
 - OWASP ZAP
 - Burp Suite
 - sqlmap
@@ -211,6 +221,7 @@ This document provides a comprehensive security checklist for manual testing and
 - nessus
 
 ### Manual Testing Tools
+
 - Postman
 - curl
 - Browser DevTools
@@ -220,12 +231,14 @@ This document provides a comprehensive security checklist for manual testing and
 ## Running Security Tests
 
 ### Run All Security Tests
+
 ```bash
 cd backend
 python -m pytest tests/security/ -v
 ```
 
 ### Run Specific Test Category
+
 ```bash
 # Authentication tests
 python -m pytest tests/security/test_auth_security.py -v
@@ -241,6 +254,7 @@ python -m pytest tests/security/test_data_validation.py -v
 ```
 
 ### Run with Coverage
+
 ```bash
 python -m pytest tests/security/ --cov=. --cov-report=html
 ```
@@ -276,6 +290,7 @@ python -m pytest tests/security/ --cov=. --cov-report=html
 ## Reporting Security Issues
 
 When reporting security vulnerabilities:
+
 1. Document the vulnerability clearly
 2. Provide steps to reproduce
 3. Explain the impact
