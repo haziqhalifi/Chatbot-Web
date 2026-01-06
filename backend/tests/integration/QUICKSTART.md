@@ -6,7 +6,7 @@
 # Backend dependencies
 pip install pytest pytest-asyncio pytest-cov fastapi httpx
 
-# Frontend dependencies  
+# Frontend dependencies
 npm install --save-dev vitest happy-dom
 ```
 
@@ -15,12 +15,14 @@ npm install --save-dev vitest happy-dom
 ### Quick Start (All Integration Tests)
 
 **Windows:**
+
 ```batch
 cd backend
 run_integration_tests.bat
 ```
 
 **Linux/Mac:**
+
 ```bash
 cd backend
 chmod +x run_integration_tests.sh
@@ -113,6 +115,7 @@ python -m pytest tests/integration/ -v --cov=. --cov-report=term-missing
 ## Test Execution Flow
 
 ### Authentication Tests
+
 ```
 1. User provides credentials
    ↓
@@ -126,6 +129,7 @@ python -m pytest tests/integration/ -v --cov=. --cov-report=term-missing
 ```
 
 ### Chat System Tests
+
 ```
 1. User creates chat session
    ↓
@@ -143,6 +147,7 @@ python -m pytest tests/integration/ -v --cov=. --cov-report=term-missing
 ```
 
 ### Notification Tests
+
 ```
 1. System creates notification
    ↓
@@ -158,21 +163,25 @@ python -m pytest tests/integration/ -v --cov=. --cov-report=term-missing
 ## Debugging Failed Tests
 
 ### See more detail:
+
 ```bash
 python -m pytest tests/integration/test_file.py -vv --tb=long
 ```
 
 ### Print debugging info:
+
 ```bash
 python -m pytest tests/integration/test_file.py -v -s
 ```
 
 ### Run with logging:
+
 ```bash
 python -m pytest tests/integration/test_file.py -v --log-cli-level=DEBUG
 ```
 
 ### Check what fixtures are available:
+
 ```bash
 python -m pytest --fixtures tests/integration/
 ```
@@ -180,6 +189,7 @@ python -m pytest --fixtures tests/integration/
 ## Expected Test Results
 
 ### Successful Run
+
 ```
 tests/integration/test_auth_integration.py::TestAuthenticationFlow::test_auth_signin_creates_valid_jwt_token PASSED
 tests/integration/test_auth_integration.py::TestAuthenticationFlow::test_auth_protected_route_requires_token PASSED
@@ -189,6 +199,7 @@ Tests      45 passed (45)
 ```
 
 ### Failed Test Output
+
 ```
 FAILED tests/integration/test_chat_integration.py::TestChatSessionIntegration::test_create_session_flow
 AssertionError: assert 500 == 200
@@ -213,7 +224,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           pip install -r backend/requirements.txt
@@ -245,6 +256,7 @@ jobs:
 ## Troubleshooting
 
 ### Tests not found
+
 ```bash
 # Make sure you're in the backend directory
 cd backend
@@ -252,6 +264,7 @@ python -m pytest tests/integration/ -v
 ```
 
 ### Import errors
+
 ```bash
 # Set Python path
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
@@ -259,13 +272,16 @@ python -m pytest tests/integration/ -v
 ```
 
 ### Permission denied on .sh file
+
 ```bash
 chmod +x run_integration_tests.sh
 ./run_integration_tests.sh
 ```
 
 ### Port already in use
+
 Some tests may try to start a server. Ensure port 8000 is available:
+
 ```bash
 # Linux/Mac: Check what's using port 8000
 lsof -i :8000
