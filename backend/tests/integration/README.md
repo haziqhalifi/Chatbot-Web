@@ -42,6 +42,7 @@ Tests the complete auth workflow:
 - **Error Handling**: Invalid credentials, duplicate users
 
 **Key Test Classes:**
+
 - `TestAuthenticationFlow` - Complete auth workflows
 - `TestAuthorizationFlow` - Access control and permissions
 - `TestAuthIntegrationWithDatabase` - Database interaction during auth
@@ -57,6 +58,7 @@ Tests the complete chat workflow:
 - **Error Handling**: Invalid sessions, service failures
 
 **Key Test Classes:**
+
 - `TestChatSessionIntegration` - Session lifecycle
 - `TestChatMessageIntegration` - Message sending and receiving
 - `TestChatAIIntegration` - AI service integration
@@ -74,6 +76,7 @@ Tests the notification system:
 - **Filtering**: By type, read status, timestamp
 
 **Key Test Classes:**
+
 - `TestNotificationIntegration` - Basic notification operations
 - `TestNotificationCreation` - Notification creation flow
 - `TestNotificationTypes` - Different notification types
@@ -92,6 +95,7 @@ Tests database operations and integrity:
 - **Error Recovery**: Connection failures, query errors
 
 **Key Test Classes:**
+
 - `TestDatabaseTransactions` - Transaction handling
 - `TestDatabaseIntegrity` - Constraint enforcement
 - `TestDatabaseConnectionPool` - Pool management
@@ -223,13 +227,13 @@ npm run test:coverage
 def test_something(client, auth_headers, mock_db):
     # Setup
     data = setup_test_data()
-    
+
     # Act
     response = client.post('/endpoint', json=data, headers=auth_headers)
-    
+
     # Assert
     assert response.status_code == 200
-    
+
     # Cleanup is automatic with fixtures
 ```
 
@@ -239,7 +243,7 @@ def test_something(client, auth_headers, mock_db):
 def test_with_mocked_service(client, mock_openai_service):
     # Mock service is already patched
     response = client.post('/chat/generate', json={...})
-    
+
     # Verify service was called
     assert mock_openai_service.call_count > 0
 ```
@@ -250,9 +254,9 @@ def test_with_mocked_service(client, mock_openai_service):
 def test_error_handling(client):
     with patch('service.method') as mock:
         mock.side_effect = Exception('Service error')
-        
+
         response = client.post('/endpoint', json={...})
-        
+
         assert response.status_code in [500, 502, 503]
 ```
 
@@ -262,7 +266,7 @@ def test_error_handling(client):
 def test_data_persistence(client, mock_save_message, mock_get_messages):
     # Send message
     response = client.post('/chat/generate', json={...})
-    
+
     # Verify persisted
     messages = mock_get_messages(session_id=1)
     assert len(messages) > 0
@@ -322,6 +326,7 @@ jobs:
 ### Issue: Tests timeout
 
 **Solution**: Add timeout markers and increase fixture timeouts
+
 ```python
 @pytest.mark.timeout(10)
 def test_something(client):
@@ -331,6 +336,7 @@ def test_something(client):
 ### Issue: Database state pollution
 
 **Solution**: Ensure proper fixture cleanup
+
 ```python
 @pytest.fixture
 def clean_db():
@@ -343,6 +349,7 @@ def clean_db():
 ### Issue: Flaky tests
 
 **Solution**: Add retries and proper waiting
+
 ```python
 @pytest.mark.flaky(reruns=3)
 def test_async_operation(client):
@@ -379,9 +386,9 @@ python -m pytest tests/integration/test_file.py::TestClass::test_method -vv --tb
 def test_with_logs(client, caplog):
     import logging
     caplog.set_level(logging.DEBUG)
-    
+
     response = client.post('/endpoint', json={...})
-    
+
     # View logs
     print(caplog.text)
 ```
