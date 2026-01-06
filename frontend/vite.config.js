@@ -25,5 +25,15 @@ export default defineConfig({
     host: "0.0.0.0",
     strictPort: true,
     allowedHosts: ['.amazonaws.com', '.builtwithrocket.new']
+  },
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    setupFiles: './src/test/setupTests.js',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      exclude: ['node_modules/', 'build/', 'dist/']
+    }
   }
 });

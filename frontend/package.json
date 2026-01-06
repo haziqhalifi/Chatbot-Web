@@ -9,22 +9,25 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "vite preview",
-    "format": "prettier --write \"src/**/*.{js,jsx,css,md,json}\""
+    "format": "prettier --write \"src/**/*.{js,jsx,css,md,json}\"",
+    "test": "vitest run --environment happy-dom",
+    "test:watch": "vitest --environment happy-dom",
+    "test:coverage": "vitest run --coverage --environment happy-dom"
   },
   "dependencies": {
     "@arcgis/core": "~4.32.0",
     "@arcgis/map-components": "^4.32.14",
     "@dhiwise/component-tagger": "^1.0.3",
     "@tailwindcss/typography": "^0.5.16",
-    "dompurify": "^3.1.6",
     "axios": "^1.9.0",
+    "dompurify": "^3.1.6",
     "html2canvas": "^1.4.1",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.2.0",
-    "marked": "^14.1.2",
     "jspdf": "^3.0.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.511.0",
+    "marked": "^14.1.2",
     "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -32,14 +35,20 @@
     "react-router-dom": "^7.4.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.1",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "4.3.4",
     "autoprefixer": "^10.4.21",
     "globals": "^15.15.0",
+    "happy-dom": "^13.3.1",
+    "jsdom": "^27.0.1",
     "postcss": "^8.5.3",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "vitest": "^4.0.16",
+    "vitest-canvas-mock": "^0.3.3"
   }
 }
