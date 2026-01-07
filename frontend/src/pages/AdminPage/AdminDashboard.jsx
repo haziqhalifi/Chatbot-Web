@@ -6,7 +6,7 @@ import {
   Activity,
   Settings,
   FileText,
-  Bell,
+  HelpCircle,
   Eye,
   MapPin,
   Clock,
@@ -506,9 +506,12 @@ const AdminDashboard = () => {
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4">
-                <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Bell className="h-8 w-8 text-orange-600 mb-2" />
-                  <span className="text-sm font-medium">Send Alert</span>
+                <button
+                  onClick={() => navigate('/admin/faq')}
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <HelpCircle className="h-8 w-8 text-purple-600 mb-2" />
+                  <span className="text-sm font-medium">Manage FAQ</span>
                 </button>
                 <button
                   onClick={() => navigate('/admin/users')}
