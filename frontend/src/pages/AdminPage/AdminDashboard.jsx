@@ -510,7 +510,10 @@ const AdminDashboard = () => {
                   <Bell className="h-8 w-8 text-orange-600 mb-2" />
                   <span className="text-sm font-medium">Send Alert</span>
                 </button>
-                <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => navigate('/admin/users')}
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <Users className="h-8 w-8 text-blue-600 mb-2" />
                   <span className="text-sm font-medium">Manage Users</span>
                 </button>{' '}
