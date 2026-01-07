@@ -65,6 +65,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root endpoint
+@app.get("/")
+def root():
+    return {"message": "Chatbot API is running", "status": "ok"}
+
 # Include route modules
 app.include_router(auth.router, tags=["Authentication"])
 app.include_router(ai.router, tags=["AI"])
