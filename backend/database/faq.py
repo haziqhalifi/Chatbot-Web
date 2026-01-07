@@ -135,15 +135,19 @@ def add_faq(question, answer, category=None, order_index=0):
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO faqs (question, answer, category, order_index, is_active)
+                OUTPUT INSERTED.id
                 VALUES (?, ?, ?, ?, 1)
             """, (question, answer, category, order_index))
+            result = cursor.fetchone()
             if not conn.autocommit:
                 conn.commit()
-            result = cursor.lastrowid
+            faq_id = int(result[0]) if result else None
             cursor.close()
-            return result
+            return faq_id
     except Exception as e:
         print(f"Error adding FAQ: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def update_faq(faq_id, question=None, answer=None, category=None, order_index=None):
