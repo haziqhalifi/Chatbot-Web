@@ -102,7 +102,13 @@ const SignInPage = () => {
 
       const data = await response.json();
       login(data.token, data.user);
-      navigate('/dashboard');
+
+      // Redirect based on user role
+      if (data.user && data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       setErrors((prev) => ({
         ...prev,
