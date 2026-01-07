@@ -23,16 +23,18 @@ const ManageFAQ = () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/faqs');
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch FAQs: ${response.status} ${response.statusText}`);
       }
-      
+
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Server returned non-JSON response. Make sure the backend server is running.');
+        throw new Error(
+          'Server returned non-JSON response. Make sure the backend server is running.'
+        );
       }
-      
+
       const data = await response.json();
       setFaqs(data.faqs || []);
       setError(null);
@@ -58,11 +60,11 @@ const ManageFAQ = () => {
   };
 
   // Get unique categories
-  const categories = ['All', ...new Set(faqs.map(faq => faq.category).filter(Boolean))];
+  const categories = ['All', ...new Set(faqs.map((faq) => faq.category).filter(Boolean))];
 
   // Filter FAQs based on search and category
   const filteredFaqs = faqs.filter((faq) => {
-    const matchesSearch = 
+    const matchesSearch =
       faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
       faq.answer.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || faq.category === selectedCategory;
@@ -97,17 +99,14 @@ const ManageFAQ = () => {
   const handleUpdateFAQ = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(
-        `http://localhost:8000/admin/faqs/${selectedFaq.id}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': 'secretkey',
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch(`http://localhost:8000/admin/faqs/${selectedFaq.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'secretkey',
+        },
+        body: JSON.stringify(formData),
+      });
 
       if (!response.ok) throw new Error('Failed to update FAQ');
 
@@ -126,15 +125,12 @@ const ManageFAQ = () => {
     if (!window.confirm('Are you sure you want to delete this FAQ?')) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:8000/admin/faqs/${faqId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'X-API-Key': 'secretkey',
-          },
-        }
-      );
+      const response = await fetch(`http://localhost:8000/admin/faqs/${faqId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-API-Key': 'secretkey',
+        },
+      });
 
       if (!response.ok) throw new Error('Failed to delete FAQ');
 
@@ -207,7 +203,7 @@ const ManageFAQ = () => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            
+
             {/* Category Filter */}
             <div className="relative min-w-[200px]">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -224,7 +220,7 @@ const ManageFAQ = () => {
               </select>
             </div>
           </div>
-          
+
           {/* Results count */}
           <div className="mt-3 text-sm text-gray-600">
             Showing {filteredFaqs.length} of {faqs.length} FAQs
@@ -261,9 +257,7 @@ const ManageFAQ = () => {
                     <div className="flex-1">
                       <div className="flex items-center mb-2">
                         <HelpCircle className="h-5 w-5 text-blue-600 mr-2" />
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {faq.question}
-                        </h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
                       </div>
                       <p className="text-gray-700 ml-7 mb-3">{faq.answer}</p>
                       {faq.category && (
@@ -304,19 +298,14 @@ const ManageFAQ = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Add New FAQ</h2>
-              <button
-                onClick={closeModals}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-6 w-6" />
               </button>
             </div>
             <form onSubmit={handleAddFAQ} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Question *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Question *</label>
                   <input
                     type="text"
                     name="question"
@@ -328,9 +317,7 @@ const ManageFAQ = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Answer *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Answer *</label>
                   <textarea
                     name="answer"
                     value={formData.answer}
@@ -382,19 +369,14 @@ const ManageFAQ = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Edit FAQ</h2>
-              <button
-                onClick={closeModals}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
                 <X className="h-6 w-6" />
               </button>
             </div>
             <form onSubmit={handleUpdateFAQ} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Question *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Question *</label>
                   <input
                     type="text"
                     name="question"
@@ -406,9 +388,7 @@ const ManageFAQ = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Answer *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Answer *</label>
                   <textarea
                     name="answer"
                     value={formData.answer}
