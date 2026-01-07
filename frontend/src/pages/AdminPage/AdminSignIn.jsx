@@ -9,12 +9,14 @@ const AdminSignInPage = () => {
     email: '',
     password: '',
     rememberMe: false,
-    adminCode: '', // Additional admin verification code
+    adminCode: '', // Email verification code
   });
 
   const [showPassword, setShowPassword] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isCodeSent, setIsCodeSent] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const navigate = useNavigate();
@@ -41,6 +43,7 @@ const AdminSignInPage = () => {
       domain.endsWith('.edu') ||
       domain.endsWith('.edu.my') ||
       domain.endsWith('.ac.my') ||
+      domain.endsWith('.um.edu.my') ||
       domain.includes('university') ||
       domain.includes('college');
 
@@ -66,29 +69,22 @@ const AdminSignInPage = () => {
 
   const validatePassword = (password) => {
     if (!password) return 'Password is required';
-    if (password.length < 6) return 'Admin password must be at least 12 characters';
-    if (!/(?=.*[a-z])/.test(password)) return 'Password must contain at least one lowercase letter';
-    if (!/(?=.*[A-Z])/.test(password)) return 'Password must contain at least one uppercase letter';
-    if (!/(?=.*\d)/.test(password)) return 'Password must contain at least one number';
-    if (!/(?=.*[@$!%*?&])/.test(password))
-      return 'Password must contain at least one special character';
+    if (password.length < 6) return 'Password must be at least 6 characters';
     return '';
   };
 
   const validateAdminCode = (code) => {
-    if (!code) return 'Admin verification code is required';
-    if (code.length !== 8) return 'Admin code must be 8 characters';
-    if (!/^[A-Z0-9]+$/.test(code))
-      return 'Admin code must contain only uppercase letters and numbers';
+    if (!code) return 'Verification code is required';
+    if (!/^\d{6}$/.test(code)) return 'Verification code must be 6 digits';
     return '';
   };
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     let fieldValue = type === 'checkbox' ? checked : value;
 
-    // Auto-convert admin code to uppercase
+    // Only allow digits for admin code
     if (name === 'adminCode') {
-      fieldValue = value.toUpperCase();
+      fieldValue = value.replace(/\D/g, '').slice(0, 6);
     }
 
     setFormData((prev) => ({
@@ -104,7 +100,7 @@ const AdminSignInPage = () => {
       const passwordError = validatePassword(value);
       setErrors((prev) => ({ ...prev, password: passwordError }));
     } else if (name === 'adminCode') {
-      const adminCodeError = validateAdminCode(fieldValue); // Use uppercase value
+      const adminCodeError = validateAdminCode(fieldValue);
       setErrors((prev) => ({ ...prev, adminCode: adminCodeError }));
     }
   };
@@ -114,10 +110,50 @@ const AdminSignInPage = () => {
     setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
+  const handleSendCode = async () => {
+    // Validate email first
+    const emailError = validateEmail(formData.email);
+    if (emailError) {
+      setErrors((prev) => ({ ...prev, email: emailError }));
+      setTouched((prev) => ({ ...prev, email: true }));
+      return;
+    }
+
+    setIsSendingCode(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
+
+    try {
+      const response = await fetch('http://localhost:8000/admin/send-verification-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Failed to send verification code');
+      }
+
+      const data = await response.json();
+      setIsCodeSent(true);
+      setErrors((prev) => ({ ...prev, general: '' }));
+      alert(data.message || 'Verification code sent to your email!');
+    } catch (error) {
+      setErrors((prev) => ({
+        ...prev,
+        general: error.message || 'Failed to send verification code',
+      }));
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
   const validateForm = () => {
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
-    const adminCodeError = validateAdminCode(formData.adminCode);
+    const adminCodeError = isCodeSent ? validateAdminCode(formData.adminCode) : '';
 
     const newErrors = {
       email: emailError,
@@ -126,9 +162,9 @@ const AdminSignInPage = () => {
     };
 
     setErrors(newErrors);
-    setTouched({ email: true, password: true, adminCode: true });
+    setTouched({ email: true, password: true, adminCode: isCodeSent });
 
-    return !emailError && !passwordError && !adminCodeError;
+    return !emailError && !passwordError && (!isCodeSent || !adminCodeError);
   };
 
   const handleSubmit = async (e) => {
@@ -193,7 +229,7 @@ const AdminSignInPage = () => {
           </div>{' '}
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Portal</h1>
           <p className="text-sm text-gray-600">
-            Authorized Personnel Only - Use Government Email Only
+            Authorized Personnel Only - Email Verification Required
           </p>
         </div>
 
@@ -223,7 +259,7 @@ const AdminSignInPage = () => {
             {/* Email Field */}{' '}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Government Email Only
+                Admin Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -304,9 +340,25 @@ const AdminSignInPage = () => {
             </div>
             {/* Admin Code Field */}
             <div>
-              <label htmlFor="adminCode" className="block text-sm font-medium text-gray-700 mb-2">
-                Admin Verification Code
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="adminCode" className="block text-sm font-medium text-gray-700">
+                  Email Verification Code
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={isSendingCode || !!errors.email || !formData.email}
+                  className={`text-sm font-medium ${
+                    isSendingCode || !!errors.email || !formData.email
+                      ? 'text-gray-400 cursor-not-allowed'
+                      : isCodeSent
+                        ? 'text-blue-600 hover:text-blue-500'
+                        : 'text-red-600 hover:text-red-500'
+                  }`}
+                >
+                  {isSendingCode ? 'Sending...' : isCodeSent ? 'Resend Code' : 'Send Code'}
+                </button>
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Shield className="h-5 w-5 text-gray-400" />
@@ -314,31 +366,28 @@ const AdminSignInPage = () => {
                 <input
                   id="adminCode"
                   name="adminCode"
-                  type={showAdminCode ? 'text' : 'password'}
+                  type="text"
+                  maxLength="6"
                   value={formData.adminCode}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  className={`w-full pl-10 pr-10 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200 uppercase tracking-wider ${
-                    getFieldError('adminCode')
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : isFieldValid('adminCode')
-                        ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
-                        : 'border-gray-300'
+                  disabled={!isCodeSent}
+                  className={`w-full pl-10 pr-10 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors duration-200 ${
+                    !isCodeSent
+                      ? 'bg-gray-100 cursor-not-allowed'
+                      : getFieldError('adminCode')
+                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                        : isFieldValid('adminCode')
+                          ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                          : 'border-gray-300'
                   }`}
-                  placeholder="XXXXXXXX"
-                  maxLength="8"
+                  placeholder="000000"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowAdminCode(!showAdminCode)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showAdminCode ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                  )}
-                </button>
+                {isFieldValid('adminCode') && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                  </div>
+                )}
               </div>
               {getFieldError('adminCode') && (
                 <p className="mt-2 text-sm text-red-600 flex items-center">
@@ -347,7 +396,9 @@ const AdminSignInPage = () => {
                 </p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                8-character code provided by your system administrator
+                {isCodeSent
+                  ? 'Enter the 6-digit code sent to your email'
+                  : 'Click "Send Code" to receive verification code via email'}
               </p>
             </div>
             {/* Remember Me */}
@@ -367,9 +418,19 @@ const AdminSignInPage = () => {
             {/* Submit Button */}
             <button
               onClick={handleSubmit}
-              disabled={isLoading || !!errors.email || !!errors.password || !!errors.adminCode}
+              disabled={
+                isLoading ||
+                !isCodeSent ||
+                !!errors.email ||
+                !!errors.password ||
+                !!errors.adminCode
+              }
               className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition-all duration-200 ${
-                isLoading || !!errors.email || !!errors.password || !!errors.adminCode
+                isLoading ||
+                !isCodeSent ||
+                !!errors.email ||
+                !!errors.password ||
+                !!errors.adminCode
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-red-600 hover:bg-red-700 focus:ring-2 focus:ring-offset-2 focus:ring-red-500 hover:shadow-lg transform hover:-translate-y-0.5'
               }`}

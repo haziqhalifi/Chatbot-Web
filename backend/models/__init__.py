@@ -12,6 +12,9 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     SUPER_ADMIN = "super_admin"
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
 class AuthRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)

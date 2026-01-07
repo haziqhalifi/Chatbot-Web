@@ -10,10 +10,11 @@ from services.notification_service import create_welcome_notification
 from database import get_db_conn
 
 # Import new models and utilities
-from models import AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse, ForgotPasswordRequest
+from models import EmailRequest, AuthRequest, AdminAuthRequest, GoogleAuthRequest, AuthResponse, ForgotPasswordRequest
 from utils.security import generate_secure_token
 from utils.security import validate_password as validate_password_strength
 from utils.email_sender import send_password_reset_email
+from utils.admin_verification import send_admin_verification_code, verify_admin_code
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -85,13 +86,78 @@ def signup(request: AuthRequest):
 def signin(request: AuthRequest):
     return verify_user(request.email, request.password)
 
+@router.post("/admin/send-verification-code")
+def admin_send_verification_code(request: EmailRequest):
+    """Send verification code to admin email"""
+    # Validate email domain - allow government, education, or personal emails
+    email_domain = request.email.split("@")[1].lower() if "@" in request.email else ""
+    
+    # Check for government domains
+    is_government = (
+        email_domain.endswith('.gov') or 
+        email_domain.endswith('.gov.my') or
+        email_domain.endswith('.mil') or
+        'government' in email_domain or
+        'emergency' in email_domain or
+        'disaster' in email_domain
+    )
+    
+    # Check for education domains
+    is_education = (
+        email_domain.endswith('.edu') or
+        email_domain.endswith('.edu.my') or
+        email_domain.endswith('.ac.my') or
+        'university' in email_domain or
+        'college' in email_domain or
+        email_domain.endswith('.um.edu.my')
+    )
+    
+    # Check for common personal email domains
+    personal_domains = [
+        'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 
+        'live.com', 'icloud.com', 'protonmail.com', 'tutanota.com'
+    ]
+    is_personal = email_domain in personal_domains
+    
+    # Special case for the admin email u2101028@siswa.um.edu.my
+    is_admin_email = request.email.lower() == 'u2101028@siswa.um.edu.my'
+    
+    if not (is_government or is_education or is_personal or is_admin_email):
+        raise HTTPException(
+            status_code=401, 
+            detail="Admin access requires government, education, or personal email address"
+        )
+    
+    # Verify user exists in database
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, email FROM users WHERE email = ?", (request.email,))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found. Please sign up first.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    
+    # Send verification code
+    result = send_admin_verification_code(request.email)
+    
+    if result["success"]:
+        return {"message": result["message"]}
+    else:
+        raise HTTPException(status_code=500, detail=result["message"])
+
 @router.post("/admin/signin")
 def admin_signin(request: AdminAuthRequest):
-    # Validate admin code (in production, this should be stored securely)
-    valid_admin_codes = ["ADMIN123", "EMRG2024", "DSTWCH01"]  # Example admin codes
+    # Validate admin code from database
+    verification_result = verify_admin_code(request.email, request.admin_code)
     
-    if request.admin_code not in valid_admin_codes:
-        raise HTTPException(status_code=401, detail="Invalid admin verification code")
+    if not verification_result["success"]:
+        raise HTTPException(status_code=401, detail=verification_result["message"])
     
     # Validate admin email domain - allow government, education, or personal emails
     email_domain = request.email.split("@")[1].lower() if "@" in request.email else ""
