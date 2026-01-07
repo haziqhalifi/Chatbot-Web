@@ -138,6 +138,108 @@ def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# User management endpoints
+@router.get("/admin/users")
+def get_all_users(x_api_key: str = Header(None)):
+    """Get all users for admin management"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    id, email, name, role, auth_provider, 
+                    created_at, last_login, email_verified,
+                    phone, city, country
+                FROM users 
+                ORDER BY created_at DESC
+            """)
+            
+            columns = [column[0] for column in cursor.description]
+            users = []
+            for row in cursor.fetchall():
+                user_dict = dict(zip(columns, row))
+                # Convert datetime objects to string
+                if user_dict.get('created_at'):
+                    user_dict['created_at'] = user_dict['created_at'].isoformat()
+                if user_dict.get('last_login'):
+                    user_dict['last_login'] = user_dict['last_login'].isoformat()
+                users.append(user_dict)
+            
+            return {"users": users, "total": len(users)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
+
+@router.post("/admin/users/{user_id}/promote")
+def promote_user_to_admin(user_id: int, x_api_key: str = Header(None)):
+    """Promote a user to admin role"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT id, email, role FROM users WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Update user role to admin
+            cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_id,))
+            conn.commit()
+            
+            return {
+                "message": "User promoted to admin successfully",
+                "user_id": user_id,
+                "email": user[1]
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to promote user: {str(e)}")
+
+@router.post("/admin/users/{user_id}/demote")
+def demote_admin_to_user(user_id: int, x_api_key: str = Header(None)):
+    """Demote an admin back to regular user"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT id, email, role FROM users WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Update user role to Public
+            cursor.execute("UPDATE users SET role = 'Public' WHERE id = ?", (user_id,))
+            conn.commit()
+            
+            return {
+                "message": "Admin demoted to user successfully",
+                "user_id": user_id,
+                "email": user[1]
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to demote user: {str(e)}")
+
 # Admin notification endpoint
 @router.post("/admin/notifications/send")
 def send_admin_notification(notification: AdminNotificationRequest, x_api_key: str = Header(None)):
