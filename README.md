@@ -20,22 +20,6 @@ A full-stack web application featuring a chatbot with a FastAPI backend and a mo
 
 2. **Start the backend server**
 
-   On Windows (from the project root):
-
-   ```bash
-   .\env\Scripts\uvicorn.exe backend.main:app --reload
-   ```
-
-   Or, if you are in the `backend` directory:
-
-   ```bash
-   ..\env\Scripts\uvicorn.exe main:app --reload
-
-
-   ```
-
-   new command for virtual env
-
    ```bash
    cd "C:\Users\user\Desktop\Chatbot Web\backend" & "..\\.venv\Scripts\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8000
 
