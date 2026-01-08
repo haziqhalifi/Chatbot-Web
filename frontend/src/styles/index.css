@@ -249,31 +249,6 @@ html[data-text-size='Large'] {
   margin-bottom: 0;
 }
 
-/* Ensure widgets are visible and properly styled */
-.esri-view .esri-expand {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.esri-view .esri-expand:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Widget button styling */
-.esri-view .esri-expand__button {
-  background-color: white;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-}
-
-.esri-view .esri-expand__button:hover {
-  background-color: #f8f9fa;
-  transform: translateY(-1px);
-}
-
 /* Ensure proper z-index for widgets */
 .esri-view .esri-ui-top-left {
   z-index: 10;
