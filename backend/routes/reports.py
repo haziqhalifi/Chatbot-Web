@@ -105,6 +105,20 @@ def submit_system_report(report: SystemReportRequest, authorization: str = Heade
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/my-reports")
+def get_my_reports(authorization: str = Header(None)):
+    """Get disaster reports submitted by the authenticated user"""
+    user_id = get_user_id_from_token(authorization)
+    
+    try:
+        # Get all reports and filter by user_id
+        all_reports = get_all_reports().get("reports", [])
+        user_reports = [report for report in all_reports if report.get("user_id") == user_id]
+        
+        return {"reports": user_reports}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/admin/reports")
 def get_reports(
     source: str = "all",
