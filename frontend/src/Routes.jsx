@@ -11,6 +11,7 @@ import AdminDashboard from './pages/AdminPage/AdminDashboard';
 import AdminReports from './pages/AdminPage/AdminReports';
 import NadmaHistory from './pages/AdminPage/NadmaHistory';
 import ManageUsers from './pages/AdminPage/ManageUsers';
+import ManageFAQ from './pages/AdminPage/ManageFAQ';
 import SignUp from './pages/SignUp';
 import Account from './pages/Account';
 import Settings from './pages/Settings';
@@ -35,6 +36,7 @@ const AppRoutes = () => {
         <Route path="/admin/reports" element={<AdminReports />} />
         <Route path="/admin/nadma-history" element={<NadmaHistory />} />
         <Route path="/admin/users" element={<ManageUsers />} />
+        <Route path="/admin/faq" element={<ManageFAQ />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/disaster-map" element={<Dashboard />} />
         <Route path="/report-disaster" element={<ReportDisaster />} />
