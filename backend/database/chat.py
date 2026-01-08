@@ -164,7 +164,7 @@ def save_chat_message(session_id, sender_type, content, message_type="text"):
         print(f"Error saving chat message: {e}")
         raise
 
-def get_chat_messages(session_id, user_id, limit=50, offset=0):
+def get_chat_messages(session_id, user_id, limit=50, offset=0, order_desc=False):
     """Get messages for a chat session"""
     try:
         with DatabaseConnection() as conn:
@@ -177,16 +177,23 @@ def get_chat_messages(session_id, user_id, limit=50, offset=0):
                 return []
             
             # Get messages
-            cursor.execute("""
+            order_clause = "ORDER BY timestamp DESC" if order_desc else "ORDER BY timestamp ASC"
+            cursor.execute(f"""
                 SELECT id, sender_type, content, message_type, timestamp
                 FROM chat_messages 
                 WHERE session_id = ?
-                ORDER BY timestamp ASC
+                {order_clause}
                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
             """, (session_id, offset, limit))
             
             messages = []
-            for row in cursor.fetchall():
+            rows = cursor.fetchall()
+
+            # If requesting newest-first, re-order to chronological before returning
+            if order_desc:
+                rows = list(reversed(rows))
+
+            for row in rows:
                 messages.append({
                     "id": row[0],
                     "sender_type": row[1],
