@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, Depends
+from fastapi import APIRouter, HTTPException, Header, Depends, Query
 import jwt
 import os
 from datetime import datetime, timedelta
@@ -15,6 +15,7 @@ from utils.security import generate_secure_token
 from utils.security import validate_password as validate_password_strength
 from utils.email_sender import send_password_reset_email
 from utils.admin_verification import send_admin_verification_code, verify_admin_code
+from utils.signup_verification import send_signup_verification_code, verify_signup_code, resend_verification_code
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -81,6 +82,54 @@ def signup(request: AuthRequest):
         print(f"Failed to create welcome notification: {e}")
     
     return result
+
+@router.post("/send-verification-code")
+def send_verification_code(request: EmailRequest):
+    """Send verification code to user email for signup"""
+    try:
+        # Send verification code
+        result = send_signup_verification_code(request.email)
+        
+        if result["success"]:
+            return {"message": result["message"]}
+        else:
+            raise HTTPException(status_code=500, detail=result["message"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send verification code: {str(e)}")
+
+@router.post("/verify-signup-code")
+def verify_signup_email(request: EmailRequest, code: str = Query(...)):
+    """Verify signup code sent to user email"""
+    try:
+        # Verify the code
+        result = verify_signup_code(request.email, code)
+        
+        if result["success"]:
+            return {"message": result["message"]}
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Verification failed: {str(e)}")
+
+@router.post("/resend-verification-code")
+def resend_code(request: EmailRequest):
+    """Resend verification code to user email"""
+    try:
+        # Resend verification code
+        result = resend_verification_code(request.email)
+        
+        if result["success"]:
+            return {"message": result["message"]}
+        else:
+            raise HTTPException(status_code=500, detail=result["message"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to resend verification code: {str(e)}")
 
 @router.post("/signin")
 def signin(request: AuthRequest):

@@ -145,17 +145,30 @@ const SignUpPage = () => {
     setIsResendLoading(true);
 
     try {
-      // Simulate API call to send verification code
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Use resend endpoint if code was already sent, otherwise use send endpoint
+      const endpoint = isCodeSent ? '/resend-verification-code' : '/send-verification-code';
+      const response = await fetch(`http://localhost:8000${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || 'Failed to send verification code');
+      }
 
       setIsCodeSent(true);
       setCountdown(60); // 60 second countdown
-      alert(`Verification code sent to ${formData.email}`);
+      // Clear previous code when resending
+      setFormData((prev) => ({ ...prev, verificationCode: '' }));
+      const data = await response.json();
+      alert(data.message || `Verification code sent to ${formData.email}`);
     } catch (error) {
       console.error('Send code error:', error);
       setErrors((prev) => ({
         ...prev,
-        general: 'Failed to send verification code. Please try again.',
+        general: error.message || 'Failed to send verification code. Please try again.',
       }));
     } finally {
       setIsResendLoading(false);
@@ -171,7 +184,23 @@ const SignUpPage = () => {
     setErrors((prev) => ({ ...prev, general: '' }));
 
     try {
-      const response = await fetch('http://localhost:8000/signup', {
+      // First, verify the signup code
+      const verifyResponse = await fetch(
+        `http://localhost:8000/verify-signup-code?code=${encodeURIComponent(formData.verificationCode)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email }),
+        }
+      );
+
+      if (!verifyResponse.ok) {
+        const data = await verifyResponse.json();
+        throw new Error(data.detail || 'Email verification failed');
+      }
+
+      // Verification successful, now create the account
+      const signupResponse = await fetch('http://localhost:8000/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -179,10 +208,12 @@ const SignUpPage = () => {
           password: formData.password,
         }),
       });
-      if (!response.ok) {
-        const data = await response.json();
+
+      if (!signupResponse.ok) {
+        const data = await signupResponse.json();
         throw new Error(data.detail || 'Registration failed');
       }
+
       navigate('/dashboard');
     } catch (error) {
       setErrors((prev) => ({

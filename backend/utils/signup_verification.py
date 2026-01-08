@@ -1,5 +1,5 @@
 """
-Admin verification utilities for email-based verification codes
+User signup verification utilities for email-based verification codes
 """
 import os
 import random
@@ -37,10 +37,9 @@ def _coerce_datetime(value) -> datetime:
         raise ValueError(f"Unrecognized datetime format: {text}") from e
 
 
-
-def send_admin_verification_code(email: str) -> dict:
+def send_signup_verification_code(email: str) -> dict:
     """
-    Generate and send a verification code to the admin email
+    Generate and send a verification code to the user's signup email
     Returns: dict with success status and message
     """
     try:
@@ -56,13 +55,13 @@ def send_admin_verification_code(email: str) -> dict:
         
         # Delete any existing unused codes for this email
         cursor.execute("""
-            DELETE FROM admin_verification_codes 
+            DELETE FROM user_verification_codes 
             WHERE email = ? AND used = 0
         """, (email,))
         
         # Insert new verification code
         cursor.execute("""
-            INSERT INTO admin_verification_codes (email, code, expires_at, used, attempts)
+            INSERT INTO user_verification_codes (email, code, expires_at, used, attempts)
             VALUES (?, ?, ?, 0, 0)
         """, (email, code, expires_at))
         
@@ -70,66 +69,66 @@ def send_admin_verification_code(email: str) -> dict:
         conn.close()
         
         # Send email with verification code
-        subject = "DisasterWatch Admin Verification Code"
+        subject = "DisasterWatch Email Verification Code"
         body = f"""
 Hello,
 
-Your DisasterWatch Admin verification code is: {code}
+Welcome to DisasterWatch! Your email verification code is: {code}
 
 This code will expire in 10 minutes.
 
-If you did not request this code, please ignore this email.
+If you did not sign up for DisasterWatch, please ignore this email.
 
 Best regards,
-DisasterWatch Security Team
+DisasterWatch Team
         """
         
         # Check if SMTP is configured
         if os.getenv("SMTP_HOST"):
             try:
                 send_email(to_email=email, subject=subject, body_text=body)
-                print(f"[ADMIN VERIFICATION] Code sent to: {email}")
+                print(f"[SIGNUP VERIFICATION] Code sent to: {email}")
                 return {
                     "success": True,
                     "message": "Verification code sent to your email"
                 }
             except Exception as e:
-                print(f"[ADMIN VERIFICATION] Email send failed: {e}")
-                print(f"[ADMIN VERIFICATION] Code for {email}: {code}")
+                print(f"[SIGNUP VERIFICATION] Email send failed: {e}")
+                print(f"[SIGNUP VERIFICATION] Code for {email}: {code}")
                 return {
                     "success": True,
                     "message": "Verification code generated (email service unavailable - check server logs)"
                 }
         else:
             # For development - log the code
-            print(f"[ADMIN VERIFICATION] Code for {email}: {code}")
+            print(f"[SIGNUP VERIFICATION] Code for {email}: {code}")
             return {
                 "success": True,
                 "message": "Verification code generated (check server logs)"
             }
             
     except Exception as e:
-        print(f"[ADMIN VERIFICATION] Error: {e}")
+        print(f"[SIGNUP VERIFICATION] Error: {e}")
         return {
             "success": False,
             "message": f"Failed to generate verification code: {str(e)}"
         }
 
 
-def verify_admin_code(email: str, code: str) -> dict:
+def verify_signup_code(email: str, code: str) -> dict:
     """
-    Verify the admin verification code
+    Verify the signup verification code
     Returns: dict with success status and message
     """
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
         
-        # Find the verification code
+        # Query the verification code
         cursor.execute("""
             SELECT id, code, expires_at, used, attempts 
-            FROM admin_verification_codes 
-            WHERE email = ? AND used = 0
+            FROM user_verification_codes 
+            WHERE email = ? 
             ORDER BY created_at DESC
         """, (email,))
         
@@ -139,74 +138,99 @@ def verify_admin_code(email: str, code: str) -> dict:
             conn.close()
             return {
                 "success": False,
-                "message": "No verification code found. Please request a new code."
+                "message": "No verification code found for this email"
             }
         
         code_id, stored_code, expires_at, used, attempts = result
         
-        # Check if code has expired (handle both string and datetime formats)
-        expires_dt = _coerce_datetime(expires_at)
-        
-        if datetime.utcnow() > expires_dt:
-            cursor.execute("""
-                UPDATE admin_verification_codes 
-                SET used = 1 
-                WHERE id = ?
-            """, (code_id,))
-            conn.commit()
+        # Check if code is already used
+        if used:
             conn.close()
             return {
                 "success": False,
-                "message": "Verification code has expired. Please request a new code."
+                "message": "Verification code already used"
             }
         
-        # Check attempts (max 5 attempts)
+        # Check if code is expired (handle both string and datetime formats)
+        expires_dt = _coerce_datetime(expires_at)
+        if datetime.utcnow() > expires_dt:
+            conn.close()
+            return {
+                "success": False,
+                "message": "Verification code has expired"
+            }
+        
+        # Check max attempts (max 5 attempts)
         if attempts >= 5:
-            cursor.execute("""
-                UPDATE admin_verification_codes 
-                SET used = 1 
-                WHERE id = ?
-            """, (code_id,))
-            conn.commit()
             conn.close()
             return {
                 "success": False,
                 "message": "Too many failed attempts. Please request a new code."
             }
         
-        # Verify the code
+        # Check if code matches
         if code != stored_code:
             # Increment attempts
+            new_attempts = attempts + 1
             cursor.execute("""
-                UPDATE admin_verification_codes 
-                SET attempts = attempts + 1 
+                UPDATE user_verification_codes 
+                SET attempts = ? 
                 WHERE id = ?
-            """, (code_id,))
+            """, (new_attempts, code_id))
             conn.commit()
-            remaining = 5 - (attempts + 1)
             conn.close()
             return {
                 "success": False,
-                "message": f"Invalid verification code. {remaining} attempts remaining."
+                "message": "Invalid verification code"
             }
         
-        # Code is valid - mark as used
+        # Mark code as used
         cursor.execute("""
-            UPDATE admin_verification_codes 
+            UPDATE user_verification_codes 
             SET used = 1 
             WHERE id = ?
         """, (code_id,))
+        
         conn.commit()
         conn.close()
         
         return {
             "success": True,
-            "message": "Verification code validated successfully"
+            "message": "Verification code verified successfully"
         }
         
     except Exception as e:
-        print(f"[ADMIN VERIFICATION] Verification error: {e}")
+        print(f"[SIGNUP VERIFICATION] Verification error: {e}")
         return {
             "success": False,
-            "message": f"Failed to verify code: {str(e)}"
+            "message": f"Verification failed: {str(e)}"
+        }
+
+
+def resend_verification_code(email: str) -> dict:
+    """
+    Resend verification code to the user's email
+    Returns: dict with success status and message
+    """
+    try:
+        # Delete any existing unused codes for this email
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            DELETE FROM user_verification_codes 
+            WHERE email = ? AND used = 0
+        """, (email,))
+        
+        conn.commit()
+        conn.close()
+        
+        # Send new code
+        return send_signup_verification_code(email)
+        
+    except Exception as e:
+        print(f"[SIGNUP VERIFICATION] Resend error: {e}")
+        return {
+            "success": False,
+            "message": f"Failed to resend verification code: {str(e)}"
         }
