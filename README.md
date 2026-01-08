@@ -1,154 +1,60 @@
-# DisasterWatch
+# Chatbot Web
 
-A comprehensive disaster monitoring and response system with real-time alerts, AI-powered chatbot assistance, and interactive mapping features. Built with FastAPI backend and React frontend.
+A full-stack web application featuring a chatbot with a FastAPI backend and a modern JavaScript frontend.
 
-## 🌟 Features
+## Project Structure
 
-- **Real-time Disaster Monitoring**: Track disasters from NADMA API
-- **AI Chatbot Assistant**: Get instant help and information
-- **Interactive Maps**: Visualize disaster locations with GIS data
-- **User Subscriptions**: Alert subscriptions for specific disaster types/regions
-- **Admin Dashboard**: Manage FAQs, users, and system reports
-- **Multi-language Support**: English, Bahasa Melayu, Mandarin, Tamil
-- **Voice Input**: Voice chat in Malay and English
-- **Email Notifications**: SMTP-based password reset and alerts
+- `backend/` — FastAPI backend (Python)
+- `frontend/` — Frontend (JavaScript, Vite, React)
+- `env/` — Python virtual environment
 
-## 🚀 Quick Start
+## Backend Setup
 
-### Prerequisites
+1. **Install dependencies**
 
-- Python 3.8+
-- Node.js 16+
-- PostgreSQL (or SQLite for development)
-
-### Backend Setup
-
-1. **Navigate to backend directory**
-
-   ```bash
-   cd backend
-   ```
-
-2. **Create virtual environment**
-
-   ```bash
-   python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # Linux/Mac
-   source .venv/bin/activate
-   ```
-
-3. **Install dependencies**
+   In the `backend` directory, install required Python packages:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Configure environment**
+2. **Start the backend server**
 
    ```bash
-   cp .env.example .env
-   # Edit .env with your configurations
+   cd "C:\Users\user\Desktop\Chatbot Web\backend" & "..\\.venv\Scripts\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8000
+
+
+   cd "C:\Users\user\Desktop\Chatbot Web"
+   .venv\Scripts\Activate.ps1
+   cd backend
+   uvicorn main:app --host 127.0.0.1 --port 8000
    ```
 
-5. **Start backend server**
-   ```bash
-   uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-   ```
+The backend will be available at `http://127.0.0.1:8000` by default.
 
-Backend available at `http://127.0.0.1:8000`
+## Frontend Setup
 
-### Frontend Setup
+1. **Install dependencies**
 
-1. **Navigate to frontend directory**
+In the `frontend` directory:
 
-   ```bash
-   cd frontend
-   ```
+```bash
+npm install
+```
 
-2. **Install dependencies**
+2. **Start the frontend development server**
 
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
    ```bash
    npm run dev
    ```
 
-Frontend available at `http://localhost:5173`
+   The frontend will be available at the address shown in the terminal (usually `http://localhost:5173`).
 
-## 📁 Project Structure
+## Voice Chat Feature (Malay & English Support) 🎤
 
-```
-DisasterWatch/
-├── backend/          # FastAPI backend
-├── frontend/         # React frontend
-├── docs/            # Documentation
-├── diagrams/        # Architecture diagrams
-├── scripts/         # Utility scripts
-└── tests/           # Integration tests
-```
+The chatbot now supports voice input with **Malay (Bahasa Melayu)** and **English** languages!
 
-For detailed structure, see [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)
-
-## 📚 Documentation
-
-- [Project Structure](docs/PROJECT_STRUCTURE.md) - Detailed repository organization
-- [API Documentation](docs/api/) - REST API endpoints
-- [Architecture](docs/architecture/) - System design and architecture
-- [Maintenance Guide](docs/maintenance/MAINTENANCE_GUIDE.md) - Operational guides
-- [Setup Guide](docs/setup/) - Detailed setup instructions
-- [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
-
-## 🛠️ Development
-
-### Running Tests
-
-**Backend:**
-
-```bash
-cd backend
-pytest
-pytest --cov  # With coverage
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-npm test
-```
-
-### Code Style
-
-- **Backend**: Follow PEP 8, use black formatter
-- **Frontend**: ESLint + Prettier configured
-
-### Building for Production
-
-**Backend:**
-
-```bash
-# Backend runs with uvicorn in production
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-**Frontend:**
-
-```bash
-cd frontend
-npm run build
-# Outputs to frontend/dist/
-```
-
-## 🎤 Voice Chat Feature
-
-The chatbot supports voice input with **Malay (Bahasa Melayu)** and **English** languages.
-
-### Quick Setup
+### Quick Setup:
 
 1. **For best Malay support (Recommended):**
 
@@ -159,78 +65,105 @@ The chatbot supports voice input with **Malay (Bahasa Melayu)** and **English** 
    - Restart backend server
 
 2. **Free alternative (Local):**
-   - Uses local Whisper model
-   - No API key needed
+   - Already configured! Uses local Whisper model
+   - No API key needed, but slower and less accurate for Malay
 
-### Usage
+### User Guide:
 
 - Click microphone icon 🎤 to record voice
-- Configure language in Settings → Interaction
+- Go to Settings → Interaction to select language:
+  - **Auto-detect** (recommended)
+  - **Bahasa Melayu** (Malay only)
+  - **English** (English only)
 
-## 🗺️ Map Data API
+📖 **Full documentation:** See [VOICE_CHAT_GUIDE.md](VOICE_CHAT_GUIDE.md)
 
-The application provides ArcGIS Feature Server endpoints for disaster management mapping.
+## Usage
+
+- Open the frontend in your browser.
+- Interact with the chatbot UI. Messages are sent to the FastAPI backend for processing.
+
+## Map Data API
+
+The application includes a Map Data API that provides ArcGIS Feature Server endpoints for disaster management mapping.
 
 ### Available Endpoints
 
-- `GET /map/endpoints` — Get all available map data endpoints
-- `GET /map/endpoints/{type}` — Get specific endpoint by type
-- `GET /map/types` — Get all available map data types
+- **GET /map/endpoints** — Get all available map data endpoints
+- **GET /map/endpoints/{type}** — Get a specific endpoint by type (landslide, flood, poi, population)
+- **GET /map/types** — Get all available map data types
 
 ### Data Sources
 
-1. **Land Slide Risk Area** — Areas prone to landslides
-2. **Flood Prone Area** — Flood risk during monsoon seasons
-3. **Place of Interest** — Emergency services locations
-4. **Population** — Population density for evacuation planning
+The API provides access to these geospatial datasets:
 
-See [backend/routes/MAP_API.md](backend/routes/MAP_API.md) or visit `http://localhost:8000/docs`
+1. **Land Slide Risk Area** — Areas prone to landslides and slope failures
+2. **Flood Prone Area** — Areas at risk of flooding during monsoon seasons
+3. **Place of Interest** — Points of interest including emergency services
+4. **Population** — Population density data for evacuation planning
 
-## 🔐 Password Reset (SMTP)
+For detailed API documentation, see `backend/routes/MAP_API.md` or visit `http://localhost:8000/docs` when the backend is running.
 
-Configure SMTP to send real password reset emails.
+### Frontend Integration Example
 
-### Environment Variables
+```javascript
+// Fetch map endpoints
+const response = await fetch("http://localhost:8000/map/endpoints");
+const data = await response.json();
 
-```env
-FRONTEND_BASE_URL=http://localhost:4028
-SMTP_HOST=smtp-relay.brevo.com
-SMTP_PORT=587
-SMTP_USER=your-smtp-login
-SMTP_PASSWORD=your-smtp-password
-SMTP_FROM=verified-sender@yourdomain.com
-SMTP_TLS=true
+// Use with ArcGIS to create layers
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
+
+data.endpoints.forEach((endpoint) => {
+  const layer = new FeatureLayer({
+    url: endpoint.url,
+    title: endpoint.name,
+  });
+  map.add(layer);
+});
 ```
 
-## 🤝 Contributing
+See `frontend/src/examples/MapDataAPIExample.jsx` for complete usage examples.
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+## Notes
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+- Ensure the backend is running before using the frontend.
+- Update API endpoints in the frontend if the backend address/port changes.
 
-## 📄 License
+## Password Reset Email (SMTP)
+
+The backend endpoint `POST /forgot-password` can send a real password reset email when SMTP is configured.
+
+Set these environment variables before starting the backend:
+
+- `FRONTEND_BASE_URL` (example: `http://localhost:4028` or your deployed site)
+- `SMTP_HOST` (required to send email)
+- `SMTP_PORT` (default: `587`)
+- `SMTP_USER` (optional; if set, login is attempted)
+- `SMTP_PASSWORD` (required if `SMTP_USER` is set)
+- `SMTP_FROM` (optional; defaults to `SMTP_USER`)
+- `SMTP_TLS` (default: `true`) – use STARTTLS on port 587
+- `SMTP_SSL` (default: `false`) – set to `true` for implicit TLS (commonly port 465)
+- `SMTP_TIMEOUT` (default: `20` seconds)
+
+If `SMTP_HOST` is not set, the backend logs the reset link in the console (dev mode).
+
+### Brevo (Sendinblue) example
+
+1. In Brevo: create an SMTP key (SMTP credentials) and verify your sender email/domain.
+2. Set env vars (PowerShell):
+
+   `$env:FRONTEND_BASE_URL = "http://localhost:4028"
+$env:SMTP_HOST = "smtp-relay.brevo.com"
+$env:SMTP_PORT = "587"
+$env:SMTP_TLS = "true"
+$env:SMTP_SSL = "false"
+$env:SMTP_USER = "YOUR_BREVO_SMTP_LOGIN"
+$env:SMTP_PASSWORD = "YOUR_BREVO_SMTP_KEY"
+$env:SMTP_FROM = "verified-sender@yourdomain.com"`
+
+3. Restart the backend and use “Forgot password?” again.
+
+## License
 
 This project is for educational purposes.
-
-## 🙏 Acknowledgments
-
-- NADMA for disaster data API
-- OpenAI for AI capabilities
-- Malaysian government agencies for GIS data
-
-## 📞 Support
-
-For issues and questions:
-
-- Create an [Issue](https://github.com/haziqhalifi/Chatbot-Web/issues)
-- Check [Documentation](docs/)
-- Review [Contributing Guidelines](CONTRIBUTING.md)
-
----
-
-**Current Version**: 1.0.0  
-**Last Updated**: January 2026
