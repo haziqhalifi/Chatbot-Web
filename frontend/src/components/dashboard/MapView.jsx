@@ -25,7 +25,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     {
       id: 'malaysia-boundaries',
       name: 'Malaysia Administrative Boundaries',
-      visible: true,
+      visible: false,
       type: 'feature',
       icon: 'Building',
       description: 'Administrative boundaries of Malaysia states and districts',
@@ -36,7 +36,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     {
       id: 'emergency-services-malaysia',
       name: 'Emergency Services (Malaysia)',
-      visible: true,
+      visible: false,
       type: 'feature',
       icon: 'MapPin',
       description: 'Hospitals, police stations, fire stations, and emergency response centers',
@@ -202,7 +202,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           return {
             id: `api-${endpoint.type}`,
             name: endpoint.name,
-            visible: endpoint.type === 'flood' || endpoint.type === 'landslide', // Show flood and landslide by default
+            visible: false,
             type: 'api-feature',
             icon: icon,
             description: endpoint.description,
@@ -253,7 +253,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         const nadmaLayer = {
           id: 'nadma-disasters',
           name: 'NADMA Real-time Disasters',
-          visible: true,
+          visible: false,
           type: 'nadma-feature',
           icon: 'AlertTriangle',
           description: 'Real-time disaster data from NADMA MyDIMS',
@@ -477,6 +477,8 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           console.log(`WebMap contains ${map.layers.length} layers:`);
           map.layers.forEach((layer, index) => {
             console.log(`  Layer ${index + 1}: ${layer.title || layer.id} (${layer.type})`);
+            // Hide all layers on startup
+            layer.visible = false;
           });
         }
       }
@@ -1159,8 +1161,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         view: view,
         content: searchWidget,
         expanded: false,
-        expandIconClass: 'esri-icon-search',
-        expandTooltip: 'Search',
         mode: 'floating',
       });
 
@@ -1186,7 +1186,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       coordDiv.style.boxShadow = '0 1px 2px rgba(0,0,0,0.3)';
       coordDiv.innerHTML = 'Lon: 0.00000<br>Lat: 0.00000';
 
-      view.ui.add(coordDiv, 'bottom-right');
+      view.ui.add(coordDiv, 'top-right');
 
       // Update coordinates on pointer move
       view.on('pointer-move', (evt) => {
@@ -1224,8 +1224,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         view: view,
         content: bookmarks,
         expanded: false,
-        expandIconClass: 'esri-icon-bookmark',
-        expandTooltip: 'Bookmarks',
       });
 
       // Add the widget to the top-left corner of the view
@@ -1318,9 +1316,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const layerListExpand = new Expand({
         view: view,
         content: layerList,
-        expanded: true,
-        expandIconClass: 'esri-icon-layers',
-        expandTooltip: 'Layer List',
+        expanded: false,
       });
 
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
@@ -1360,8 +1356,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         view: view,
         content: basemapGallery,
         expanded: false,
-        expandIconClass: 'esri-icon-basemap',
-        expandTooltip: 'Basemap Gallery',
         mode: 'floating',
       });
 
@@ -1393,8 +1387,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         view: view,
         content: legend,
         expanded: false,
-        expandIconClass: 'esri-icon-legend',
-        expandTooltip: 'Legend',
         mode: 'floating',
       });
 
