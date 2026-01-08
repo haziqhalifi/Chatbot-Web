@@ -1456,22 +1456,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     >
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full" id="real-map-container"></div>
-      {/* Fallback Map Container */}
-      {!mapView && (
-        <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading Malaysia Disaster Management Map...</p>
-            <p className="text-sm text-gray-500 mt-2">Initializing ArcGIS components</p>
-            <button
-              onClick={manualInitialize}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Manual Initialize
-            </button>
-          </div>
-        </div>
-      )}
       {/* {/* Layer Status Indicator */}
       {/* <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
         <div className="text-sm text-gray-700">
