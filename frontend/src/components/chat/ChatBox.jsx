@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import api from '../../api';
 import { useAuth } from '../../contexts/AuthContext';
-import { useChat } from '../../hooks/useChat';
+import { useChatContext } from '../../contexts/ChatContext';
 import ChatHeader from './ChatHeader';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
@@ -36,7 +36,7 @@ const ChatBox = ({
     providerDescriptions,
     preferredProvider,
     setPreferredProvider,
-  } = useChat();
+  } = useChatContext();
   const { userProfile } = useUserProfile();
 
   const [inputValue, setInputValue] = useState('');
@@ -227,12 +227,12 @@ const ChatBox = ({
         }`}
         style={{
           width: width || 380,
-          height: height || 600,
+          height: displayMode === 'sidebar' ? '100%' : height || 600,
           position: 'relative',
           display: 'flex',
           flexDirection: 'column',
           minWidth: 320,
-          minHeight: displayMode === 'sidebar' ? 'auto' : 450,
+          minHeight: displayMode === 'sidebar' ? '100%' : 450,
         }}
       >
         <ChatHeader
