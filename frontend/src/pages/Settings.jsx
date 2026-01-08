@@ -6,6 +6,16 @@ import i18n from '../i18n';
 import { loadSettings, saveSettings } from '../utils/settingsStorage';
 import jsPDF from 'jspdf';
 import { Bell, Database, HelpCircle, MessageSquare, Shield, User } from 'lucide-react';
+import {
+  SettingsHeader,
+  TabButton,
+  ProfileTab,
+  InteractionTab,
+  NotificationsTab,
+  SecurityTab,
+  DataTab,
+  HelpTab,
+} from '../components/settings';
 
 const SettingsPage = ({ onClose }) => {
   const navigate = useNavigate();
@@ -113,46 +123,6 @@ const SettingsPage = ({ onClose }) => {
   const handleClose = () => {
     if (isModal) return onClose();
     navigate(-1);
-  };
-
-  const TabButton = ({ id, icon: Icon, label }) => {
-    const isActive = activeTab === id;
-    return (
-      <button
-        type="button"
-        onClick={() => setActiveTab(id)}
-        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-          isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        }`}
-        aria-current={isActive ? 'page' : undefined}
-      >
-        {Icon ? <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500'}`} /> : null}
-        <span>{label}</span>
-      </button>
-    );
-  };
-
-  const ToggleRow = ({ label, description, checked, onChange, disabled = false }) => {
-    return (
-      <div className="flex items-start justify-between gap-4 py-3">
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-gray-800">{label}</div>
-          {description ? <div className="text-sm text-gray-500">{description}</div> : null}
-        </div>
-        <label
-          className={`relative inline-flex items-center ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-        >
-          <input
-            type="checkbox"
-            className="sr-only peer"
-            checked={!!checked}
-            onChange={(e) => onChange?.(e.target.checked)}
-            disabled={disabled}
-          />
-          <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-200 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
-        </label>
-      </div>
-    );
   };
 
   const handleSaveProfile = async () => {
@@ -348,495 +318,138 @@ const SettingsPage = ({ onClose }) => {
 
   const content = (
     <div className={`w-full bg-white rounded-lg shadow-lg ${isModal ? 'max-w-4xl' : 'max-w-4xl'}`}>
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-100">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
-          <p className="text-sm text-gray-500">Manage your profile, preferences, and security.</p>
-        </div>
-
-        {isModal ? (
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100"
-            aria-label="Close settings"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        ) : null}
-      </div>
-
-      {/* Status / errors */}
-      <div className="px-6 pt-4">
-        {(saveStatus || saveMessage) && (
-          <div
-            className={`mb-3 text-sm ${
-              saveStatus === 'error'
-                ? 'text-red-700 bg-red-50 border border-red-200'
-                : saveStatus === 'saved'
-                  ? 'text-green-800 bg-green-50 border border-green-200'
-                  : 'text-gray-700 bg-gray-50 border border-gray-200'
-            } rounded-lg px-3 py-2`}
-          >
-            {saveMessage}
-          </div>
-        )}
-        {profileError && (
-          <div className="mb-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {profileError}
-          </div>
-        )}
-      </div>
+      <SettingsHeader
+        isModal={isModal}
+        onClose={handleClose}
+        saveStatus={saveStatus}
+        saveMessage={saveMessage}
+        profileError={profileError}
+      />
 
       {/* Tabs */}
       <div className="px-6 pb-4">
         <div className="flex flex-wrap gap-2">
-          <TabButton id="profile" icon={User} label="Profile" />
-          <TabButton id="interaction" icon={MessageSquare} label="Interaction" />
-          <TabButton id="notifications" icon={Bell} label="Notifications" />
-          <TabButton id="security" icon={Shield} label="Security" />
-          <TabButton id="data" icon={Database} label="Data" />
-          <TabButton id="help" icon={HelpCircle} label="Help" />
+          <TabButton
+            id="profile"
+            icon={User}
+            label="Profile"
+            isActive={activeTab === 'profile'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="interaction"
+            icon={MessageSquare}
+            label="Interaction"
+            isActive={activeTab === 'interaction'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="notifications"
+            icon={Bell}
+            label="Notifications"
+            isActive={activeTab === 'notifications'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="security"
+            icon={Shield}
+            label="Security"
+            isActive={activeTab === 'security'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="data"
+            icon={Database}
+            label="Data"
+            isActive={activeTab === 'data'}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="help"
+            icon={HelpCircle}
+            label="Help"
+            isActive={activeTab === 'help'}
+            onClick={setActiveTab}
+          />
         </div>
       </div>
 
       <div className={`px-6 pb-6 ${isModal ? 'max-h-[70vh] overflow-y-auto' : ''}`}>
-        {/* Profile Settings */}
         {activeTab === 'profile' && (
-          <div>
-            {profileLoading ? (
-              <div className="text-gray-600">Loading profile...</div>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    readOnly
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">User Role</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    value={roleLabel}
-                    readOnly
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">Date Registered</label>
-                  <input
-                    type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    value={createdAt}
-                    readOnly
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Language Preference
-                  </label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value)}
-                  >
-                    <option>English</option>
-                    <option>Bahasa Melayu</option>
-                  </select>
-                </div>
-
-                {roleLabel === 'Government Officer' && (
-                  <>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 font-medium mb-1">
-                        Assigned Department / Agency
-                      </label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                        value={profile?.department || ''}
-                        readOnly
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <label className="block text-gray-700 font-medium mb-1">Access Scope</label>
-                      <input
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                        value={profile?.accessScope || ''}
-                        readOnly
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                        onClick={() => navigate('/admin')}
-                      >
-                        Go to Admin Dashboard
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-end">
-                  <button
-                    className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    onClick={handleSaveProfile}
-                    disabled={profileLoading}
-                  >
-                    Save Profile
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <ProfileTab
+            profileLoading={profileLoading}
+            fullName={fullName}
+            setFullName={setFullName}
+            email={email}
+            setEmail={setEmail}
+            roleLabel={roleLabel}
+            createdAt={createdAt}
+            language={language}
+            setLanguage={setLanguage}
+            profile={profile}
+            navigate={navigate}
+            onSaveProfile={handleSaveProfile}
+          />
         )}
 
-        {/* Interaction Preferences */}
         {activeTab === 'interaction' && (
-          <div>
-            <ToggleRow
-              label="Voice Input"
-              description="Enable microphone input when available."
-              checked={voiceInput}
-              onChange={(next) => setVoiceInput(next)}
-            />
-
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Voice Input Language</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={voiceLanguage}
-                onChange={(e) => {
-                  setVoiceLanguage(e.target.value);
-                  localStorage.setItem('voiceLanguage', e.target.value);
-                }}
-              >
-                <option value="auto">Auto-detect</option>
-                <option value="ms">Bahasa Melayu (Malay)</option>
-                <option value="en">English</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                Select the language for voice recognition. Auto-detect works for both languages.
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Text Size</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={textSize}
-                onChange={(e) => setTextSize(e.target.value)}
-              >
-                <option>Small</option>
-                <option>Medium</option>
-                <option>Large</option>
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Default Chat Language</label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={defaultChatLang}
-                onChange={(e) => setDefaultChatLang(e.target.value)}
-              >
-                <option>English</option>
-                <option>BM</option>
-                <option>Auto-detect</option>
-              </select>
-            </div>
-
-            <ToggleRow
-              label="Chat History Logging"
-              description="Controls whether your chat sessions are saved."
-              checked={chatHistoryLogging}
-              onChange={(next) => setChatHistoryLogging(next)}
-            />
-            <div className="text-xs text-gray-500">Note: Chat history is stored on the server.</div>
-          </div>
+          <InteractionTab
+            voiceInput={voiceInput}
+            setVoiceInput={setVoiceInput}
+            voiceLanguage={voiceLanguage}
+            setVoiceLanguage={setVoiceLanguage}
+            textSize={textSize}
+            setTextSize={setTextSize}
+            defaultChatLang={defaultChatLang}
+            setDefaultChatLang={setDefaultChatLang}
+            chatHistoryLogging={chatHistoryLogging}
+            setChatHistoryLogging={setChatHistoryLogging}
+          />
         )}
-        {/* Notifications */}
+
         {activeTab === 'notifications' && (
-          <div>
-            <ToggleRow
-              label="Disaster Alerts"
-              description="Enable general disaster alert notifications."
-              checked={disasterAlerts}
-              onChange={(next) => setDisasterAlerts(next)}
-            />
-            <ToggleRow
-              label="SOP Updates"
-              description="Notify you when standard operating procedures are updated."
-              checked={notifySOP}
-              onChange={(next) => setNotifySOP(next)}
-            />
-            <ToggleRow
-              label="Nearby Incidents"
-              description="Use your location to notify you about nearby incidents."
-              checked={notifyNearby}
-              onChange={(next) => setNotifyNearby(next)}
-            />
-
-            <div className="mt-2">
-              <button
-                className="text-blue-600 hover:underline"
-                onClick={() => navigate('/notification-settings')}
-              >
-                Manage detailed notification preferences
-              </button>
-            </div>
-          </div>
+          <NotificationsTab
+            disasterAlerts={disasterAlerts}
+            setDisasterAlerts={setDisasterAlerts}
+            notifySOP={notifySOP}
+            setNotifySOP={setNotifySOP}
+            notifyNearby={notifyNearby}
+            setNotifyNearby={setNotifyNearby}
+            navigate={navigate}
+          />
         )}
-        {/* Security Settings */}
+
         {activeTab === 'security' && (
-          <div>
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">Change Password</h2>
-              <form onSubmit={handleChangePassword}>
-                <div className="mb-3">
-                  <label className="block text-gray-700 mb-1">Current Password</label>
-                  <input
-                    type="password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={passwordForm.currentPassword}
-                    onChange={(e) =>
-                      setPasswordForm((p) => ({ ...p, currentPassword: e.target.value }))
-                    }
-                    autoComplete="current-password"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="block text-gray-700 mb-1">New Password</label>
-                  <input
-                    type="password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={passwordForm.newPassword}
-                    onChange={(e) =>
-                      setPasswordForm((p) => ({ ...p, newPassword: e.target.value }))
-                    }
-                    autoComplete="new-password"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="block text-gray-700 mb-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={passwordForm.confirmPassword}
-                    onChange={(e) =>
-                      setPasswordForm((p) => ({ ...p, confirmPassword: e.target.value }))
-                    }
-                    autoComplete="new-password"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  disabled={passwordStatus === 'saving'}
-                >
-                  {passwordStatus === 'saving' ? 'Changing...' : 'Change Password'}
-                </button>
-
-                {passwordMessage && (
-                  <div
-                    className={`mt-2 text-sm ${
-                      passwordStatus === 'error' ? 'text-red-600' : 'text-green-700'
-                    }`}
-                  >
-                    {passwordMessage}
-                  </div>
-                )}
-              </form>
-            </div>
-            <ToggleRow
-              label="Two-Factor Authentication"
-              description="Not available in this version."
-              checked={false}
-              onChange={() => {}}
-              disabled
-            />
-            <div className="mb-4">
-              <button
-                className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors mb-2"
-                onClick={() => {
-                  localStorage.removeItem('token');
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('tiara_current_session');
-                  window.location.href = '/signin';
-                }}
-              >
-                Log out of all devices
-              </button>
-              <ToggleRow
-                label="Public Profile"
-                description="Allow others to see your profile information."
-                checked={privacy}
-                onChange={(next) => setPrivacy(next)}
-              />
-            </div>
-            <div className="mb-4">
-              <button
-                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                Delete My Account
-              </button>
-            </div>
-            {showDeleteConfirm && (
-              <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-                <div className="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full relative">
-                  <h3 className="text-lg font-bold mb-4">Confirm Account Deletion</h3>
-                  <p className="mb-6">
-                    Are you sure you want to delete your account? This action cannot be undone.
-                  </p>
-                  <div className="flex justify-end space-x-2">
-                    <button
-                      className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
-                      onClick={() => setShowDeleteConfirm(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
-                      onClick={handleDeleteAccount}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <SecurityTab
+            passwordForm={passwordForm}
+            setPasswordForm={setPasswordForm}
+            onChangePassword={handleChangePassword}
+            passwordStatus={passwordStatus}
+            passwordMessage={passwordMessage}
+            privacy={privacy}
+            setPrivacy={setPrivacy}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+            onDeleteAccount={handleDeleteAccount}
+          />
         )}
-        {/* Data Management */}
+
         {activeTab === 'data' && (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">View Chat History</span>
-              <button
-                className="text-blue-600 hover:underline"
-                onClick={async () => {
-                  const next = !showChatHistory;
-                  setShowChatHistory(next);
-                  if (next) {
-                    await fetchChatHistory();
-                  }
-                }}
-              >
-                {showChatHistory ? 'Hide' : 'View'}
-              </button>
-            </div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Download Activity Log (PDF)</span>
-              <button
-                className="text-blue-600 hover:underline disabled:opacity-50"
-                onClick={handleDownloadActivityPdf}
-                disabled={chatSessionsLoading}
-              >
-                Download
-              </button>
-            </div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Clear Chat History</span>
-              <button
-                className="text-red-600 hover:underline disabled:opacity-50"
-                onClick={handleClearChatHistory}
-                disabled={chatSessionsLoading}
-              >
-                Clear
-              </button>
-            </div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Delete My Account</span>
-              <button
-                className="text-red-600 hover:underline"
-                onClick={() => setActiveTab('security')}
-              >
-                Go to Security
-              </button>
-            </div>
-
-            {chatSessionsError && <div className="text-red-600 text-sm">{chatSessionsError}</div>}
-            {chatSessionsLoading && <div className="text-gray-600 text-sm">Loading...</div>}
-
-            {showChatHistory && !chatSessionsLoading && (
-              <div className="mt-3 border rounded p-3 bg-gray-50">
-                <div className="text-sm font-semibold mb-2">Recent Sessions</div>
-                {chatSessions.length === 0 ? (
-                  <div className="text-sm text-gray-600">No chat sessions found.</div>
-                ) : (
-                  <div className="space-y-2">
-                    {chatSessions.slice(0, 10).map((s) => (
-                      <div key={s.id} className="text-sm flex justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="font-medium truncate">{s.title || `Session ${s.id}`}</div>
-                          <div className="text-xs text-gray-500 truncate">{s.updated_at || ''}</div>
-                        </div>
-                        <button
-                          className="text-blue-600 hover:underline whitespace-nowrap"
-                          onClick={() => navigate('/dashboard')}
-                        >
-                          Open Chat
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <DataTab
+            showChatHistory={showChatHistory}
+            setShowChatHistory={setShowChatHistory}
+            chatSessions={chatSessions}
+            chatSessionsLoading={chatSessionsLoading}
+            chatSessionsError={chatSessionsError}
+            onFetchChatHistory={fetchChatHistory}
+            onDownloadActivityPdf={handleDownloadActivityPdf}
+            onClearChatHistory={handleClearChatHistory}
+            navigate={navigate}
+            setActiveTab={setActiveTab}
+          />
         )}
-        {/* Help & Support */}
-        {activeTab === 'help' && (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Help Center / FAQ</span>
-              <a
-                href="/help-faq"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                Open
-              </a>
-            </div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Submit Feedback</span>
-              <button className="text-blue-600 hover:underline" onClick={() => navigate('/report')}>
-                Submit
-              </button>
-            </div>
-            <div className="mb-4 flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Contact Support</span>
-              <button className="text-blue-600 hover:underline" onClick={() => navigate('/report')}>
-                Contact
-              </button>
-            </div>
-          </div>
-        )}
+
+        {activeTab === 'help' && <HelpTab navigate={navigate} />}
       </div>
     </div>
   );
