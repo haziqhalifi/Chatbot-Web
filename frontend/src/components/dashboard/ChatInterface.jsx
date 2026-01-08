@@ -4,6 +4,9 @@ import { ChatBox, ChatButton } from '../chat';
 import { Maximize2, Minimize2, Sidebar } from 'lucide-react';
 
 const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
+  // Header height constant (h-20 = 80px)
+  const HEADER_HEIGHT = 80;
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [savedChat, setSavedChat] = useState(null);
   const [chatKey, setChatKey] = useState(0);
@@ -47,7 +50,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         onSidebarChange(0);
       }
     }
-  }, [isChatOpen, displayMode, chatSize.width, onSidebarChange]);
+  }, [isChatOpen, displayMode, chatSize.width, onSidebarChange, HEADER_HEIGHT]);
 
   const handleClose = () => {
     setIsChatOpen(false);
@@ -73,7 +76,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
 
     // Reset size when switching modes
     if (newMode === 'sidebar') {
-      setChatSize({ width: 420, height: window.innerHeight - 64 }); // Subtract header height
+      setChatSize({ width: 420, height: window.innerHeight - HEADER_HEIGHT });
     } else {
       setChatSize({ width: 380, height: 600 });
     }
@@ -117,7 +120,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
 
         setChatSize({
           width: newWidth,
-          height: window.innerHeight - 64, // Subtract header height
+          height: window.innerHeight - HEADER_HEIGHT,
         });
       } else {
         // Popup resize - width and height change
@@ -127,8 +130,9 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         // Improved constraints with better minimum sizes
         const minWidth = 320;
         const minHeight = 450;
+        // Ensure chat doesn't extend above the navbar (HEADER_HEIGHT)
+        const maxHeight = window.innerHeight - fixedPosition.bottom - HEADER_HEIGHT;
         const maxWidth = window.innerWidth - fixedPosition.right - 20;
-        const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
 
         const newWidth = Math.max(
           minWidth,
@@ -168,11 +172,12 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
           const minWidth = 320;
           return {
             width: Math.max(minWidth, Math.min(prevSize.width, maxWidth)),
-            height: window.innerHeight - 64, // Subtract header height
+            height: window.innerHeight - HEADER_HEIGHT,
           };
         } else {
           const maxWidth = window.innerWidth - fixedPosition.right - 20;
-          const maxHeight = window.innerHeight - fixedPosition.bottom - 20;
+          // Ensure chat doesn't extend above the navbar
+          const maxHeight = window.innerHeight - fixedPosition.bottom - HEADER_HEIGHT;
           const minWidth = 320;
           const minHeight = 450;
 
@@ -191,7 +196,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
         if (displayMode === 'sidebar') {
           setChatSize({
             width: resizingRef.current.startWidth,
-            height: window.innerHeight - 64, // Subtract header height
+            height: window.innerHeight - HEADER_HEIGHT,
           });
         } else {
           setChatSize({
@@ -229,8 +234,8 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
             displayMode === 'sidebar'
               ? {
                   width: chatSize.width,
-                  height: 'calc(100vh - 64px)', // Subtract header height (64px)
-                  top: '64px', // Start below the header
+                  height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+                  top: `${HEADER_HEIGHT}px`,
                   right: 0,
                 }
               : {
@@ -241,76 +246,69 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
                 }
           }
         >
-          {/* Display Mode Toggle Button */}
-          <div
-            className="absolute top-2 right-2 z-20 bg-white/90 hover:bg-white rounded-lg p-1.5 shadow-md cursor-pointer transition-all duration-200"
-            onClick={toggleDisplayMode}
-            title={displayMode === 'popup' ? 'Switch to Sidebar' : 'Switch to Popup'}
-          >
-            {displayMode === 'popup' ? (
-              <Sidebar className="w-4 h-4 text-blue-600" />
-            ) : (
-              <Maximize2 className="w-4 h-4 text-blue-600" />
-            )}
-          </div>
-
           {/* Resize Handles - Only show for popup mode */}
           {displayMode === 'popup' && (
             <>
               {/* Enhanced Resize Handle - Top Left */}
               <div
                 onMouseDown={handleResizeMouseDown}
-                className={`absolute top-0 left-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
-                  isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                className={`absolute top-0 left-0 w-8 h-8 cursor-nwse-resize z-10 group transition-all duration-200 ${
+                  isResizing ? 'opacity-100' : 'opacity-30 hover:opacity-100'
                 }`}
                 style={{
-                  background:
-                    'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.1) 50%)',
+                  background: isResizing
+                    ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 50%, transparent 50%)'
+                    : 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 50%, transparent 50%)',
                 }}
+                title="Drag to resize"
               >
-                {/* Resize handle visual indicator */}
-                <div className="absolute top-1 left-1 w-4 h-4">
-                  <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
+                {/* Resize handle visual indicator - enhanced for better visibility */}
+                <div className="absolute top-1.5 left-1.5 w-5 h-5">
+                  <svg width="20" height="20" viewBox="0 0 20 20" className="text-blue-600">
                     <path
-                      d="M2 14L14 2M6 2H2V6M10 14H14V10"
+                      d="M3 17L17 3M7 3H3V7M13 17H17V13"
                       stroke="currentColor"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
                       fill="none"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 </div>
 
                 {/* Hover effect */}
-                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-tl-lg transition-opacity duration-200" />
+                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-15 rounded-tl-lg transition-opacity duration-200" />
               </div>
 
               {/* Enhanced Resize Handle - Bottom Right */}
               <div
                 onMouseDown={handleResizeMouseDown}
-                className={`absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize z-10 group chat-resize-handle ${
-                  isResizing ? 'opacity-100' : 'opacity-0 hover:opacity-100'
+                className={`absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize z-10 group transition-all duration-200 ${
+                  isResizing ? 'opacity-100' : 'opacity-30 hover:opacity-100'
                 }`}
                 style={{
-                  background:
-                    'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 50%, transparent 50%)',
+                  background: isResizing
+                    ? 'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.2) 50%)'
+                    : 'linear-gradient(135deg, transparent 50%, rgba(59, 130, 246, 0.05) 50%)',
                 }}
+                title="Drag to resize"
               >
-                {/* Resize handle visual indicator */}
-                <div className="absolute bottom-1 right-1 w-4 h-4">
-                  <svg width="16" height="16" viewBox="0 0 16 16" className="text-blue-600">
+                {/* Resize handle visual indicator - enhanced for better visibility */}
+                <div className="absolute bottom-1.5 right-1.5 w-5 h-5">
+                  <svg width="20" height="20" viewBox="0 0 20 20" className="text-blue-600">
                     <path
-                      d="M2 14L14 2M6 2H2V6M10 14H14V10"
+                      d="M3 17L17 3M7 3H3V7M13 17H17V13"
                       stroke="currentColor"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
                       fill="none"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 </div>
 
                 {/* Hover effect */}
-                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-10 rounded-br-lg transition-opacity duration-200" />
+                <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-15 rounded-br-lg transition-opacity duration-200" />
               </div>
             </>
           )}
@@ -333,26 +331,33 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
                 document.body.style.cursor = 'ew-resize';
                 document.body.classList.add('chat-resizing');
               }}
-              className={`absolute top-0 left-0 w-2 h-full cursor-ew-resize z-10 group ${
-                isResizing ? 'bg-blue-600 bg-opacity-20' : 'hover:bg-blue-600 hover:bg-opacity-10'
+              className={`absolute top-0 left-0 w-2 h-full cursor-ew-resize z-10 group transition-all duration-200 ${
+                isResizing
+                  ? 'bg-blue-600 bg-opacity-30'
+                  : 'bg-blue-600 bg-opacity-10 hover:bg-opacity-20'
               }`}
+              title="Drag to resize sidebar width"
             >
               <div className="absolute top-1/2 left-0 w-full h-12 transform -translate-y-1/2 flex items-center justify-center">
-                <div className="w-1 h-8 bg-blue-600 opacity-0 group-hover:opacity-50 rounded-full transition-opacity duration-200" />
+                <div
+                  className={`w-1 h-10 bg-blue-600 rounded-full transition-all duration-200 ${
+                    isResizing ? 'opacity-70' : 'opacity-40 group-hover:opacity-60'
+                  }`}
+                />
               </div>
             </div>
           )}
 
           {/* Size Indicator */}
           {showSizeIndicator && (
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-blue-600 bg-opacity-90 text-white text-xs px-2 py-1 rounded z-20 pointer-events-none size-indicator shadow-md">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 bg-opacity-95 text-white text-sm font-semibold px-3 py-2 rounded-lg z-20 pointer-events-none shadow-lg size-indicator">
               {Math.round(chatSize.width)} × {Math.round(chatSize.height)}
             </div>
           )}
 
           {/* Resize border indicator */}
           {isResizing && (
-            <div className="absolute inset-0 border-2 border-blue-600 border-dashed pointer-events-none z-5 resize-border" />
+            <div className="absolute inset-0 border-2 border-blue-600 border-dashed pointer-events-none z-5 resize-border rounded-[22px]" />
           )}
 
           <ChatBox
@@ -363,6 +368,7 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
             height={chatSize.height}
             mapView={parentMapView}
             displayMode={displayMode}
+            onToggleDisplayMode={toggleDisplayMode}
           />
         </div>
       )}

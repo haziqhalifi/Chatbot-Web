@@ -10,7 +10,15 @@ import ChatHistory from './ChatHistory';
 import useUserProfile from '../../hooks/useUserProfile';
 import { MapController } from '../../utils/mapController';
 
-const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'popup' }) => {
+const ChatBox = ({
+  onClose,
+  onNewChat,
+  width,
+  height,
+  mapView,
+  displayMode = 'popup',
+  onToggleDisplayMode,
+}) => {
   const { token } = useAuth();
   const {
     currentSession,
@@ -212,8 +220,10 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'po
 
       {/* Chat Box */}
       <div
-        className={`bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col shadow-2xl overflow-hidden border border-blue-200 ${
-          displayMode === 'sidebar' ? 'rounded-none h-full' : 'rounded-[22px]'
+        className={`bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col shadow-2xl border border-blue-200 ${
+          displayMode === 'sidebar'
+            ? 'rounded-none h-full overflow-hidden'
+            : 'rounded-[22px] overflow-hidden'
         }`}
         style={{
           width: width || 380,
@@ -222,7 +232,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'po
           display: 'flex',
           flexDirection: 'column',
           minWidth: 320,
-          minHeight: displayMode === 'sidebar' ? '100vh' : 450,
+          minHeight: displayMode === 'sidebar' ? 'auto' : 450,
         }}
       >
         <ChatHeader
@@ -239,6 +249,7 @@ const ChatBox = ({ onClose, onNewChat, width, height, mapView, displayMode = 'po
           setExportType={setExportType}
           onOpenHistory={handleOpenHistory}
           displayMode={displayMode}
+          onToggleDisplayMode={onToggleDisplayMode}
         />
 
         <ChatMessages
