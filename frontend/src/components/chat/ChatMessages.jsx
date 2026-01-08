@@ -22,7 +22,7 @@ const ChatMessages = forwardRef(
         className="flex-1 overflow-y-auto px-4 py-4 chat-messages"
         style={{
           minHeight: 0,
-          maxHeight: height ? height - 170 : 430,
+          flex: '1 1 auto',
           display: 'flex',
           flexDirection: 'column',
           gap: '0.75rem',
