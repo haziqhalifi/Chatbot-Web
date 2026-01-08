@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLayer } from '../../contexts/LayerContext';
 import { ChatBox, ChatButton } from '../chat';
+import { ChatProvider } from '../../contexts/ChatContext';
 import { Maximize2, Minimize2, Sidebar } from 'lucide-react';
 
 const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
@@ -360,16 +361,18 @@ const ChatInterface = ({ mapView: parentMapView, onSidebarChange }) => {
             <div className="absolute inset-0 border-2 border-blue-600 border-dashed pointer-events-none z-5 resize-border rounded-[22px]" />
           )}
 
-          <ChatBox
-            key={chatKey}
-            onClose={handleClose}
-            onNewChat={handleNewChat}
-            width={chatSize.width}
-            height={chatSize.height}
-            mapView={parentMapView}
-            displayMode={displayMode}
-            onToggleDisplayMode={toggleDisplayMode}
-          />
+          <ChatProvider>
+            <ChatBox
+              key={chatKey}
+              onClose={handleClose}
+              onNewChat={handleNewChat}
+              width={chatSize.width}
+              height={chatSize.height}
+              mapView={parentMapView}
+              displayMode={displayMode}
+              onToggleDisplayMode={toggleDisplayMode}
+            />
+          </ChatProvider>
         </div>
       )}
 

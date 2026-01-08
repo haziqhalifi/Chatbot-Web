@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useChat } from '../../hooks/useChat';
+import { useChatContext } from '../../contexts/ChatContext';
 
 const ChatHistory = ({ isOpen, onClose, currentSessionId }) => {
-  const { sessions, fetchSessions, loadSession, deleteSession, loading } = useChat();
+  const { sessions, fetchSessions, loadSession, deleteSession, updateSessionTitle, loading } =
+    useChatContext();
   const [deletingId, setDeletingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [savingRename, setSavingRename] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -13,6 +17,8 @@ const ChatHistory = ({ isOpen, onClose, currentSessionId }) => {
   }, [isOpen, fetchSessions]);
 
   const handleLoadSession = async (sessionId) => {
+    if (renamingId) return;
+
     if (sessionId === currentSessionId) {
       onClose();
       return;
@@ -42,6 +48,35 @@ const ChatHistory = ({ isOpen, onClose, currentSessionId }) => {
       console.error('Failed to delete session:', error);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleStartRename = (e, session) => {
+    e.stopPropagation();
+    setRenamingId(session.id);
+    setRenameValue(session.title || '');
+  };
+
+  const handleCancelRename = (e) => {
+    e?.stopPropagation();
+    setRenamingId(null);
+    setRenameValue('');
+  };
+
+  const handleSubmitRename = async (e, sessionId) => {
+    e.stopPropagation();
+    const title = renameValue.trim();
+    if (!title) return;
+
+    try {
+      setSavingRename(true);
+      await updateSessionTitle(sessionId, title);
+      setRenamingId(null);
+      setRenameValue('');
+    } catch (error) {
+      console.error('Failed to rename session:', error);
+    } finally {
+      setSavingRename(false);
     }
   };
 
@@ -151,35 +186,67 @@ const ChatHistory = ({ isOpen, onClose, currentSessionId }) => {
                 >
                   {/* Session Content */}
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 pr-8">
-                      <h3 className="font-medium text-gray-900 truncate text-sm">
-                        {session.title || 'Untitled Chat'}
-                      </h3>
-                      <div className="flex items-center mt-1 text-xs text-gray-500">
-                        <span>{formatDate(session.updated_at || session.created_at)}</span>
-                        {session.ai_provider && (
-                          <>
-                            <span className="mx-1.5">•</span>
-                            <span className="capitalize">{session.ai_provider}</span>
-                          </>
-                        )}
-                      </div>
+                    <div className="flex-1 min-w-0 pr-10">
+                      {renamingId === session.id ? (
+                        <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            className="w-full border border-blue-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-400 rounded-md px-2 py-1 text-sm"
+                            placeholder="Session title"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSubmitRename(e, session.id);
+                              if (e.key === 'Escape') handleCancelRename(e);
+                            }}
+                          />
+                          <div className="flex gap-2 text-xs">
+                            <button
+                              onClick={(e) => handleSubmitRename(e, session.id)}
+                              disabled={savingRename}
+                              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-60"
+                            >
+                              {savingRename ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={handleCancelRename}
+                              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="font-medium text-gray-900 truncate text-sm">
+                            {session.title || 'Untitled Chat'}
+                          </h3>
+                          <div className="flex items-center mt-1 text-xs text-gray-500">
+                            <span>{formatDate(session.updated_at || session.created_at)}</span>
+                            {session.ai_provider && (
+                              <>
+                                <span className="mx-1.5">•</span>
+                                <span className="capitalize">{session.ai_provider}</span>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={(e) => handleDeleteSession(e, session.id)}
-                      disabled={deletingId === session.id}
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 disabled:opacity-50"
-                      aria-label="Delete chat"
-                      title="Delete this chat"
-                    >
-                      {deletingId === session.id ? (
-                        <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
-                      ) : (
+                    {/* Action Buttons */}
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                      <button
+                        onClick={(e) => handleStartRename(e, session)}
+                        disabled={renamingId === session.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full p-1.5 disabled:opacity-60"
+                        aria-label="Rename chat"
+                        title="Rename this chat"
+                      >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3"
+                          className="h-3.5 w-3.5"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="currentColor"
@@ -187,11 +254,37 @@ const ChatHistory = ({ isOpen, onClose, currentSessionId }) => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4Z" />
                         </svg>
-                      )}
-                    </button>
+                      </button>
+
+                      <button
+                        onClick={(e) => handleDeleteSession(e, session.id)}
+                        disabled={deletingId === session.id}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 disabled:opacity-50"
+                        aria-label="Delete chat"
+                        title="Delete this chat"
+                      >
+                        {deletingId === session.id ? (
+                          <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Current Session Indicator */}

@@ -130,10 +130,35 @@ class ChatService:
 
                 openai_thread_id = session.get('openai_thread_id')
 
+                # If no thread exists yet, seed the new thread with recent chat history
+                history_messages = None
+                if not openai_thread_id:
+                    try:
+                        previous_messages = get_chat_messages(
+                            session_id,
+                            user_id,
+                            limit=20,
+                            offset=0,
+                            order_desc=True
+                        )
+
+                        if previous_messages:
+                            history_messages = [
+                                {
+                                    "role": "user" if msg["sender_type"] == "user" else "assistant",
+                                    "content": msg["content"]
+                                }
+                                for msg in previous_messages
+                            ]
+                    except Exception as exc:
+                        # History seeding should not block the request
+                        logger.warning(f"Unable to seed chat history for session {session_id}: {exc}")
+
                 try:
                     ai_response_data = openai_service.generate_response(
                         prompt=prompt,
-                        thread_id=openai_thread_id
+                        thread_id=openai_thread_id,
+                        history=history_messages
                     )
                 except Exception as exc:
                     logger.error(f"OpenAI Assistant response error: {exc}")
@@ -208,7 +233,14 @@ class ChatService:
     def get_session_context(session_id, user_id, last_messages=5):
         """Get recent messages from session for context"""
         try:
-            messages = get_chat_messages(session_id, user_id, limit=last_messages, offset=0)
+            # Pull the most recent messages for better continuity
+            messages = get_chat_messages(
+                session_id,
+                user_id,
+                limit=last_messages,
+                offset=0,
+                order_desc=True
+            )
             
             # Format messages for context
             context = []
