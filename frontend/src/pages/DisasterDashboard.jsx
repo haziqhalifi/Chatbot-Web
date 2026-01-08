@@ -11,17 +11,21 @@ import {
   RefreshCw,
   Filter,
   Search,
+  User,
+  CheckCircle,
 } from 'lucide-react';
 
 const DisasterDashboard = () => {
   const navigate = useNavigate();
   const [disasters, setDisasters] = useState([]);
+  const [myReports, setMyReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [activeTab, setActiveTab] = useState('disasters');
   const [selectedDisaster, setSelectedDisaster] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
@@ -57,16 +61,59 @@ const DisasterDashboard = () => {
     }
   };
 
+  // Fetch user's own submitted reports
+  const fetchMyReports = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Please login to view your reports');
+        setMyReports([]);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/my-reports', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch reports: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('My Reports Data:', data);
+      setMyReports(data.reports || []);
+    } catch (err) {
+      console.error('Error fetching my reports:', err);
+      setError(err.message);
+      setMyReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Refresh all data
   const refreshAllData = async () => {
     setLoading(true);
-    await fetchDisasters();
+    if (activeTab === 'disasters') {
+      await fetchDisasters();
+    } else if (activeTab === 'myreports') {
+      await fetchMyReports();
+    }
     setLoading(false);
   };
 
   useEffect(() => {
-    refreshAllData();
-  }, []);
+    if (activeTab === 'disasters') {
+      fetchDisasters();
+    } else if (activeTab === 'myreports') {
+      fetchMyReports();
+    }
+  }, [activeTab]);
 
   // Calculate analytics
   const analytics = {
@@ -80,6 +127,22 @@ const DisasterDashboard = () => {
     critical: disasters.filter(
       (d) => d.bencana_khas?.toLowerCase() === 'ya' || d.bencana_khas?.toLowerCase() === 'yes'
     ).length,
+  };
+
+  // Calculate analytics for user reports
+  const myReportsAnalytics = {
+    total: myReports.length,
+    pending: myReports.filter(
+      (r) => r.status?.toLowerCase() === 'pending' || r.status?.toLowerCase() === 'active'
+    ).length,
+    resolved: myReports.filter((r) => r.status?.toLowerCase() === 'resolved').length,
+    thisMonth: myReports.filter((r) => {
+      const reportDate = new Date(r.timestamp);
+      const now = new Date();
+      return (
+        reportDate.getMonth() === now.getMonth() && reportDate.getFullYear() === now.getFullYear()
+      );
+    }).length,
   };
 
   // Get disaster types distribution
@@ -115,6 +178,39 @@ const DisasterDashboard = () => {
     }
     return 0;
   });
+
+  // Filter and search user reports
+  const filteredMyReports = myReports.filter((report) => {
+    const matchesSearch =
+      searchTerm === '' ||
+      report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      report.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesType = filterType === 'all' || report.type === filterType;
+    const matchesStatus =
+      filterStatus === 'all' || report.status?.toLowerCase() === filterStatus.toLowerCase();
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // Sort user reports
+  const sortedMyReports = [...filteredMyReports].sort((a, b) => {
+    if (sortBy === 'date') {
+      return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+    } else if (sortBy === 'name') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    return 0;
+  });
+
+  // Get user report types distribution
+  const myReportTypeDistribution = myReports.reduce((acc, report) => {
+    const type = report.type || 'Unknown';
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {});
 
   // Export to CSV
   const exportToCSV = () => {
@@ -164,60 +260,153 @@ const DisasterDashboard = () => {
           </p>
         </div>
 
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Disasters</p>
-                <p className="text-3xl font-bold text-gray-900">{analytics.total}</p>
+        {/* Tab Navigation */}
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('disasters')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'disasters'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={18} />
+                NADMA Disasters
               </div>
-              <BarChart3 className="text-blue-500" size={40} />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Active/Ongoing</p>
-                <p className="text-3xl font-bold text-orange-600">{analytics.active}</p>
+            </button>
+            <button
+              onClick={() => setActiveTab('myreports')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'myreports'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <User size={18} />
+                My Reports
               </div>
-              <AlertTriangle className="text-orange-500" size={40} />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Resolved</p>
-                <p className="text-3xl font-bold text-green-600">{analytics.resolved}</p>
-              </div>
-              <TrendingUp className="text-green-500" size={40} />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Critical/High Priority</p>
-                <p className="text-3xl font-bold text-red-600">{analytics.critical}</p>
-              </div>
-              <AlertTriangle className="text-red-500" size={40} />
-            </div>
-          </div>
+            </button>
+          </nav>
         </div>
+
+        {/* Analytics Cards */}
+        {activeTab === 'disasters' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Disasters</p>
+                  <p className="text-3xl font-bold text-gray-900">{analytics.total}</p>
+                </div>
+                <BarChart3 className="text-blue-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Active/Ongoing</p>
+                  <p className="text-3xl font-bold text-orange-600">{analytics.active}</p>
+                </div>
+                <AlertTriangle className="text-orange-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Resolved</p>
+                  <p className="text-3xl font-bold text-green-600">{analytics.resolved}</p>
+                </div>
+                <TrendingUp className="text-green-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Critical/High Priority</p>
+                  <p className="text-3xl font-bold text-red-600">{analytics.critical}</p>
+                </div>
+                <AlertTriangle className="text-red-500" size={40} />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Reports</p>
+                  <p className="text-3xl font-bold text-gray-900">{myReportsAnalytics.total}</p>
+                </div>
+                <BarChart3 className="text-blue-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Pending/Active</p>
+                  <p className="text-3xl font-bold text-orange-600">{myReportsAnalytics.pending}</p>
+                </div>
+                <AlertTriangle className="text-orange-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Resolved</p>
+                  <p className="text-3xl font-bold text-green-600">{myReportsAnalytics.resolved}</p>
+                </div>
+                <CheckCircle className="text-green-500" size={40} />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">This Month</p>
+                  <p className="text-3xl font-bold text-blue-600">{myReportsAnalytics.thisMonth}</p>
+                </div>
+                <Calendar className="text-blue-500" size={40} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Type Distribution Chart */}
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Disaster Types Distribution</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            {activeTab === 'disasters'
+              ? 'Disaster Types Distribution'
+              : 'My Report Types Distribution'}
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(typeDistribution).map(([type, count]) => (
+            {Object.entries(
+              activeTab === 'disasters' ? typeDistribution : myReportTypeDistribution
+            ).map(([type, count]) => (
               <div key={type} className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">{count}</p>
                 <p className="text-sm text-gray-600 capitalize">{type}</p>
               </div>
             ))}
           </div>
+          {activeTab === 'myreports' && myReports.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p>No reports submitted yet</p>
+              <button
+                onClick={() => navigate('/report-disaster')}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Submit Your First Report
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filters and Actions */}
@@ -291,17 +480,140 @@ const DisasterDashboard = () => {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <RefreshCw className="animate-spin text-blue-600" size={40} />
-                <span className="ml-3 text-gray-600">Loading disasters...</span>
+                <span className="ml-3 text-gray-600">
+                  Loading {activeTab === 'disasters' ? 'disasters' : 'your reports'}...
+                </span>
               </div>
             ) : error ? (
               <div className="flex items-center justify-center py-12 text-red-600">
                 <AlertTriangle size={24} />
                 <span className="ml-3">Error: {error}</span>
               </div>
-            ) : sortedDisasters.length === 0 ? (
-              <div className="flex items-center justify-center py-12 text-gray-600">
-                <AlertTriangle size={24} />
-                <span className="ml-3">No disasters found</span>
+            ) : activeTab === 'disasters' ? (
+              sortedDisasters.length === 0 ? (
+                <div className="flex items-center justify-center py-12 text-gray-600">
+                  <AlertTriangle size={24} />
+                  <span className="ml-3">No disasters found</span>
+                </div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date Started
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Special Case
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {sortedDisasters.map((disaster, index) => (
+                      <tr key={disaster.id || index} className="hover:bg-gray-50 cursor-pointer">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900">
+                            #{disaster.id || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {disaster.kategori?.group_helper && (
+                              <img
+                                src={`https://mydims.nadma.gov.my${disaster.kategori.group_helper}`}
+                                alt={disaster.kategori?.name}
+                                className="w-6 h-6"
+                              />
+                            )}
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {disaster.kategori?.name || 'N/A'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              disaster.status?.toLowerCase() === 'aktif'
+                                ? 'bg-orange-100 text-orange-800'
+                                : disaster.status?.toLowerCase() === 'selesai'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {disaster.status || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex flex-col text-sm text-gray-900">
+                            <div className="flex items-center">
+                              <MapPin className="text-gray-400 mr-1" size={14} />
+                              <span className="font-medium">{disaster.state?.name || 'N/A'}</span>
+                            </div>
+                            <span className="text-xs text-gray-500 ml-5">
+                              {disaster.district?.name || ''}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="text-gray-400 mr-1" size={14} />
+                            {disaster.datetime_start
+                              ? new Date(disaster.datetime_start).toLocaleDateString()
+                              : 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
+                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                              Special Case
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => {
+                              setSelectedDisaster(disaster);
+                              setShowModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            ) : sortedMyReports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-600">
+                <User size={48} className="text-gray-400 mb-4" />
+                <p className="text-lg font-medium">No reports found</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  You haven't submitted any disaster reports yet
+                </p>
+                <button
+                  onClick={() => navigate('/report-disaster')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Submit a Report
+                </button>
               </div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
@@ -311,98 +623,65 @@ const DisasterDashboard = () => {
                       ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
+                      Title
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Location
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date Started
+                      Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Special Case
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Submitted
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sortedDisasters.map((disaster, index) => (
-                    <tr key={disaster.id || index} className="hover:bg-gray-50 cursor-pointer">
+                  {sortedMyReports.map((report, index) => (
+                    <tr key={report.id || index} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          #{disaster.id || 'N/A'}
+                        <span className="text-sm font-medium text-gray-900">#{report.id}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{report.title}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                          {report.description}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {report.type}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          {disaster.kategori?.group_helper && (
-                            <img
-                              src={`https://mydims.nadma.gov.my${disaster.kategori.group_helper}`}
-                              alt={disaster.kategori?.name}
-                              className="w-6 h-6"
-                            />
-                          )}
-                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                            {disaster.kategori?.name || 'N/A'}
-                          </span>
+                        <div className="flex items-center text-sm text-gray-900">
+                          <MapPin className="text-gray-400 mr-1" size={14} />
+                          {report.location}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            disaster.status?.toLowerCase() === 'aktif'
-                              ? 'bg-orange-100 text-orange-800'
-                              : disaster.status?.toLowerCase() === 'selesai'
-                                ? 'bg-green-100 text-green-800'
+                            report.status?.toLowerCase() === 'resolved'
+                              ? 'bg-green-100 text-green-800'
+                              : report.status?.toLowerCase() === 'active'
+                                ? 'bg-orange-100 text-orange-800'
                                 : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {disaster.status || 'N/A'}
+                          {report.status || 'Pending'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col text-sm text-gray-900">
-                          <div className="flex items-center">
-                            <MapPin className="text-gray-400 mr-1" size={14} />
-                            <span className="font-medium">{disaster.state?.name || 'N/A'}</span>
-                          </div>
-                          <span className="text-xs text-gray-500 ml-5">
-                            {disaster.district?.name || ''}
-                          </span>
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">
                           <Calendar className="text-gray-400 mr-1" size={14} />
-                          {disaster.datetime_start
-                            ? new Date(disaster.datetime_start).toLocaleDateString()
+                          {report.timestamp
+                            ? new Date(report.timestamp).toLocaleDateString()
                             : 'N/A'}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
-                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Special Case
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => {
-                            setSelectedDisaster(disaster);
-                            setShowModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                        >
-                          View Details
-                        </button>
                       </td>
                     </tr>
                   ))}
@@ -413,7 +692,9 @@ const DisasterDashboard = () => {
 
           {/* Results Count */}
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 text-center">
-            Showing {sortedDisasters.length} of {disasters.length} disasters
+            {activeTab === 'disasters'
+              ? `Showing ${sortedDisasters.length} of ${disasters.length} disasters`
+              : `Showing ${sortedMyReports.length} of ${myReports.length} reports`}
           </div>
         </div>
       </div>
