@@ -8,9 +8,6 @@ __pycache__/
 
 # Virtual environment
 env/
-.venv/
-venv/
-ENV/
 
 # Distribution / packaging
 .Python
@@ -103,9 +100,9 @@ celerybeat.pid
 # Environments
 .env
 .env.*
-.env.local
-.env.development
-.env.production
+.venv
+venv/
+ENV/
 env.bak/
 venv.bak/
 
@@ -182,16 +179,3 @@ frontend/.env.*
 # Misc
 *.swp
 *.swo
-
-# Temporary files
-backend/auth_token.txt
-backend/embeddings.pkl
-backend/$env
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Scripts output
-scripts/output/
