@@ -140,6 +140,28 @@ class OpenAIAssistantService:
         except Exception as e:
             logger.error(f"Error getting OpenAI Assistant response: {e}")
             raise
+
+    def seed_thread_messages(self, thread_id: str, history: List[Dict[str, str]]) -> None:
+        """Populate a thread with existing chat history before sending a new message"""
+        for item in history:
+            role = item.get("role")
+            content = item.get("content")
+            if not role or not content:
+                continue
+
+            # Only allow roles OpenAI expects
+            if role not in ["user", "assistant"]:
+                continue
+
+            try:
+                self.client.beta.threads.messages.create(
+                    thread_id=thread_id,
+                    role=role,
+                    content=content
+                )
+            except Exception as exc:
+                logger.warning(f"Failed to seed message into thread {thread_id}: {exc}")
+                continue
     
     def get_or_create_thread(self, existing_thread_id: Optional[str] = None) -> str:
         """
@@ -165,7 +187,8 @@ class OpenAIAssistantService:
     def generate_response(
         self, 
         prompt: str, 
-        thread_id: Optional[str] = None
+        thread_id: Optional[str] = None,
+        history: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
         Generate a response using OpenAI Assistant
@@ -180,6 +203,10 @@ class OpenAIAssistantService:
         try:
             # Get or create thread
             thread = self.get_or_create_thread(thread_id)
+
+            # Seed prior conversation so Assistant has context on first run
+            if history:
+                self.seed_thread_messages(thread, history)
             
             # Send message and get response
             result = self.send_message(thread, prompt)
