@@ -25,6 +25,9 @@ def update_database_schema():
     # Create admin verification codes table
     create_admin_verification_codes_table()
     
+    # Create user signup verification codes table
+    create_user_verification_codes_table()
+    
     # Create NADMA disaster tables
     create_nadma_tables()
 
@@ -187,10 +190,41 @@ def create_admin_verification_codes_table():
     except Exception as e:
         print(f"Error creating admin_verification_codes table: {e}")
 
+
+def create_user_verification_codes_table():
+    """Create user_verification_codes table for signup email verification"""
+    try:
+        with DatabaseConnection() as conn:
+            conn.autocommit = False
+            cursor = conn.cursor()
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'user_verification_codes')
+                CREATE TABLE user_verification_codes (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    email NVARCHAR(255) NOT NULL,
+                    code NVARCHAR(6) NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used BIT DEFAULT 0,
+                    created_at DATETIME DEFAULT GETDATE(),
+                    attempts INT DEFAULT 0
+                )
+            """)
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_user_verification_codes_email')
+                CREATE INDEX IX_user_verification_codes_email ON user_verification_codes(email)
+            """)
+            conn.commit()
+            conn.autocommit = True
+            cursor.close()
+            print("user_verification_codes table created successfully")
+    except Exception as e:
+        print(f"Error creating user_verification_codes table: {e}")
+
 __all__ = [
     'update_database_schema',
     'create_notifications_table', 
     'migrate_reports_tables',
     'create_password_reset_tokens_table',
     'create_admin_verification_codes_table',
+    'create_user_verification_codes_table',
 ]
