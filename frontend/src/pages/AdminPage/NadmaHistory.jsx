@@ -7,11 +7,9 @@ import {
   RefreshCw,
   ChevronLeft,
   Search,
-  Filter,
   Download,
   Eye,
   X,
-  ExternalLink,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,7 +28,6 @@ const NadmaHistory = () => {
   const [stateFilter, setStateFilter] = useState('All');
   const [selectedDisaster, setSelectedDisaster] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   // Fetch disasters from database
   const fetchDisasters = async () => {
@@ -279,199 +276,178 @@ const NadmaHistory = () => {
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search disasters..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                </button>
-                <button
-                  onClick={exportData}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </button>
-                <button
-                  onClick={fetchDisasters}
-                  disabled={loading}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  {loading ? 'Loading...' : 'Refresh'}
-                </button>
-              </div>
-            </div>
-
-            {showFilters && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Status</option>
-                    {availableStatuses.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Categories</option>
-                    {availableCategories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <select
-                    value={stateFilter}
-                    onChange={(e) => setStateFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All States</option>
-                    {availableStates.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Disasters Table */}
+        {/* NADMA Disaster History Table */}
         <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
-              Disaster Records ({filteredDisasters.length})
-            </h3>
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-medium text-gray-900">NADMA Disaster History</h2>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={exportData}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center px-3 py-1 border border-blue-600 rounded-md hover:bg-blue-50"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Export Data
+              </button>
+              <button
+                onClick={fetchDisasters}
+                disabled={loading}
+                className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                {loading ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            {filteredDisasters.length === 0 ? (
-              <div className="text-center text-gray-500 py-12">
-                <MapPin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No disasters found matching your filters</p>
+          <div className="p-6">
+            {disasters.length > 0 ? (
+              <div className="overflow-x-auto">
+                {/* Search + Filters */}
+                <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search NADMA disasters..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by status"
+                    >
+                      <option value="All">All Status</option>
+                      {availableStatuses.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={categoryFilter}
+                      onChange={(e) => setCategoryFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by category"
+                    >
+                      <option value="All">All Categories</option>
+                      {availableCategories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={stateFilter}
+                      onChange={(e) => setStateFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      aria-label="Filter NADMA by state"
+                    >
+                      <option value="All">All States</option>
+                      {availableStates.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Location
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Special Case
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Victims
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        Started
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredDisasters.map((disaster) => (
+                      <tr
+                        key={disaster.id}
+                        onClick={() => handleRowClick(disaster)}
+                        className="hover:bg-blue-50 cursor-pointer transition-colors"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{disaster.id}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {disaster.kategori?.name || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              disaster.status?.toLowerCase() === 'aktif'
+                                ? 'bg-orange-100 text-orange-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {disaster.status || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {[disaster.district?.name, disaster.state?.name]
+                            .filter(Boolean)
+                            .join(', ') || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              YES
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">No</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {disaster.case?.jumlah_mangsa
+                            ? `${disaster.case.jumlah_mangsa} people`
+                            : 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {disaster.datetime_start
+                            ? new Date(disaster.datetime_start).toLocaleDateString()
+                            : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredDisasters.length === 0 && (
+                  <div className="text-center mt-4 text-sm text-gray-500">
+                    No disasters match your search/filters
+                  </div>
+                )}
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Location
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Special Case
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Victims
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Started
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredDisasters.map((disaster) => (
-                    <tr key={disaster.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{disaster.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {disaster.kategori?.name || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            disaster.status?.toLowerCase() === 'aktif'
-                              ? 'bg-orange-100 text-orange-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {disaster.status || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {[disaster.district?.name, disaster.state?.name]
-                          .filter(Boolean)
-                          .join(', ') || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                            YES
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-500">No</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {disaster.case?.jumlah_mangsa
-                          ? `${disaster.case.jumlah_mangsa} people`
-                          : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {disaster.datetime_start
-                          ? new Date(disaster.datetime_start).toLocaleDateString()
-                          : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleRowClick(disaster)}
-                          className="text-blue-600 hover:text-blue-900 flex items-center"
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="text-center text-gray-500 py-8">
+                <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p>No NADMA disasters data available</p>
+              </div>
             )}
           </div>
         </div>
