@@ -9,6 +9,30 @@ from typing import List, Dict, Optional, Any
 import json
 
 
+def _normalize_datetime(value: Any) -> Optional[str]:
+    """Convert various datetime string formats to SQL Server-friendly format.
+    Returns a string like 'YYYY-MM-DD HH:MM:SS' or None.
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M:%S')
+    if isinstance(value, str):
+        s = value.strip()
+        # Replace 'T' separator and drop trailing 'Z'
+        s = s.replace('T', ' ').replace('Z', '')
+        # Remove fractional seconds if present
+        if '.' in s:
+            s = s.split('.')[0]
+        return s
+    # Fallback: try to cast via datetime if possible
+    try:
+        dt = datetime.fromisoformat(str(value))
+        return dt.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        return None
+
+
 def create_nadma_tables():
     """Create NADMA disaster tables if they don't exist"""
     try:
@@ -195,11 +219,11 @@ def save_disaster(disaster_data: Dict[str, Any]) -> bool:
                     disaster_data.get('is_backdated', 0),
                     disaster_data.get('latitude'),
                     disaster_data.get('longitude'),
-                    disaster_data.get('datetime_start'),
-                    disaster_data.get('datetime_end'),
+                    _normalize_datetime(disaster_data.get('datetime_start')),
+                    _normalize_datetime(disaster_data.get('datetime_end')),
                     disaster_data.get('special_report'),
-                    disaster_data.get('updated_at'),
-                    disaster_data.get('deleted_at'),
+                    _normalize_datetime(disaster_data.get('updated_at')),
+                    _normalize_datetime(disaster_data.get('deleted_at')),
                     json.dumps(disaster_data, default=str),
                     disaster_id
                 ))
@@ -228,12 +252,12 @@ def save_disaster(disaster_data: Dict[str, Any]) -> bool:
                     disaster_data.get('is_backdated', 0),
                     disaster_data.get('latitude'),
                     disaster_data.get('longitude'),
-                    disaster_data.get('datetime_start'),
-                    disaster_data.get('datetime_end'),
+                    _normalize_datetime(disaster_data.get('datetime_start')),
+                    _normalize_datetime(disaster_data.get('datetime_end')),
                     disaster_data.get('special_report'),
-                    disaster_data.get('created_at'),
-                    disaster_data.get('updated_at'),
-                    disaster_data.get('deleted_at'),
+                    _normalize_datetime(disaster_data.get('created_at')),
+                    _normalize_datetime(disaster_data.get('updated_at')),
+                    _normalize_datetime(disaster_data.get('deleted_at')),
                     json.dumps(disaster_data, default=str)
                 ))
             
@@ -280,7 +304,7 @@ def save_category(category_data: Dict[str, Any], cursor) -> None:
                 category_data.get('meta_id'),
                 category_data.get('name'),
                 category_data.get('group_helper'),
-                category_data.get('updated_at'),
+                _normalize_datetime(category_data.get('updated_at')),
                 category_id
             ))
         else:
@@ -292,8 +316,8 @@ def save_category(category_data: Dict[str, Any], cursor) -> None:
                 category_data.get('meta_id'),
                 category_data.get('name'),
                 category_data.get('group_helper'),
-                category_data.get('created_at'),
-                category_data.get('updated_at')
+                _normalize_datetime(category_data.get('created_at')),
+                _normalize_datetime(category_data.get('updated_at'))
             ))
     except Exception as e:
         print(f"Error saving category: {e}")
@@ -310,7 +334,7 @@ def save_state(state_data: Dict[str, Any], cursor) -> None:
         if exists:
             cursor.execute("""
                 UPDATE nadma_states SET name = ?, updated_at = ? WHERE id = ?
-            """, (state_data.get('name'), state_data.get('updated_at'), state_id))
+            """, (state_data.get('name'), _normalize_datetime(state_data.get('updated_at')), state_id))
         else:
             cursor.execute("""
                 INSERT INTO nadma_states (id, name, created_at, updated_at)
@@ -318,8 +342,8 @@ def save_state(state_data: Dict[str, Any], cursor) -> None:
             """, (
                 state_id,
                 state_data.get('name'),
-                state_data.get('created_at'),
-                state_data.get('updated_at')
+                _normalize_datetime(state_data.get('created_at')),
+                _normalize_datetime(state_data.get('updated_at'))
             ))
     except Exception as e:
         print(f"Error saving state: {e}")
@@ -343,7 +367,7 @@ def save_district(district_data: Dict[str, Any], cursor) -> None:
                 district_data.get('name'),
                 district_data.get('latitude'),
                 district_data.get('longitude'),
-                district_data.get('updated_at'),
+                _normalize_datetime(district_data.get('updated_at')),
                 district_id
             ))
         else:
@@ -356,8 +380,8 @@ def save_district(district_data: Dict[str, Any], cursor) -> None:
                 district_data.get('name'),
                 district_data.get('latitude'),
                 district_data.get('longitude'),
-                district_data.get('created_at'),
-                district_data.get('updated_at')
+                _normalize_datetime(district_data.get('created_at')),
+                _normalize_datetime(district_data.get('updated_at'))
             ))
     except Exception as e:
         print(f"Error saving district: {e}")
@@ -384,7 +408,7 @@ def save_disaster_case(case_data: Dict[str, Any], disaster_id: int, cursor) -> N
                 case_data.get('jumlah_pps', 0),
                 case_data.get('jumlah_keluarga', 0),
                 case_data.get('jumlah_mangsa', 0),
-                case_data.get('updated_at'),
+                _normalize_datetime(case_data.get('updated_at')),
                 case_id
             ))
         else:
@@ -400,8 +424,8 @@ def save_disaster_case(case_data: Dict[str, Any], disaster_id: int, cursor) -> N
                 case_data.get('jumlah_pps', 0),
                 case_data.get('jumlah_keluarga', 0),
                 case_data.get('jumlah_mangsa', 0),
-                case_data.get('created_at'),
-                case_data.get('updated_at')
+                _normalize_datetime(case_data.get('created_at')),
+                _normalize_datetime(case_data.get('updated_at'))
             ))
     except Exception as e:
         print(f"Error saving disaster case: {e}")
@@ -445,40 +469,49 @@ def save_disasters_batch(disasters_list: List[Dict[str, Any]]) -> Dict[str, int]
 
 def get_all_disasters(status: Optional[str] = None, limit: int = 100) -> List[Dict[str, Any]]:
     """
-    Retrieve disasters from database
+    Retrieve disasters from database with all related data from raw_data column
     
     Args:
         status: Filter by status (Aktif, Selesai, etc.)
         limit: Maximum number of records to return
         
     Returns:
-        List of disaster dictionaries
+        List of disaster dictionaries with kategori, state, district, and case data
     """
     try:
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
             
+            # Get disasters with raw_data column that contains full JSON
             if status:
                 cursor.execute("""
-                    SELECT TOP (?) * FROM nadma_disasters 
+                    SELECT TOP (?) raw_data
+                    FROM nadma_disasters
                     WHERE status = ? 
                     ORDER BY datetime_start DESC
                 """, (limit, status))
             else:
                 cursor.execute("""
-                    SELECT TOP (?) * FROM nadma_disasters 
+                    SELECT TOP (?) raw_data
+                    FROM nadma_disasters
                     ORDER BY datetime_start DESC
                 """, (limit,))
             
-            columns = [column[0] for column in cursor.description]
-            results = []
+            disasters = []
             
             for row in cursor.fetchall():
-                disaster_dict = dict(zip(columns, row))
-                results.append(disaster_dict)
+                raw_data = row[0]
+                if raw_data:
+                    try:
+                        # Parse the JSON from raw_data column
+                        disaster = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
+                        disasters.append(disaster)
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing raw_data JSON: {e}")
+                        continue
             
             cursor.close()
-            return results
+            return disasters
             
     except Exception as e:
         print(f"Error retrieving disasters: {e}")
