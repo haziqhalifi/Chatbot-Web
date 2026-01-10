@@ -53,6 +53,12 @@ def update_users_table():
             if 'city' not in existing_columns:
                 cursor.execute("ALTER TABLE users ADD city NVARCHAR(100)")
                 
+            if 'state' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD state NVARCHAR(100)")
+                
+            if 'postcode' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD postcode NVARCHAR(10)")
+                
             if 'country' not in existing_columns:
                 cursor.execute("ALTER TABLE users ADD country NVARCHAR(100)")
                 
