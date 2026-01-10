@@ -140,16 +140,18 @@ class DatabaseConnectionPool:
                     raise
         
         # Wait for connection to become available with timeout
-        print(f"Waiting for connection... Active: {self.active_connections}/{self.max_connections}, Queue: {self.pool.qsize()}")
+        print(f"⚠️ Waiting for connection... Active: {self.active_connections}/{self.max_connections}, Queue: {self.pool.qsize()}")
         try:
-            conn = self.pool.get(timeout=5)  # Wait max 5 seconds
+            conn = self.pool.get(timeout=10)  # Wait max 10 seconds
             conn_id = self.connection_ids.get(id(conn))
             if conn_id:
                 self.connection_times[conn_id] = time.time()
             return conn
         except Empty:
             # Log detailed error for debugging
-            print(f"Connection pool exhausted! Active: {self.active_connections}/{self.max_connections}, Queue size: {self.pool.qsize()}")
+            error_msg = f"⛔ Connection pool exhausted! Active: {self.active_connections}/{self.max_connections}, Queue: {self.pool.qsize()}"
+            print(error_msg)
+            print(f"💡 TIP: Increase max_connections in connection.py or check for connection leaks")
             raise Exception(f"Connection pool exhausted - too many concurrent requests. Active: {self.active_connections}/{self.max_connections}")
     
     def return_connection(self, conn):
@@ -205,7 +207,7 @@ class DatabaseConnectionPool:
         """Background thread to cleanup expired connections"""
         while True:
             try:
-                time.sleep(60)  # Check every minute
+                time.sleep(30)  # Check every 30 seconds for more aggressive cleanup
                 current_time = time.time()
                 expired_conn_ids = []
                 
@@ -215,8 +217,14 @@ class DatabaseConnectionPool:
                         expired_conn_ids.append(conn_id)
                 
                 # Clean up expired connections (they'll be removed from pool naturally)
+                if expired_conn_ids:
+                    print(f"🧹 Cleaning up {len(expired_conn_ids)} expired connections")
                 for conn_id in expired_conn_ids:
                     self.connection_times.pop(conn_id, None)
+                
+                # Health check - log pool status
+                if self.active_connections > self.max_connections * 0.8:
+                    print(f"⚠️ Pool usage high: {self.active_connections}/{self.max_connections} ({int(self.active_connections/self.max_connections*100)}%)")
                         
             except Exception as e:
                 print(f"Connection cleanup error: {e}")
@@ -243,18 +251,32 @@ def get_connection_pool():
             if _connection_pool is None:
                 try:
                     # Connection pool configuration:
-                    # - min: 5 connections always ready (increased for better responsiveness)
-                    # - max: 30 concurrent connections (increased to handle more load)
-                    # - timeout: 90 seconds (reduced to recycle faster)
                     # 
-                    # Increase max_connections if you still see exhaustion errors
-                    # Decrease connection_timeout if connections are held too long
+                    # SIZING GUIDELINES:
+                    # - Light load (<20 users):    max=30-50
+                    # - Medium load (20-50 users): max=50-100
+                    # - Heavy load (50-100 users): max=100-200
+                    # - Very heavy (100+ users):   max=200-500
+                    #
+                    # DO NOT set unlimited - your SQL Server has limits!
+                    # SQL Server typically handles 100-500 concurrent connections well.
+                    # Beyond that, you need database server scaling.
+                    #
+                    # Current settings optimized for medium-heavy load:
+                    # - min: 10 connections always ready (fast response)
+                    # - max: 100 concurrent connections (handles spikes)
+                    # - timeout: 60 seconds (prevents stale connections)
+                    
+                    max_pool = int(os.getenv("DB_POOL_MAX_SIZE", "100"))  # Override via env var
+                    min_pool = int(os.getenv("DB_POOL_MIN_SIZE", "10"))
+                    pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "60"))
+                    
                     _connection_pool = DatabaseConnectionPool(
-                        min_connections=5, 
-                        max_connections=30,
-                        connection_timeout=90
+                        min_connections=min_pool, 
+                        max_connections=max_pool,
+                        connection_timeout=pool_timeout
                     )
-                    print("Database connection pool initialized: 5 min, 30 max, 90s timeout")
+                    print(f"Database connection pool initialized: {min_pool} min, {max_pool} max, {pool_timeout}s timeout")
                 except Exception as e:
                     print(f"Warning: Failed to initialize connection pool: {e}")
                     # Return a minimal pool that will try to create connections on demand
@@ -282,6 +304,101 @@ class DatabaseConnection:
                 pass
         self.pool.return_connection(self.conn)
 
+class ManagedDatabaseConnection:
+    """
+    Wrapper for database connections that MUST be used with context manager.
+    This prevents connection leaks by enforcing proper cleanup.
+    
+    Usage:
+        with ManagedDatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ...")
+    """
+    def __init__(self, conn, pool):
+        self.conn = conn
+        self.pool = pool
+        self._returned = False
+    
+    def __enter__(self):
+        return self.conn
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self._returned:
+            if exc_type is not None:
+                try:
+                    if not self.conn.autocommit:
+                        self.conn.rollback()
+                except:
+                    pass
+            self.pool.return_connection(self.conn)
+            self._returned = True
+    
+    def __getattr__(self, name):
+        # Proxy all attributes to the underlying connection
+        return getattr(self.conn, name)
+    
+    def close(self):
+        """Override close to return to pool instead of actually closing"""
+        if not self._returned:
+            self.pool.return_connection(self.conn)
+            self._returned = True
+
 def get_db_conn():
-    """Legacy function - maintained for backwards compatibility"""
-    return get_connection_pool().get_connection()
+    """
+    Legacy function - Returns a ManagedDatabaseConnection that MUST be closed or used in context manager.
+    
+    ⚠️ WARNING: Always use one of these patterns to avoid connection leaks:
+    
+    Pattern 1 (RECOMMENDED - Context Manager):
+        with get_db_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ...")
+    
+    Pattern 2 (Manual close - less safe):
+        conn = get_db_conn()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ...")
+        finally:
+            conn.close()
+    
+    Pattern 3 (BEST - Use DatabaseConnection directly):
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT ...")
+    """
+    pool = get_connection_pool()
+    raw_conn = pool.get_connection()
+    return ManagedDatabaseConnection(raw_conn, pool)
+
+def get_pool_stats():
+    """
+    Get current connection pool statistics for monitoring.
+    
+    Returns:
+        dict: Pool statistics including active connections, queue size, and utilization percentage
+    """
+    pool = get_connection_pool()
+    queue_size = pool.pool.qsize()
+    active = pool.active_connections
+    max_conn = pool.max_connections
+    utilization = (active / max_conn * 100) if max_conn > 0 else 0
+    
+    return {
+        "active_connections": active,
+        "max_connections": max_conn,
+        "available_in_queue": queue_size,
+        "utilization_percent": round(utilization, 1),
+        "status": "healthy" if utilization < 80 else "warning" if utilization < 95 else "critical"
+    }
+
+def force_cleanup_pool():
+    """
+    Force cleanup of the connection pool.
+    This will close all idle connections and reset the pool.
+    Use with caution - only for maintenance or testing.
+    """
+    global _connection_pool
+    if _connection_pool:
+        _connection_pool.close_all()
+        print("Connection pool cleaned up")
