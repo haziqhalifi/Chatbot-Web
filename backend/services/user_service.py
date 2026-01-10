@@ -115,7 +115,7 @@ def get_user_profile(user_id: int):
         cursor.execute(
             """SELECT id, email, name, given_name, family_name, language, role, 
                profile_picture, email_verified, auth_provider, phone, address, 
-               city, country, timezone, created_at, updated_at, last_login 
+               city, state, postcode, country, timezone, created_at, updated_at, last_login 
                FROM users WHERE id = ?""", 
             (user_id,)
         )
@@ -139,11 +139,13 @@ def get_user_profile(user_id: int):
             "phone": row[10] or "",
             "address": row[11] or "",
             "city": row[12] or "",
-            "country": row[13] or "",
-            "timezone": row[14] or "",
-            "created_at": row[15].isoformat() if row[15] else None,
-            "updated_at": row[16].isoformat() if row[16] else None,
-            "last_login": row[17].isoformat() if row[17] else None,
+            "state": row[13] or "",
+            "postcode": row[14] or "",
+            "country": row[15] or "",
+            "timezone": row[16] or "",
+            "created_at": row[17].isoformat() if row[17] else None,
+            "updated_at": row[18].isoformat() if row[18] else None,
+            "last_login": row[19].isoformat() if row[19] else None,
         }
         print(f"Returning profile data: {profile_data}")
         return profile_data
@@ -155,18 +157,18 @@ def get_user_profile(user_id: int):
         except:
             pass
 
-def update_user_profile(user_id: int, name: str, language: str, phone: str = "", address: str = "", city: str = "", country: str = "", timezone: str = ""):
+def update_user_profile(user_id: int, name: str, language: str, phone: str = "", address: str = "", city: str = "", state: str = "", postcode: str = "", country: str = "", timezone: str = ""):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
         print(f"Updating profile for user_id: {user_id}")
-        print(f"New data: name={name}, language={language}, phone={phone}, address={address}, city={city}, country={country}, timezone={timezone}")
+        print(f"New data: name={name}, language={language}, phone={phone}, address={address}, city={city}, state={state}, postcode={postcode}, country={country}, timezone={timezone}")
         
         cursor.execute(
             """UPDATE users SET name = ?, language = ?, phone = ?, address = ?, 
-               city = ?, country = ?, timezone = ?, updated_at = GETDATE() 
+               city = ?, state = ?, postcode = ?, country = ?, timezone = ?, updated_at = GETDATE() 
                WHERE id = ?""",
-            (name, language, phone, address, city, country, timezone, user_id)
+            (name, language, phone, address, city, state, postcode, country, timezone, user_id)
         )
         print(f"Rows affected: {cursor.rowcount}")
         if cursor.rowcount == 0:

@@ -16,6 +16,8 @@ class UserProfileRequest(BaseModel):
     phone: str = ""
     address: str = ""
     city: str = ""
+    state: str = ""
+    postcode: str = ""
     country: str = ""
     timezone: str = ""
 
@@ -46,7 +48,8 @@ def update_profile(request: UserProfileRequest, authorization: str = Header(None
     user_id = get_user_id_from_token(authorization)
     return update_user_profile(
         user_id, request.name, request.language, request.phone, 
-        request.address, request.city, request.country, request.timezone
+        request.address, request.city, request.state, request.postcode, 
+        request.country, request.timezone
     )
 
 
