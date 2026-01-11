@@ -31,34 +31,74 @@ const ResetPassword = () => {
     e.preventDefault();
     setError('');
     setSuccess('');
+
     if (!token) {
-      setError('Invalid or missing reset token.');
+      setError('Invalid or missing reset token. Please request a new password reset link.');
       return;
     }
+
     const passwordError = validatePassword(newPassword);
     if (passwordError) {
       setError(passwordError);
       return;
     }
+
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Passwords do not match. Please ensure both passwords are identical.');
       return;
     }
+
     setIsLoading(true);
+
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch('http://localhost:8000/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, new_password: newPassword }),
+        signal: controller.signal,
       });
-      const data = await response.json();
+
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        throw new Error(data.detail || 'Failed to reset password.');
+        const contentType = response.headers.get('content-type');
+        let errorMessage = 'Failed to reset password. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (response.status === 400) {
+          errorMessage =
+            'Invalid or expired reset token. Please request a new password reset link.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
-      setSuccess('Password reset successful! You can now sign in.');
-      setTimeout(() => navigate('/signin'), 2000);
+
+      const data = await response.json();
+      setSuccess(data.message || 'Password reset successful! Redirecting to sign in...');
+
+      // Redirect after showing success message
+      setTimeout(() => navigate('/signin'), 2500);
     } catch (err) {
-      setError(err.message);
+      let errorMessage = 'Failed to reset password. Please try again.';
+
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection and try again.';
+      } else if (err.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
