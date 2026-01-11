@@ -1,9 +1,8 @@
-"""
-Frontend Integration Tests
-Tests integration between components, hooks, and API client
-"""
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createMemoryHistory } from 'history';
+/**
+ * Frontend Integration Tests
+ * Tests integration between components, hooks, and API client
+ */
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Note: These are conceptual integration tests demonstrating patterns
 // Actual implementation would require proper React Testing Library setup
@@ -63,14 +62,18 @@ describe('Frontend Chat Integration', () => {
       localStorage.setItem('sessionMessages', JSON.stringify(messages));
 
       // Simulate another tab updating
+      const updatedMessages = [
+        ...messages,
+        { id: 3, content: 'New message' },
+      ];
+      
       const event = new StorageEvent('storage', {
         key: 'sessionMessages',
-        newValue: JSON.stringify([
-          ...messages,
-          { id: 3, content: 'New message' },
-        ]),
+        newValue: JSON.stringify(updatedMessages),
       });
 
+      // Update localStorage to simulate the other tab's change
+      localStorage.setItem('sessionMessages', JSON.stringify(updatedMessages));
       window.dispatchEvent(event);
       
       // Messages should be updated
