@@ -30,7 +30,8 @@ def app():
 def client(app):
     """FastAPI test client"""
     from fastapi.testclient import TestClient
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 # ============================================================================

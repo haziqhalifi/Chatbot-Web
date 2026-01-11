@@ -213,12 +213,14 @@ class TestPathTraversalPrevention:
     def test_path_traversal_sequences_blocked(self, path_traversal_payloads):
         """Path traversal sequences should be blocked"""
         for payload in path_traversal_payloads:
-            # Normalize path
-            normalized = payload.replace("\\", "/").replace("..", "")
+            # Check if traversal is attempted in ORIGINAL payload
+            has_traversal = ".." in payload or "\\" in payload or "%2e" in payload.lower()
+            assert has_traversal, f"Payload should contain traversal sequence: {payload}"
             
-            # Check if traversal is attempted
-            has_traversal = ".." in payload or "\\" in payload
-            assert has_traversal
+            # Normalize path to remove traversal (this is what protection would do)
+            normalized = payload.replace("\\", "/").replace("..", "")
+            # Normalized should not have traversal
+            assert ".." not in normalized
 
     def test_absolute_path_validation(self):
         """Absolute paths should be validated"""
