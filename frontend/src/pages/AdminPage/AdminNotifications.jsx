@@ -1,6 +1,6 @@
 import React from 'react';
 import Header from '../../components/common/Header';
-import AdminNotificationPanel from '../../components/AdminNotificationPanel';
+import AdminNotificationPanel from '../../components/admin/AdminNotificationPanel';
 
 const AdminNotifications = () => {
   return (
