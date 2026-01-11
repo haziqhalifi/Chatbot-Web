@@ -15,15 +15,17 @@ def create_user(email: str, password: str):
         cursor = conn.cursor()
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Email already registered")
+            raise HTTPException(status_code=400, detail="Email already registered. Please sign in instead.")
         cursor.execute(
             "INSERT INTO users (email, hashed_password) VALUES (?, ?)",
             (email, hashed_password)
         )
         conn.commit()
-        return {"message": "User registered successfully"}
+        return {"message": "Account created successfully"}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="An error occurred during registration. Please try again.")
     finally:
         try:
             conn.close()
@@ -36,8 +38,15 @@ def verify_user(email: str, password: str):
         cursor = conn.cursor()
         cursor.execute("SELECT id, hashed_password, name FROM users WHERE email = ?", (email,))
         row = cursor.fetchone()
-        if not row or not pwd_context.verify(password, row[1]):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        if not row:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        if not row[1]:
+            raise HTTPException(status_code=401, detail="No password set for this account. Please use social login or reset your password.")
+        
+        if not pwd_context.verify(password, row[1]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
         
         # Generate JWT token
         JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
@@ -65,7 +74,7 @@ def verify_user(email: str, password: str):
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="An error occurred during sign in. Please try again.")
     finally:
         try:
             conn.close()
@@ -100,7 +109,7 @@ def get_or_create_google_user(email: str, name: str, given_name: str = "", famil
             conn.commit()
         return row[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to authenticate with Google. Please try again.")
     finally:
         try:
             conn.close()
@@ -149,8 +158,10 @@ def get_user_profile(user_id: int):
         }
         print(f"Returning profile data: {profile_data}")
         return profile_data
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve profile. Please try again.")
     finally:
         try:
             conn.close()
@@ -163,6 +174,10 @@ def update_user_profile(user_id: int, name: str, language: str, phone: str = "",
         cursor = conn.cursor()
         print(f"Updating profile for user_id: {user_id}")
         print(f"New data: name={name}, language={language}, phone={phone}, address={address}, city={city}, state={state}, postcode={postcode}, country={country}, timezone={timezone}")
+        
+        # Validate name
+        if not name or not name.strip():
+            raise HTTPException(status_code=400, detail="Name is required")
         
         cursor.execute(
             """UPDATE users SET name = ?, language = ?, phone = ?, address = ?, 
@@ -177,8 +192,10 @@ def update_user_profile(user_id: int, name: str, language: str, phone: str = "",
         print("Profile updated successfully")
         # Fetch and return the updated profile
         return get_user_profile(user_id)
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Failed to update profile. Please try again.")
     finally:
         try:
             conn.close()

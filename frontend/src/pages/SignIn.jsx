@@ -92,6 +92,9 @@ const SignInPage = () => {
     setIsLoading(true);
     setErrors((prev) => ({ ...prev, general: '' }));
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
       const response = await fetch('http://localhost:8000/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,13 +102,38 @@ const SignInPage = () => {
           email: formData.email,
           password: formData.password,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Invalid email or password. Please try again.');
+        const contentType = response.headers.get('content-type');
+        let errorMessage = 'Invalid email or password. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        // Provide specific error messages based on status code
+        if (response.status === 401) {
+          errorMessage = 'Invalid email or password. Please check your credentials.';
+        } else if (response.status === 404) {
+          errorMessage = 'Account not found. Please sign up first.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+
+      if (!data.token || !data.user) {
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       login(data.token, data.user);
 
       // Redirect based on user role
@@ -115,9 +143,19 @@ const SignInPage = () => {
         navigate('/dashboard');
       }
     } catch (error) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection and try again.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setErrors((prev) => ({
         ...prev,
-        general: error.message || 'Invalid email or password. Please try again.',
+        general: errorMessage,
       }));
     } finally {
       setIsLoading(false);
@@ -126,11 +164,16 @@ const SignInPage = () => {
 
   const handleSocialLogin = (provider) => {
     setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
+
     // Simulate social login
     setTimeout(() => {
-      alert(`${provider} login initiated!`);
+      setErrors((prev) => ({
+        ...prev,
+        general: `${provider} login is not yet configured. Please use email login.`,
+      }));
       setIsLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   const handleForgotPassword = () => {
@@ -144,22 +187,58 @@ const SignInPage = () => {
     e.preventDefault();
     setForgotStatus('');
     setForgotError('');
-    if (!forgotEmail) {
-      setForgotError('Please enter your email address');
+
+    const emailError = validateEmail(forgotEmail);
+    if (emailError) {
+      setForgotError(emailError);
       return;
     }
+
     setIsLoading(true);
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch('http://localhost:8000/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail }),
+        signal: controller.signal,
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || 'Failed to send reset link');
-      setForgotStatus('If the email exists, a reset link has been sent.');
+
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get('content-type');
+      let data = {};
+
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to send reset link. Please try again.');
+      }
+
+      setForgotStatus('If the email exists, a reset link has been sent to your inbox.');
+
+      // Clear the form after 3 seconds
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setForgotEmail('');
+        setForgotStatus('');
+      }, 3000);
     } catch (err) {
-      setForgotError(err.message);
+      let errorMessage = 'Failed to send reset link. Please try again.';
+
+      if (err.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (err.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setForgotError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -179,22 +258,63 @@ const SignInPage = () => {
 
   const handleGoogleResponse = async (response) => {
     setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
+
     try {
+      if (!response || !response.credential) {
+        throw new Error('Google authentication failed. Please try again.');
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch('http://localhost:8000/google-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Google sign in failed');
+        const contentType = res.headers.get('content-type');
+        let errorMessage = 'Google sign in failed. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (res.status === 403) {
+          errorMessage = 'Access denied. Please contact support.';
+        } else if (res.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();
+
+      if (!data.token) {
+        throw new Error('Invalid response from server. Please try again.');
+      }
+
       login(data.token, { email: data.email, name: data.name });
       navigate('/dashboard');
     } catch (error) {
-      setErrors((prev) => ({ ...prev, general: error.message || 'Google sign in failed.' }));
+      let errorMessage = 'Google sign in failed. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setErrors((prev) => ({ ...prev, general: errorMessage }));
     } finally {
       setIsLoading(false);
     }
@@ -329,12 +449,12 @@ const SignInPage = () => {
 
       {/* Contact Us */}
       <div className="text-center space-y-2">
-        <button
-          onClick={() => alert('Contact us clicked')}
+        <a
+          href="mailto:support@disasterwatch.com"
           className="text-sm text-gray-600 hover:text-gray-500 underline"
         >
           Contact us
-        </button>
+        </a>
         <div className="text-xs text-gray-400">
           <button
             onClick={() => navigate('/admin/signin')}

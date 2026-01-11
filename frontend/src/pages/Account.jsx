@@ -124,17 +124,39 @@ const AccountPage = ({ onClose }) => {
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return;
+    if (!token) {
+      setSaveStatus('error');
+      setSaveMessage('Session expired. Please sign in again.');
+      setTimeout(() => logout(), 2000);
+      return;
+    }
 
     if (!fullName.trim()) {
       setSaveStatus('error');
       setSaveMessage('Full name is required.');
+      setTimeout(() => setSaveStatus(null), 3000);
+      return;
+    }
+
+    // Validate phone number if provided
+    if (phone && !/^[\d\s\-\+\(\)]+$/.test(phone)) {
+      setSaveStatus('error');
+      setSaveMessage('Please enter a valid phone number.');
+      setTimeout(() => setSaveStatus(null), 3000);
+      return;
+    }
+
+    // Validate postcode if provided
+    if (postcode && !/^\d{5}$/.test(postcode)) {
+      setSaveStatus('error');
+      setSaveMessage('Postcode must be 5 digits.');
+      setTimeout(() => setSaveStatus(null), 3000);
       return;
     }
 
     setUpdating(true);
     setSaveStatus('saving');
-    setSaveMessage('Saving...');
+    setSaveMessage('Saving changes...');
 
     try {
       const response = await api.put(
@@ -166,14 +188,32 @@ const AccountPage = ({ onClose }) => {
 
       setSaveStatus('saved');
       setSaveMessage('Profile updated successfully!');
-      setTimeout(() => setSaveStatus(null), 2000);
+      setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
       console.error('Failed to update profile:', error);
-      setSaveStatus('error');
-      setSaveMessage(error.response?.data?.detail || 'Failed to update profile. Please try again.');
-      if (error.response?.status === 401) {
-        logout();
+
+      let errorMessage = 'Failed to update profile. Please try again.';
+
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Session expired. Please sign in again.';
+          setTimeout(() => logout(), 2000);
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.detail || 'Invalid profile data.';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          errorMessage = error.response.data?.detail || errorMessage;
+        }
       }
+
+      setSaveStatus('error');
+      setSaveMessage(errorMessage);
+      setTimeout(() => setSaveStatus(null), 5000);
     } finally {
       setUpdating(false);
     }

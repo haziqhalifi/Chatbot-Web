@@ -104,6 +104,21 @@ def transcribe_audio_file(file: UploadFile, language: str = "auto", method: str 
         language: Language code ("ms" for Malay, "en" for English, "auto" for auto-detect)
         method: Transcription method ("openai" for API, "local" for local Whisper, "auto" for best available)
     """
+    # Validate file
+    if not file:
+        raise HTTPException(status_code=400, detail="No audio file provided")
+    
+    # Check file size (limit to 25MB)
+    try:
+        audio_bytes = file.file.read()
+        file_size_mb = len(audio_bytes) / (1024 * 1024)
+        if file_size_mb > 25:
+            raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        raise HTTPException(status_code=400, detail="Failed to read audio file")
+    
     # Determine which method to use
     use_openai_api = False
     if method == "openai" and OPENAI_API_AVAILABLE:
@@ -114,15 +129,12 @@ def transcribe_audio_file(file: UploadFile, language: str = "auto", method: str 
     elif not WHISPER_AVAILABLE and not OPENAI_API_AVAILABLE:
         raise HTTPException(
             status_code=503,
-            detail="Audio transcription is not available. Neither OpenAI API nor Whisper library is properly configured."
+            detail="Voice transcription is currently unavailable. Please try again later."
         )
     
     try:
-        audio_bytes = file.file.read()
-        
         if use_openai_api:
             # Use OpenAI Whisper API (better for Malay and multilingual)
-            import tempfile
             import io
             
             # OpenAI API requires file-like object with name attribute
@@ -136,15 +148,30 @@ def transcribe_audio_file(file: UploadFile, language: str = "auto", method: str 
                 transcription_params["language"] = language
             
             logger.info(f"Using OpenAI Whisper API with language: {language}")
-            transcript = openai_client.audio.transcriptions.create(**transcription_params)
-            return {"transcript": transcript.text, "method": "openai_api"}
+            
+            try:
+                transcript = openai_client.audio.transcriptions.create(**transcription_params)
+                
+                if not transcript or not transcript.text:
+                    raise HTTPException(status_code=400, detail="No speech detected in audio")
+                
+                return {"transcript": transcript.text, "method": "openai_api"}
+            except Exception as api_error:
+                logger.error(f"OpenAI API error: {str(api_error)}")
+                
+                if "insufficient_quota" in str(api_error):
+                    raise HTTPException(status_code=503, detail="Transcription quota exceeded. Please try again later.")
+                elif "invalid_api_key" in str(api_error):
+                    raise HTTPException(status_code=503, detail="Transcription service configuration error.")
+                else:
+                    raise HTTPException(status_code=500, detail="Transcription failed. Please try again.")
         
         else:
             # Use local Whisper model
             if not WHISPER_AVAILABLE:
                 raise HTTPException(
                     status_code=503,
-                    detail="Local Whisper model is not available. Please configure OpenAI API key or install openai-whisper."
+                    detail="Voice transcription is currently unavailable. Please try again later."
                 )
             
             temp_dir = os.path.dirname(os.path.abspath(__file__))
@@ -165,10 +192,19 @@ def transcribe_audio_file(file: UploadFile, language: str = "auto", method: str 
                     transcribe_params["language"] = language
                 
                 result = model.transcribe(**transcribe_params)
+                
+                if not result or not result.get("text"):
+                    raise HTTPException(status_code=400, detail="No speech detected in audio")
+                
                 return {"transcript": result["text"], "method": "local_whisper"}
             finally:
-                os.unlink(temp_audio.name)
+                try:
+                    os.unlink(temp_audio.name)
+                except:
+                    pass
     
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Transcription error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Voice transcription failed. Please try again.")
