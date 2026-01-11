@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import Header from '../components/common/Header';
-import Button from '../components/ui/Button';
-import InputField from '../components/ui/InputField';
-import Dropdown from '../components/ui/Dropdown';
-import api from '../api';
-import { useAuth } from '../contexts/AuthContext';
+import Header from '../../components/common/Header';
+import Button from '../../components/ui/Button';
+import InputField from '../../components/ui/InputField';
+import Dropdown from '../../components/ui/Dropdown';
+import api from '../../api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const initialForm = {
   title: '',

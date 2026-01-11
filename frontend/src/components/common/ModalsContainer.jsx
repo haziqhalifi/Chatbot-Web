@@ -1,9 +1,9 @@
 import React from 'react';
-import AccountPage from '../../pages/Account';
-import Report from '../../pages/Report';
-import ReportDisaster from '../../pages/ReportDisaster';
-import EmergencySupport from '../../pages/EmergencySupport';
-import SettingsPage from '../../pages/Settings';
+import AccountPage from '../../pages/user/Account';
+import Report from '../../pages/user/Report';
+import ReportDisaster from '../../pages/user/ReportDisaster';
+import EmergencySupport from '../../pages/user/EmergencySupport';
+import SettingsPage from '../../pages/user/Settings';
 
 const ModalsContainer = ({
   isAccountOpen,

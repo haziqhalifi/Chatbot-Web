@@ -2,25 +2,30 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import page components
-import Dashboard from './pages/Dashboard';
-import ReportDisaster from './pages/ReportDisaster';
-import EmergencySupport from './pages/EmergencySupport';
-import SignIn from './pages/SignIn';
-import AdminSignIn from './pages/AdminPage/AdminSignIn';
-import AdminDashboard from './pages/AdminPage/AdminDashboard';
-import AdminReports from './pages/AdminPage/AdminReports';
-import NadmaHistory from './pages/AdminPage/NadmaHistory';
-import ManageUsers from './pages/AdminPage/ManageUsers';
-import ManageFAQ from './pages/AdminPage/ManageFAQ';
-import SignUp from './pages/SignUp';
-import Account from './pages/Account';
-import Settings from './pages/Settings';
-import FAQ from './pages/FAQ';
-import Report from './pages/Report';
-import NotificationSettings from './pages/NotificationSettings';
-import AdminNotifications from './pages/AdminPage/AdminNotifications';
-import ResetPassword from './pages/ResetPassword';
-import DisasterDashboard from './pages/DisasterDashboard';
+// User pages
+import Dashboard from './pages/user/Dashboard';
+import ReportDisaster from './pages/user/ReportDisaster';
+import EmergencySupport from './pages/user/EmergencySupport';
+import Account from './pages/user/Account';
+import Settings from './pages/user/Settings';
+import FAQ from './pages/user/FAQ';
+import Report from './pages/user/Report';
+import NotificationSettings from './pages/user/NotificationSettings';
+import ResetPassword from './pages/user/ResetPassword';
+import DisasterDashboard from './pages/user/DisasterDashboard';
+
+// Auth pages
+import SignIn from './pages/auth/SignIn';
+import SignUp from './pages/auth/SignUp';
+import AdminSignIn from './pages/auth/AdminSignIn';
+
+// Admin pages
+import AdminDashboard from './pages/admin/Dashboard';
+import AdminReports from './pages/admin/Reports';
+import NadmaHistory from './pages/admin/NadmaHistory';
+import ManageUsers from './pages/admin/ManageUsers';
+import ManageFAQ from './pages/admin/ManageFAQ';
+import AdminNotifications from './pages/admin/Notifications';
 
 const AppRoutes = () => {
   return (
