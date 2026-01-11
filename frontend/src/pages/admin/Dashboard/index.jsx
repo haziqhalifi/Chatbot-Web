@@ -17,7 +17,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();

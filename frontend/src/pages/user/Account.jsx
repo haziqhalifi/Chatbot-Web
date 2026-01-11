@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import api from '../api';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../api';
 import { User, MapPin, Globe, Phone, Mail, Shield, Calendar } from 'lucide-react';
 
 const TabButton = ({ id, icon: Icon, label, isActive, onClick }) => {

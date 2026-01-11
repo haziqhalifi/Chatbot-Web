@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { faqAPI } from '../api';
+import { faqAPI } from '../../api';
 
 const groupFaqsByCategory = (faqs) => {
   const grouped = {};
