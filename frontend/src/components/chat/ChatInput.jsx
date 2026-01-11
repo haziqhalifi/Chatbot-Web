@@ -26,6 +26,7 @@ const ChatInput = ({
 }) => {
   const settings = useAppSettings();
   const voiceInputEnabled = settings?.voiceInputEnabled !== false;
+  const [transcriptionError, setTranscriptionError] = React.useState('');
 
   const handleVoiceClick = async () => {
     if (!isListening) {
@@ -78,20 +79,33 @@ const ChatInput = ({
             formData.append('file', audioBlob, 'voice.wav');
 
             setIsTranscribing(true);
+            setTranscriptionError('');
             try {
               // Get user's preferred language from localStorage (default to auto-detect)
               const voiceLanguage = localStorage.getItem('voiceLanguage') || 'auto';
 
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
               const res = await api.post('/transcribe', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 params: {
-                  language: voiceLanguage, // 'ms' for Malay, 'en' for English, 'auto' for auto-detect
-                  method: 'auto', // Use best available method (OpenAI API or local)
+                  language: voiceLanguage,
+                  method: 'auto',
                 },
+                signal: controller.signal,
               });
+
+              clearTimeout(timeoutId);
+
               const transcript = res.data.transcript;
               const method = res.data.method || 'unknown';
               console.log(`Transcription successful using ${method}`);
+
+              if (!transcript || transcript.trim() === '') {
+                setTranscriptionError('No speech detected. Please try again.');
+                return;
+              }
 
               onInputChange({ target: { value: transcript } });
 
@@ -100,9 +114,26 @@ const ChatInput = ({
               }
             } catch (err) {
               console.error('Voice transcription failed:', err);
-              const errorMsg =
-                err.response?.data?.detail || 'Voice transcription failed. Please try again.';
-              alert(errorMsg);
+
+              let errorMsg = 'Voice transcription failed. Please try again.';
+
+              if (err.name === 'AbortError') {
+                errorMsg = 'Transcription timeout. Please try recording a shorter message.';
+              } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
+                errorMsg = 'Request timeout. Please check your internet connection.';
+              } else if (err.message.includes('Network Error')) {
+                errorMsg = 'Network error. Please check your internet connection.';
+              } else if (err.response) {
+                if (err.response.status === 503) {
+                  errorMsg = 'Transcription service unavailable. Please try again later.';
+                } else if (err.response.status === 413) {
+                  errorMsg = 'Audio file too large. Please record a shorter message.';
+                } else if (err.response.data?.detail) {
+                  errorMsg = err.response.data.detail;
+                }
+              }
+
+              setTranscriptionError(errorMsg);
             } finally {
               setIsTranscribing(false);
             }
@@ -110,8 +141,22 @@ const ChatInput = ({
 
           mediaRecorder.start();
           setIsListening(true);
+          setTranscriptionError('');
         } catch (err) {
-          alert('Microphone access denied or not available.');
+          console.error('Microphone access error:', err);
+
+          let errorMsg = 'Microphone access denied or not available.';
+
+          if (err.name === 'NotAllowedError') {
+            errorMsg =
+              'Microphone permission denied. Please allow microphone access in your browser settings.';
+          } else if (err.name === 'NotFoundError') {
+            errorMsg = 'No microphone found. Please connect a microphone and try again.';
+          } else if (err.name === 'NotReadableError') {
+            errorMsg = 'Microphone is in use by another application.';
+          }
+
+          setTranscriptionError(errorMsg);
         }
       }
     } else {
@@ -128,6 +173,34 @@ const ChatInput = ({
 
   return (
     <div className="bg-white rounded-b-[22px] p-4 border-t border-blue-200 shadow-inner">
+      {/* Transcription error message */}
+      {transcriptionError && (
+        <div className="mb-2 bg-red-50 border border-red-200 rounded-lg p-2 text-red-700 text-xs flex items-start">
+          <svg
+            className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex-1">
+            <span>{transcriptionError}</span>
+            <button
+              onClick={() => setTranscriptionError('')}
+              className="ml-2 text-red-500 hover:text-red-700 font-semibold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Voice recording indicator */}
       {voiceInputEnabled && isListening && <VoiceInput audioLevel={audioLevel} />}
 

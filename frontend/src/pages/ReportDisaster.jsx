@@ -27,7 +27,8 @@ const ReportDisaster = ({ onClose }) => {
   const [form, setForm] = useState(initialForm);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+  const [error, setError] = useState('');
+  const { user, token } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,26 +40,84 @@ const ReportDisaster = ({ onClose }) => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
+    setError('');
+
     if (!token) {
-      alert('You must be logged in to submit a report. Please sign in first.');
-      setIsSubmitting(false);
+      setError('You must be logged in to submit a report. Please sign in first.');
       return;
     }
+
+    // Validation
+    if (!form.title.trim()) {
+      setError('Please enter a title for the report.');
+      return;
+    }
+    if (!form.location.trim()) {
+      setError('Please enter the location of the disaster.');
+      return;
+    }
+    if (!form.disaster_type) {
+      setError('Please select a disaster type.');
+      return;
+    }
+    if (!form.description.trim()) {
+      setError('Please provide a description of the disaster.');
+      return;
+    }
+    if (form.description.length < 20) {
+      setError('Please provide a more detailed description (at least 20 characters).');
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
-      await api.post('/report', {
-        title: form.title,
-        location: form.location,
-        disaster_type: form.disaster_type,
-        description: form.description,
-        timestamp: new Date().toISOString(),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      await api.post(
+        '/report',
+        {
+          title: form.title,
+          location: form.location,
+          disaster_type: form.disaster_type,
+          description: form.description,
+          timestamp: new Date().toISOString(),
+        },
+        {
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
       setSubmitted(true);
       setForm(initialForm);
+      setError('');
     } catch (error) {
       console.error('Report submission error:', error);
-      alert('Failed to submit report. Please try again.');
+
+      let errorMessage = 'Failed to submit report. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection and try again.';
+      } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Session expired. Please sign in again.';
+        } else if (error.response.status === 400) {
+          errorMessage = error.response.data?.detail || 'Invalid report data.';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (error.response.data?.detail) {
+          errorMessage = error.response.data.detail;
+        }
+      }
+
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +138,42 @@ const ReportDisaster = ({ onClose }) => {
           />
         </svg>
       </button>
-      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">Report a Disaster</h2>{' '}
+      <h2 className="text-2xl font-bold text-[#0a4974] mb-6 text-center">Report a Disaster</h2>
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start">
+          <svg
+            className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="flex-1">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+          <button
+            onClick={() => setError('')}
+            className="text-red-400 hover:text-red-600 ml-2"
+            aria-label="Dismiss error"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
       {submitted && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
           <div className="flex justify-center mb-3">
