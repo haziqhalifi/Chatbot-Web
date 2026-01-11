@@ -41,19 +41,19 @@ class SystemReportRequest(BaseModel):
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        raise HTTPException(status_code=401, detail="Authentication required. Please sign in.")
     
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("user_id")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
         return user_id
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(status_code=401, detail="Session expired. Please sign in again.")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid authentication token. Please sign in again.")
 
 @router.post("/report")
 def submit_report(report: ReportRequest, authorization: str = Header(None)):
@@ -61,6 +61,18 @@ def submit_report(report: ReportRequest, authorization: str = Header(None)):
     user_id = get_user_id_from_token(authorization)
     
     try:
+        # Validate report data
+        if not report.title or not report.title.strip():
+            raise HTTPException(status_code=400, detail="Report title is required")
+        if not report.location or not report.location.strip():
+            raise HTTPException(status_code=400, detail="Location is required")
+        if not report.disaster_type:
+            raise HTTPException(status_code=400, detail="Disaster type is required")
+        if not report.description or not report.description.strip():
+            raise HTTPException(status_code=400, detail="Description is required")
+        if len(report.description.strip()) < 20:
+            raise HTTPException(status_code=400, detail="Description must be at least 20 characters")
+        
         # Create a complete report object with the authenticated user_id
         from types import SimpleNamespace
         complete_report = SimpleNamespace(
@@ -90,8 +102,11 @@ def submit_report(report: ReportRequest, authorization: str = Header(None)):
             print(f"Failed to send targeted notifications: {e}")
         
         return result
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Report submission error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit report. Please try again.")
 
 @router.post("/system-report")
 def submit_system_report(report: SystemReportRequest, authorization: str = Header(None)):
@@ -99,11 +114,19 @@ def submit_system_report(report: SystemReportRequest, authorization: str = Heade
     user_id = get_user_id_from_token(authorization)
     
     try:
+        # Validate report data
+        if not report.subject or not report.subject.strip():
+            raise HTTPException(status_code=400, detail="Subject is required")
+        if not report.message or not report.message.strip():
+            raise HTTPException(status_code=400, detail="Message is required")
+        
         result = insert_system_report(user_id, report.subject, report.message)
         return result
-        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"System report error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to submit report. Please try again.")
 
 @router.get("/my-reports")
 def get_my_reports(authorization: str = Header(None)):
@@ -116,8 +139,11 @@ def get_my_reports(authorization: str = Header(None)):
         user_reports = [report for report in all_reports if report.get("user_id") == user_id]
         
         return {"reports": user_reports}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Get reports error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve reports. Please try again.")
 
 @router.get("/admin/reports")
 def get_reports(

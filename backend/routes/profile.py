@@ -24,19 +24,19 @@ class UserProfileRequest(BaseModel):
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        raise HTTPException(status_code=401, detail="Authentication required. Please sign in.")
     
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("user_id")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail="Invalid authentication token")
         return user_id
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(status_code=401, detail="Session expired. Please sign in again.")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid authentication token. Please sign in again.")
 
 @router.get("/profile")
 def get_profile(authorization: str = Header(None)):

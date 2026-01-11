@@ -143,32 +143,72 @@ const SignUpPage = () => {
     }
 
     setIsResendLoading(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
 
     try {
-      // Use resend endpoint if code was already sent, otherwise use send endpoint
       const endpoint = isCodeSent ? '/resend-verification-code' : '/send-verification-code';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await fetch(`http://localhost:8000${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || 'Failed to send verification code');
+        const contentType = response.headers.get('content-type');
+        let errorMessage = 'Failed to send verification code. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (response.status === 429) {
+          errorMessage = 'Too many requests. Please wait a moment before trying again.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
 
       setIsCodeSent(true);
-      setCountdown(60); // 60 second countdown
-      // Clear previous code when resending
+      setCountdown(60);
       setFormData((prev) => ({ ...prev, verificationCode: '' }));
+
       const data = await response.json();
-      alert(data.message || `Verification code sent to ${formData.email}`);
-    } catch (error) {
-      console.error('Send code error:', error);
       setErrors((prev) => ({
         ...prev,
-        general: error.message || 'Failed to send verification code. Please try again.',
+        general: '',
+        verification: data.message || `Verification code sent to ${formData.email}`,
+      }));
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setErrors((prev) => ({ ...prev, verification: '' }));
+      }, 5000);
+    } catch (error) {
+      console.error('Send code error:', error);
+
+      let errorMessage = 'Failed to send verification code. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setErrors((prev) => ({
+        ...prev,
+        general: errorMessage,
       }));
     } finally {
       setIsResendLoading(false);
@@ -185,21 +225,40 @@ const SignUpPage = () => {
 
     try {
       // First, verify the signup code
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const verifyResponse = await fetch(
         `http://localhost:8000/verify-signup-code?code=${encodeURIComponent(formData.verificationCode)}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email }),
+          signal: controller.signal,
         }
       );
 
+      clearTimeout(timeoutId);
+
       if (!verifyResponse.ok) {
-        const data = await verifyResponse.json();
-        throw new Error(data.detail || 'Email verification failed');
+        const contentType = verifyResponse.headers.get('content-type');
+        let errorMessage = 'Email verification failed. Please check your code.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await verifyResponse.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (verifyResponse.status === 400) {
+          errorMessage = 'Invalid or expired verification code. Please request a new one.';
+        }
+
+        throw new Error(errorMessage);
       }
 
       // Verification successful, now create the account
+      const timeoutId2 = setTimeout(() => controller.abort(), 15000);
+
       const signupResponse = await fetch('http://localhost:8000/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,19 +266,45 @@ const SignUpPage = () => {
           email: formData.email,
           password: formData.password,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId2);
+
       if (!signupResponse.ok) {
-        const data = await signupResponse.json();
-        throw new Error(data.detail || 'Registration failed');
+        const contentType = signupResponse.headers.get('content-type');
+        let errorMessage = 'Registration failed. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await signupResponse.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (signupResponse.status === 400) {
+          errorMessage = 'Email already registered. Please sign in instead.';
+        } else if (signupResponse.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
 
+      // Success - navigate to dashboard
       navigate('/dashboard');
     } catch (error) {
+      let errorMessage = 'Registration failed. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setErrors((prev) => ({
         ...prev,
-        general:
-          error.message || 'Registration failed. Please check your information and try again.',
+        general: errorMessage,
       }));
     } finally {
       setIsLoading(false);
@@ -228,10 +313,15 @@ const SignUpPage = () => {
 
   const handleSocialSignUp = (provider) => {
     setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
+
     setTimeout(() => {
-      alert(`${provider} sign up initiated!`);
+      setErrors((prev) => ({
+        ...prev,
+        general: `${provider} sign up is not yet configured. Please use email registration.`,
+      }));
       setIsLoading(false);
-    }, 1000);
+    }, 500);
   };
 
   const handleSignIn = () => {
@@ -248,19 +338,56 @@ const SignUpPage = () => {
 
   const handleGoogleResponse = async (response) => {
     setIsLoading(true);
+    setErrors((prev) => ({ ...prev, general: '' }));
+
     try {
+      if (!response || !response.credential) {
+        throw new Error('Google authentication failed. Please try again.');
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const res = await fetch('http://localhost:8000/google-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: response.credential }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.detail || 'Google sign up failed');
+        const contentType = res.headers.get('content-type');
+        let errorMessage = 'Google sign up failed. Please try again.';
+
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          errorMessage = data.detail || errorMessage;
+        }
+
+        if (res.status === 403) {
+          errorMessage = 'Access denied. Please contact support.';
+        } else if (res.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+
+        throw new Error(errorMessage);
       }
+
       navigate('/dashboard');
     } catch (error) {
-      setErrors((prev) => ({ ...prev, general: error.message || 'Google sign up failed.' }));
+      let errorMessage = 'Google sign up failed. Please try again.';
+
+      if (error.name === 'AbortError') {
+        errorMessage = 'Request timeout. Please check your internet connection.';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setErrors((prev) => ({ ...prev, general: errorMessage }));
     } finally {
       setIsLoading(false);
     }
@@ -284,6 +411,9 @@ const SignUpPage = () => {
         {/* Sign Up Form */}
         <div className="space-y-6">
           <ValidationMessage type="error" message={errors.general} />
+          {errors.verification && (
+            <ValidationMessage type="success" message={errors.verification} />
+          )}
 
           <FormInput
             id="email"
