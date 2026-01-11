@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/common/Header';
+import PageHeader from '../../components/common/PageHeader';
+import StatusMessage from '../../components/common/StatusMessage';
 
 const AdminReports = () => {
   const { user, logout } = useAuth();
@@ -458,48 +461,26 @@ const AdminReports = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="w-full bg-white rounded-lg shadow-lg max-w-4xl mx-auto">
+            <PageHeader title="Disaster Reports" description="Error loading reports" />
+            <div className="p-6">
+              <div className="bg-white rounded-lg p-8 text-center">
+                <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Reports</h2>
+                <p className="text-gray-600 mb-4">{error}</p>
                 <button
-                  onClick={handleBackToDashboard}
-                  className="mr-4 p-2 rounded-md hover:bg-gray-100"
+                  onClick={fetchReports}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                  disabled={loading}
                 >
-                  <ChevronLeft className="h-5 w-5 text-gray-600" />
-                </button>
-                <Shield className="h-8 w-8 text-red-600 mr-3" />
-                <h1 className="text-xl font-semibold text-gray-900">Disaster Reports</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">Welcome, {user?.name || user?.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  Sign Out
+                  {loading ? 'Retrying...' : 'Try Again'}
                 </button>
               </div>
             </div>
           </div>
-        </header>
-
-        {/* Error Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Reports</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={fetchReports}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              disabled={loading}
-            >
-              {loading ? 'Retrying...' : 'Try Again'}
-            </button>
-          </div>
-        </main>
+        </div>
       </div>
     );
   }
@@ -507,10 +488,13 @@ const AdminReports = () => {
   // Show loading state for initial load
   if (loading && reports.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading reports...</p>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading reports...</p>
+          </div>
         </div>
       </div>
     );
@@ -518,385 +502,372 @@ const AdminReports = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <button
-                onClick={handleBackToDashboard}
-                className="mr-4 p-2 rounded-md hover:bg-gray-100"
-              >
-                <ChevronLeft className="h-5 w-5 text-gray-600" />
-              </button>
-              <Shield className="h-8 w-8 text-red-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">Disaster Reports</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">
-                Welcome, {user?.name || user?.email || 'Admin'}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <div className="w-full bg-white rounded-lg shadow-lg max-w-7xl mx-auto">
+          <PageHeader
+            title="Disaster Reports"
+            description="Monitor and manage disaster reports from all sources."
+          />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                <p className="text-2xl font-bold text-gray-900">{reports.length}</p>
-              </div>
-            </div>
-          </div>
+          <StatusMessage error={error} />
 
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Reports</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.status === 'Active').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">People Affected</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.reduce((sum, r) => sum + r.affectedPeople, 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Critical Reports</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter((r) => r.severity === 'Critical').length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Search and Filter Section */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-              {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search reports..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
+          {/* Content */}
+          <div className="px-6 pb-6">
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200">
+                <div className="flex items-center">
+                  <FileText className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-blue-700">Total Reports</p>
+                    <p className="text-2xl font-bold text-blue-900">{reports.length}</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                  <ChevronDown
-                    className={`h-4 w-4 ml-2 transform ${showFilters ? 'rotate-180' : ''}`}
+              <div className="bg-gradient-to-br from-red-50 to-red-100 p-6 rounded-lg border border-red-200">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-red-700">Active Reports</p>
+                    <p className="text-2xl font-bold text-red-900">
+                      {reports.filter((r) => r.status === 'Active').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-lg border border-green-200">
+                <div className="flex items-center">
+                  <Users className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-green-700">People Affected</p>
+                    <p className="text-2xl font-bold text-green-900">
+                      {reports.reduce((sum, r) => sum + r.affectedPeople, 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-lg border border-purple-200">
+                <div className="flex items-center">
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-purple-700">Critical Reports</p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      {reports.filter((r) => r.severity === 'Critical').length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Search and Filter Section */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                {/* Search */}
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search reports..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setShowExportDropdown(!showExportDropdown)}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export
-                    <ChevronDown className="h-4 w-4 ml-2" />
-                  </button>
-                  {showExportDropdown && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                      <div className="py-1">
-                        <button
-                          onClick={exportReportsCSV}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Export as CSV
-                        </button>
-                        <button
-                          onClick={exportReportsPDF}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                        >
-                          <FileText className="h-4 w-4 mr-2" />
-                          Export as PDF
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
-                <button
-                  onClick={fetchReports}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                  disabled={loading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                  {loading ? 'Loading...' : 'Refresh'}
-                </button>
-              </div>
-            </div>
 
-            {/* Filter Options */}
-            {showFilters && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Responding">Responding</option>
-                    <option value="Monitoring">Monitoring</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Types</option>
-                    {availableTypes.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
-                  <select
-                    value={severityFilter}
-                    onChange={(e) => setSeverityFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Severity</option>
-                    <option value="Critical">Critical</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-                  <select
-                    value={sourceFilter}
-                    onChange={(e) => setSourceFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="All">All Sources</option>
-                    <option value="Disaster Reports">Disaster Reports</option>
-                    <option value="NADMA Realtime">NADMA Realtime</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Reports Table */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">
-              Reports ({filteredReports.length})
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Report Details
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Location
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Severity
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reporter
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>{' '}
-              <tbody className="bg-white divide-y divide-gray-200">
-                {currentReports.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center">
-                      <div className="text-gray-500">
-                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-lg font-medium mb-2">No reports found</p>
-                        <p className="text-sm">
-                          {filteredReports.length === 0 && reports.length > 0
-                            ? 'Try adjusting your search or filter criteria.'
-                            : 'No disaster reports have been submitted yet.'}
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  currentReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{report.title}</div>
-                          <div className="text-sm text-gray-500">{report.type}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
-                          {report.location}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
-                        >
-                          {report.severity}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(report.status)}`}
-                        >
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {report.reportedBy}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900">
-                          <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                          {formatDate(report.timestamp)}
-                        </div>
-                      </td>{' '}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() =>
-                              report?.source === 'NADMA Realtime'
-                                ? setSelectedReport(report)
-                                : fetchReportDetails(report.id)
-                            }
-                            className="text-blue-600 hover:text-blue-900 flex items-center"
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </button>
-                          <button
-                            onClick={() => handleSendNotification(report)}
-                            disabled={report?.source === 'NADMA Realtime'}
-                            className={`flex items-center ${
-                              report?.source === 'NADMA Realtime'
-                                ? 'text-orange-300 cursor-not-allowed'
-                                : 'text-orange-600 hover:text-orange-900'
-                            }`}
-                            title={
-                              report?.source === 'NADMA Realtime'
-                                ? 'Notifications are available for user-submitted reports'
-                                : 'Send Notification'
-                            }
-                          >
-                            <Bell className="h-4 w-4 mr-1" />
-                            Notify
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {indexOfFirstReport + 1} to{' '}
-                {Math.min(indexOfLastReport, filteredReports.length)} of {filteredReports.length}{' '}
-                results
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {[...Array(totalPages)].map((_, i) => (
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
                   <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3 py-1 border rounded-md ${
-                      currentPage === i + 1
-                        ? 'bg-red-600 text-white border-red-600'
-                        : 'border-gray-300 hover:bg-gray-50'
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center px-4 py-2 border rounded-lg transition-colors ${
+                      showFilters
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    {i + 1}
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filters
+                    <ChevronDown
+                      className={`h-4 w-4 ml-2 transform ${showFilters ? 'rotate-180' : ''}`}
+                    />
                   </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowExportDropdown(!showExportDropdown)}
+                      className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </button>
+                    {showExportDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 border border-gray-200">
+                        <div className="py-1">
+                          <button
+                            onClick={exportReportsCSV}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Export as CSV
+                          </button>
+                          <button
+                            onClick={exportReportsPDF}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            Export as PDF
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={fetchReports}
+                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    {loading ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>{' '}
-      </main>
 
+              {/* Filter Options */}
+              {showFilters && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="All">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Responding">Responding</option>
+                      <option value="Monitoring">Monitoring</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    <select
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="All">All Types</option>
+                      {availableTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                    <select
+                      value={severityFilter}
+                      onChange={(e) => setSeverityFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="All">All Severity</option>
+                      <option value="Critical">Critical</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                    <select
+                      value={sourceFilter}
+                      onChange={(e) => setSourceFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="All">All Sources</option>
+                      <option value="Disaster Reports">Disaster Reports</option>
+                      <option value="NADMA Realtime">NADMA Realtime</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Reports Table */}
+            <div className="bg-white rounded-lg border border-gray-200">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Reports ({filteredReports.length})
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Report Details
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Reporter
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>{' '}
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentReports.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-12 text-center">
+                          <div className="text-gray-500">
+                            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <p className="text-lg font-medium mb-2">No reports found</p>
+                            <p className="text-sm">
+                              {filteredReports.length === 0 && reports.length > 0
+                                ? 'Try adjusting your search or filter criteria.'
+                                : 'No disaster reports have been submitted yet.'}
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      currentReports.map((report) => (
+                        <tr key={report.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {report.title}
+                              </div>
+                              <div className="text-sm text-gray-500">{report.type}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-900">
+                              <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                              {report.location}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
+                            >
+                              {report.severity}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(report.status)}`}
+                            >
+                              {report.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {report.reportedBy}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-900">
+                              <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                              {formatDate(report.timestamp)}
+                            </div>
+                          </td>{' '}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() =>
+                                  report?.source === 'NADMA Realtime'
+                                    ? setSelectedReport(report)
+                                    : fetchReportDetails(report.id)
+                                }
+                                className="text-blue-600 hover:text-blue-900 flex items-center"
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </button>
+                              <button
+                                onClick={() => handleSendNotification(report)}
+                                disabled={report?.source === 'NADMA Realtime'}
+                                className={`flex items-center ${
+                                  report?.source === 'NADMA Realtime'
+                                    ? 'text-orange-300 cursor-not-allowed'
+                                    : 'text-orange-600 hover:text-orange-900'
+                                }`}
+                                title={
+                                  report?.source === 'NADMA Realtime'
+                                    ? 'Notifications are available for user-submitted reports'
+                                    : 'Send Notification'
+                                }
+                              >
+                                <Bell className="h-4 w-4 mr-1" />
+                                Notify
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50">
+                  <div className="text-sm text-gray-700">
+                    Showing {indexOfFirstReport + 1} to{' '}
+                    {Math.min(indexOfLastReport, filteredReports.length)} of{' '}
+                    {filteredReports.length} results
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`px-3 py-1 border rounded-lg transition-colors ${
+                          currentPage === i + 1
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'border-gray-300 hover:bg-gray-100'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      );
       {/* Send Notification Modal */}
       {showNotificationModal && notificationReport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1038,7 +1009,6 @@ const AdminReports = () => {
           </div>
         </div>
       )}
-
       {/* Detailed Report Modal */}
       {selectedReport && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
