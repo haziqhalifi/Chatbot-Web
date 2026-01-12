@@ -52,7 +52,7 @@ export const useSubscriptions = () => {
         ...subscriptionData,
         id: response.data.subscription_id,
         user_id: response.data.user_id,
-        is_active: true,
+        is_active: subscriptionData.is_active !== undefined ? subscriptionData.is_active : true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
