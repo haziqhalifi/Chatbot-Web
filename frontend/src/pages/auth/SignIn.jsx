@@ -403,11 +403,21 @@ const SignInPage = () => {
           {/* Terms and Privacy */}
           <div className="text-xs text-gray-500 text-center">
             By signing up or logging in, you consent to DisasterWatch's{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500 underline">
+            <a
+              href="/terms-of-use"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-500 underline"
+            >
               Terms of Use
             </a>{' '}
             and{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500 underline">
+            <a
+              href="/privacy-policy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-500 underline"
+            >
               Privacy Policy
             </a>
             .
