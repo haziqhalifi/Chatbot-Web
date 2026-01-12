@@ -33,7 +33,7 @@ const SettingsPage = ({ onClose }) => {
   const [language, setLanguage] = useState('English');
   const [voiceInput, setVoiceInput] = useState(initialSettings.voiceInputEnabled);
   const [voiceLanguage, setVoiceLanguage] = useState(
-    localStorage.getItem('voiceLanguage') || 'auto'
+    localStorage.getItem('voiceLanguage') || 'en-US'
   );
   const [textSize, setTextSize] = useState(initialSettings.textSize);
   const [defaultChatLang, setDefaultChatLang] = useState(initialSettings.defaultChatLang);
