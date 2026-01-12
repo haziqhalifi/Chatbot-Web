@@ -114,24 +114,74 @@ def clear_all_user_notifications(authorization: str = Header(None)):
     return clear_all_notifications(user_id)
 
 # Admin notification endpoints
+@router.get("/admin/notifications")
+def get_all_notifications_admin(
+    authorization: str = Header(None),
+    limit: int = 100,
+    offset: int = 0,
+    notification_type: Optional[str] = None,
+    disaster_type: Optional[str] = None,
+    search: Optional[str] = None,
+    grouped: bool = True
+):
+    """Get all notifications across all users (admin only)"""
+    from services.notification_service import get_all_notifications
+    # Verify admin authentication (user_id extraction also validates token)
+    get_user_id_from_token(authorization)
+    return get_all_notifications(limit, offset, notification_type, disaster_type, search, grouped)
+
+@router.get("/admin/notifications/users")
+def get_notification_users_admin(
+    authorization: str = Header(None),
+    title: str = None,
+    message: str = None,
+    notification_type: str = None,
+    disaster_type: Optional[str] = None,
+    location: Optional[str] = None
+):
+    """Get all users who received a specific notification (admin only)"""
+    from services.notification_service import get_notification_users
+    # Verify admin authentication
+    get_user_id_from_token(authorization)
+    return get_notification_users(title, message, notification_type, disaster_type, location)
+
+@router.get("/admin/notifications/stats")
+def get_notification_stats_admin(authorization: str = Header(None)):
+    """Get notification statistics (admin only)"""
+    from services.notification_service import get_notification_stats
+    # Verify admin authentication
+    get_user_id_from_token(authorization)
+    return get_notification_stats()
+
+@router.delete("/admin/notifications/{notification_id}")
+def delete_notification_admin(
+    notification_id: int,
+    authorization: str = Header(None)
+):
+    """Delete any notification (admin only)"""
+    from services.notification_service import delete_notification_admin
+    # Verify admin authentication
+    get_user_id_from_token(authorization)
+    return delete_notification_admin(notification_id)
+
 @router.post("/admin/notifications/system")
 def create_admin_system_notification(
     request: SystemNotificationRequest,
-    x_api_key: str = Header(None)
+    authorization: str = Header(None)
 ):
-    """Create system notifications (admin only - requires API key)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    """Create system notifications (admin only)"""
+    # Verify admin authentication
+    get_user_id_from_token(authorization)
     return create_system_notification(request.title, request.message, request.type, request.user_ids)
 
 @router.post("/admin/notifications/targeted")
 def create_admin_targeted_notification(
     request: TargetedNotificationRequest,
-    x_api_key: str = Header(None)
+    authorization: str = Header(None)
 ):
     """Create targeted notifications based on disaster type and location (admin only)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    # Verify admin authentication
+    get_user_id_from_token(authorization)
     return create_targeted_disaster_notification(
         request.disaster_type, 
         request.location, 

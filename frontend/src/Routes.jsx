@@ -29,7 +29,7 @@ import AdminReports from './pages/admin/Reports';
 import NadmaHistory from './pages/admin/NadmaHistory';
 import ManageUsers from './pages/admin/ManageUsers';
 import ManageFAQ from './pages/admin/ManageFAQ';
-import AdminNotifications from './pages/admin/Notifications';
+import NotificationManagement from './pages/admin/NotificationManagement';
 
 const AppRoutes = () => {
   return (
@@ -55,7 +55,7 @@ const AppRoutes = () => {
         <Route path="/help-faq" element={<FAQ />} />
         <Route path="/report" element={<Report />} />
         <Route path="/notification-settings" element={<NotificationSettings />} />
-        <Route path="/admin/notifications" element={<AdminNotifications />} />
+        <Route path="/admin/notifications" element={<NotificationManagement />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms-of-use" element={<TermsOfUse />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
