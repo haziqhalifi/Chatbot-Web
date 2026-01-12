@@ -8,10 +8,6 @@ from fastapi import HTTPException
 class TestAuthRoutes:
     """Test authentication endpoints"""
     
-    def test_signup_success(self, test_client, mock_db_connection):
-        """Test successful user signup"""
-        pytest.skip("Requires database integration")
-    
     def test_signup_invalid_email(self, test_client):
         """Test signup with invalid email"""
         response = test_client.post("/signup", json={
@@ -20,14 +16,6 @@ class TestAuthRoutes:
         })
         
         assert response.status_code == 422  # Validation error
-    
-    def test_signin_success(self, test_client):
-        """Test successful user signin"""
-        pytest.skip("Requires database integration")
-    
-    def test_signin_invalid_credentials(self, test_client):
-        """Test signin with invalid credentials"""
-        pytest.skip("Requires database integration")
     
     def test_admin_signin_invalid_code(self, test_client):
         """Test admin signin with invalid admin code"""

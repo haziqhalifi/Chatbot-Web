@@ -12,7 +12,7 @@ class TestNotificationIntegration:
 
     def test_get_notifications_flow(self, client, auth_headers):
         """Test retrieving user notifications"""
-        with patch('database.notifications.get_notifications') as mock_get:
+        with patch('services.notification_service.get_notifications') as mock_get:
             mock_get.return_value = [
                 {
                     'id': 1,
@@ -30,7 +30,7 @@ class TestNotificationIntegration:
 
     def test_get_unread_count(self, client, auth_headers):
         """Test getting unread notification count"""
-        with patch('database.notifications.get_unread_count') as mock_count:
+        with patch('services.notification_service.get_unread_count') as mock_count:
             mock_count.return_value = 5
             
             response = client.get('/notifications/unread-count', headers=auth_headers)
@@ -42,7 +42,7 @@ class TestNotificationIntegration:
 
     def test_mark_notification_as_read(self, client, auth_headers):
         """Test marking a notification as read"""
-        with patch('database.notifications.mark_as_read') as mock_mark:
+        with patch('services.notification_service.mark_notification_as_read') as mock_mark:
             mock_mark.return_value = True
             
             response = client.put('/notifications/1/read', headers=auth_headers)
@@ -51,7 +51,7 @@ class TestNotificationIntegration:
 
     def test_mark_all_notifications_as_read(self, client, auth_headers):
         """Test marking all notifications as read"""
-        with patch('database.notifications.mark_all_as_read') as mock_mark:
+        with patch('services.notification_service.mark_all_notifications_as_read') as mock_mark:
             mock_mark.return_value = True
             
             response = client.put('/notifications/mark-all-read', headers=auth_headers)
@@ -60,7 +60,7 @@ class TestNotificationIntegration:
 
     def test_delete_notification(self, client, auth_headers):
         """Test deleting a notification"""
-        with patch('database.notifications.delete_notification') as mock_delete:
+        with patch('services.notification_service.delete_notification') as mock_delete:
             mock_delete.return_value = True
             
             response = client.delete('/notifications/1', headers=auth_headers)
@@ -69,7 +69,7 @@ class TestNotificationIntegration:
 
     def test_clear_all_notifications(self, client, auth_headers):
         """Test clearing all notifications"""
-        with patch('database.notifications.clear_all_notifications') as mock_clear:
+        with patch('services.notification_service.clear_all_notifications') as mock_clear:
             mock_clear.return_value = True
             
             response = client.delete('/notifications', headers=auth_headers)
@@ -82,7 +82,7 @@ class TestNotificationCreation:
 
     def test_create_system_notification(self, client):
         """Test creating a system notification (admin only)"""
-        with patch('database.notifications.create_notification') as mock_create:
+        with patch('services.notification_service.create_system_notification') as mock_create:
             mock_create.return_value = {
                 'id': 1,
                 'type': 'system',
@@ -116,7 +116,7 @@ class TestNotificationCreation:
 
     def test_notification_persisted_to_database(self, client):
         """Test that created notifications are saved to database"""
-        with patch('database.notifications.create_notification') as mock_create:
+        with patch('services.notification_service.create_notification') as mock_create:
             mock_create.return_value = {'id': 1, 'type': 'alert'}
             
             response = client.post('/notifications',
@@ -135,7 +135,7 @@ class TestNotificationTypes:
 
     def test_alert_notifications(self, client, auth_headers):
         """Test alert type notifications"""
-        with patch('database.notifications.get_notifications') as mock_get:
+        with patch('services.notification_service.get_notifications') as mock_get:
             mock_get.return_value = [
                 {
                     'id': 1,
@@ -186,7 +186,7 @@ class TestNotificationFiltering:
 
     def test_get_notifications_sorted(self, client, auth_headers):
         """Test that notifications are sorted by timestamp"""
-        with patch('database.notifications.get_notifications') as mock_get:
+        with patch('services.notification_service.get_notifications') as mock_get:
             now = datetime.now()
             mock_get.return_value = [
                 {
@@ -211,7 +211,7 @@ class TestNotificationState:
 
     def test_notification_state_unread_to_read(self, client, auth_headers):
         """Test transition from unread to read state"""
-        with patch('database.notifications.mark_as_read') as mock_mark:
+        with patch('services.notification_service.mark_notification_as_read') as mock_mark:
             mock_mark.return_value = True
             
             response = client.put('/notifications/1/read', headers=auth_headers)
@@ -220,7 +220,7 @@ class TestNotificationState:
 
     def test_notification_read_idempotent(self, client, auth_headers):
         """Test that marking as read twice is idempotent"""
-        with patch('database.notifications.mark_as_read') as mock_mark:
+        with patch('services.notification_service.mark_notification_as_read') as mock_mark:
             mock_mark.return_value = True
             
             # Mark as read first time
@@ -235,7 +235,7 @@ class TestNotificationState:
 
     def test_notification_deletion_removes_from_list(self, client, auth_headers):
         """Test that deleted notifications don't appear in list"""
-        with patch('database.notifications.delete_notification') as mock_delete:
+        with patch('services.notification_service.delete_notification') as mock_delete:
             mock_delete.return_value = True
             
             # Delete notification
