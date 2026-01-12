@@ -3,91 +3,83 @@ Email notification service for sending notification emails to subscribed users
 """
 from typing import List, Optional
 from utils.email_sender import send_email
-from database import get_db_conn
+from database.connection import DatabaseConnection
 import os
 
 
 def get_users_with_email_subscription() -> List[dict]:
     """Get all users who have email in their notification methods"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Get users with email subscription
-        cursor.execute("""
-            SELECT DISTINCT u.id, u.email, u.name, s.notification_methods
-            FROM users u
-            INNER JOIN user_subscriptions s ON u.user_id = s.user_id
-            WHERE s.is_active = 1 
-                AND s.notification_methods LIKE '%email%'
-                AND u.email IS NOT NULL
-                AND u.email != ''
-        """)
-        
-        users = []
-        for row in cursor.fetchall():
-            users.append({
-                "user_id": row[0],
-                "email": row[1],
-                "name": row[2],
-                "notification_methods": row[3]
-            })
-        
-        return users
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Get users with email subscription
+            cursor.execute("""
+                SELECT DISTINCT u.id, u.email, u.name, s.notification_methods
+                FROM users u
+                INNER JOIN user_subscriptions s ON u.id = s.user_id
+                WHERE s.is_active = 1 
+                    AND s.notification_methods LIKE '%email%'
+                    AND u.email IS NOT NULL
+                    AND u.email != ''
+            """)
+            
+            users = []
+            for row in cursor.fetchall():
+                users.append({
+                    "user_id": row[0],
+                    "email": row[1],
+                    "name": row[2],
+                    "notification_methods": row[3]
+                })
+            
+            cursor.close()
+            return users
         
     except Exception as e:
         print(f"Error getting users with email subscription: {e}")
         return []
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 
 def get_users_with_email_for_targeted_notification(disaster_type: str, location: str) -> List[dict]:
     """Get users who subscribed to email notifications for specific disaster type and location"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Get users with matching subscriptions and email enabled
-        cursor.execute("""
-            SELECT DISTINCT u.id, u.email, u.name
-            FROM users u
-            INNER JOIN user_subscriptions s ON u.user_id = s.user_id
-            WHERE s.is_active = 1 
-                AND s.notification_methods LIKE '%email%'
-                AND u.email IS NOT NULL
-                AND u.email != ''
-                AND (
-                    s.disaster_types LIKE ? 
-                    OR s.disaster_types LIKE '%"all"%'
-                )
-                AND (
-                    s.locations LIKE ?
-                    OR s.locations LIKE '%"all"%'
-                )
-        """, (f'%{disaster_type}%', f'%{location}%'))
-        
-        users = []
-        for row in cursor.fetchall():
-            users.append({
-                "user_id": row[0],
-                "email": row[1],
-                "name": row[2]
-            })
-        
-        return users
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Get users with matching subscriptions and email enabled
+            cursor.execute("""
+                SELECT DISTINCT u.id, u.email, u.name
+                FROM users u
+                INNER JOIN user_subscriptions s ON u.id = s.user_id
+                WHERE s.is_active = 1 
+                    AND s.notification_methods LIKE '%email%'
+                    AND u.email IS NOT NULL
+                    AND u.email != ''
+                    AND (
+                        s.disaster_types LIKE ? 
+                        OR s.disaster_types LIKE '%"all"%'
+                    )
+                    AND (
+                        s.locations LIKE ?
+                        OR s.locations LIKE '%"all"%'
+                    )
+            """, (f'%{disaster_type}%', f'%{location}%'))
+            
+            users = []
+            for row in cursor.fetchall():
+                users.append({
+                    "user_id": row[0],
+                    "email": row[1],
+                    "name": row[2]
+                })
+            
+            cursor.close()
+            return users
         
     except Exception as e:
         print(f"Error getting targeted users with email subscription: {e}")
         return []
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 
 def send_notification_email(user_email: str, user_name: str, title: str, message: str, 
@@ -96,7 +88,8 @@ def send_notification_email(user_email: str, user_name: str, title: str, message
     """Send a notification email to a user"""
     try:
         # Check if SMTP is configured
-        if not os.getenv("SMTP_HOST"):
+        smtp_host = os.getenv("SMTP_HOST")
+        if not smtp_host or smtp_host.strip() == "":
             print("SMTP not configured, skipping email notification")
             return False
         
@@ -155,53 +148,54 @@ def send_system_notification_emails(title: str, message: str, notification_type:
                                     user_ids: Optional[List[int]] = None) -> dict:
     """Send system notification emails to users who have email enabled"""
     try:
-        conn = get_db_conn()
-        cursor = conn.cursor()
-        
-        # Get users with email subscription
-        if user_ids:
-            # Get specific users with email subscription
-            placeholders = ','.join('?' * len(user_ids))
-            query = f"""
-                SELECT DISTINCT u.id, u.email, u.name
-                FROM users u
-                INNER JOIN user_subscriptions s ON u.user_id = s.user_id
-                WHERE u.id IN ({placeholders})
-                    AND s.is_active = 1 
-                    AND s.notification_methods LIKE '%email%'
-                    AND u.email IS NOT NULL
-                    AND u.email != ''
-            """
-            cursor.execute(query, user_ids)
-        else:
-            # Get all users with email subscription
-            cursor.execute("""
-                SELECT DISTINCT u.id, u.email, u.name
-                FROM users u
-                INNER JOIN user_subscriptions s ON u.user_id = s.user_id
-                WHERE s.is_active = 1 
-                    AND s.notification_methods LIKE '%email%'
-                    AND u.email IS NOT NULL
-                    AND u.email != ''
-            """)
-        
-        users = cursor.fetchall()
-        
-        emails_sent = 0
-        emails_failed = 0
-        
-        for row in users:
-            user_id, user_email, user_name = row
-            if send_notification_email(user_email, user_name, title, message, notification_type):
-                emails_sent += 1
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Get users with email subscription
+            if user_ids:
+                # Get specific users with email subscription
+                placeholders = ','.join('?' * len(user_ids))
+                query = f"""
+                    SELECT DISTINCT u.id, u.email, u.name
+                    FROM users u
+                    INNER JOIN user_subscriptions s ON u.id = s.user_id
+                    WHERE u.id IN ({placeholders})
+                        AND s.is_active = 1 
+                        AND s.notification_methods LIKE '%email%'
+                        AND u.email IS NOT NULL
+                        AND u.email != ''
+                """
+                cursor.execute(query, user_ids)
             else:
-                emails_failed += 1
-        
-        return {
-            "emails_sent": emails_sent,
-            "emails_failed": emails_failed,
-            "total_users": len(users)
-        }
+                # Get all users with email subscription
+                cursor.execute("""
+                    SELECT DISTINCT u.id, u.email, u.name
+                    FROM users u
+                    INNER JOIN user_subscriptions s ON u.id = s.user_id
+                    WHERE s.is_active = 1 
+                        AND s.notification_methods LIKE '%email%'
+                        AND u.email IS NOT NULL
+                        AND u.email != ''
+                """)
+            
+            users = cursor.fetchall()
+            cursor.close()
+            
+            emails_sent = 0
+            emails_failed = 0
+            
+            for row in users:
+                user_id, user_email, user_name = row
+                if send_notification_email(user_email, user_name, title, message, notification_type):
+                    emails_sent += 1
+                else:
+                    emails_failed += 1
+            
+            return {
+                "emails_sent": emails_sent,
+                "emails_failed": emails_failed,
+                "total_users": len(users)
+            }
         
     except Exception as e:
         print(f"Error sending system notification emails: {e}")
@@ -211,11 +205,6 @@ def send_system_notification_emails(title: str, message: str, notification_type:
             "total_users": 0,
             "error": str(e)
         }
-    finally:
-        try:
-            conn.close()
-        except:
-            pass
 
 
 def send_targeted_notification_emails(disaster_type: str, location: str, title: str, 

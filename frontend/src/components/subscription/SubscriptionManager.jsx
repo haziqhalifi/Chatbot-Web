@@ -332,10 +332,12 @@ const SubscriptionManager = () => {
             Choose how you want to receive notifications.
           </p>
 
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="space-y-4">
+            {/* In-App Notification Toggle */}
+            <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
               <input
                 type="checkbox"
+                id="web-notifications"
                 checked={formData.notification_methods.includes('web')}
                 onChange={(e) => {
                   if (e.target.checked) {
@@ -351,15 +353,75 @@ const SubscriptionManager = () => {
                   }
                 }}
                 disabled={!isEditing}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
-              <span className={`${!isEditing ? 'text-gray-500' : 'text-gray-700'}`}>
-                Web Notifications (In-app)
-              </span>
-            </label>
+              <label htmlFor="web-notifications" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <span className={`font-medium ${!isEditing ? 'text-gray-500' : 'text-gray-800'}`}>
+                    In-App Notifications
+                  </span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
+                    Active
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Receive real-time notifications while using the application. You'll see alerts in
+                  the notification bell.
+                </p>
+              </label>
+            </div>
 
-            <div className="text-sm text-gray-500 pl-6">
-              <p>Email and SMS notifications coming soon!</p>
+            {/* Email Notification Toggle */}
+            <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
+              <input
+                type="checkbox"
+                id="email-notifications"
+                checked={formData.notification_methods.includes('email')}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      notification_methods: [...prev.notification_methods, 'email'],
+                    }));
+                  } else {
+                    setFormData((prev) => ({
+                      ...prev,
+                      notification_methods: prev.notification_methods.filter((m) => m !== 'email'),
+                    }));
+                  }
+                }}
+                disabled={!isEditing}
+                className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              />
+              <label htmlFor="email-notifications" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <span className={`font-medium ${!isEditing ? 'text-gray-500' : 'text-gray-800'}`}>
+                    Email Notifications
+                  </span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    New
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  Get disaster alerts sent to your registered email address. Notifications are sent
+                  when new alerts match your preferences.
+                </p>
+              </label>
+            </div>
+
+            {/* Info Message */}
+            {formData.notification_methods.length === 0 && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-yellow-800 text-sm">
+                  <strong>No notification method selected:</strong> Please select at least one
+                  notification method to receive alerts.
+                </p>
+              </div>
+            )}
+
+            {/* Coming Soon */}
+            <div className="text-sm text-gray-500 pl-2">
+              <p>📱 SMS notifications coming soon!</p>
             </div>
           </div>
         </div>
