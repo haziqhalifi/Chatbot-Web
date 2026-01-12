@@ -33,7 +33,8 @@ const ProfileTab = ({
         <label className="block text-gray-700 font-medium mb-1">Language Preference</label>
         <div className="w-full px-4 py-3 border border-blue-200 bg-blue-50 rounded-lg">
           <p className="text-sm text-gray-700 mb-2">
-            For more reliable and full language coverage, we recommend using <strong>Google Translate</strong> to translate the entire page.
+            For more reliable and full language coverage, we recommend using{' '}
+            <strong>Google Translate</strong> to translate the entire page.
           </p>
           <a
             href="https://youtu.be/ZoUrkKe58Jk"
