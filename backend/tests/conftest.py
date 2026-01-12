@@ -38,7 +38,8 @@ def add_repo_to_path():
 def test_client():
     """Create a test client for the FastAPI app"""
     from main import app
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 @pytest.fixture
 def mock_db_connection():

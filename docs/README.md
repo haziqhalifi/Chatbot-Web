@@ -21,18 +21,31 @@ Welcome to the Chatbot Web documentation! Use this index to find what you need.
 
 Complete step-by-step guides for various tasks.
 
-| Guide                                                        | Purpose                        |
-| ------------------------------------------------------------ | ------------------------------ |
-| [Admin Sign-In](guides/ADMIN_SIGNIN_GUIDE.md)                | Admin authentication setup     |
-| [API Key Configuration](guides/API_KEY_GUIDE.md)             | Configure API keys and tokens  |
-| [OpenAI Assistant](guides/OPENAI_ASSISTANT_GUIDE.md)         | OpenAI assistant configuration |
-| [OpenAI Setup](guides/OPENAI_ASSISTANT_SETUP.md)             | Complete OpenAI integration    |
-| [OpenAI Quick Start](guides/OPENAI_QUICKSTART.md)            | Quick OpenAI setup             |
-| [Voice Chat](guides/VOICE_CHAT_GUIDE.md)                     | Voice chat feature guide       |
-| [Voice Chat Testing](guides/VOICE_CHAT_TEST.md)              | Test voice chat functionality  |
-| [Chat History](guides/CHAT_HISTORY_FEATURE.md)               | Chat history feature           |
-| [Chat History User Guide](guides/CHAT_HISTORY_USER_GUIDE.md) | Using chat history             |
-| [Testing Guide](guides/TESTING_GUIDE.md)                     | How to test the application    |
+| Guide                                                          | Purpose                        |
+| -------------------------------------------------------------- | ------------------------------ |
+| [Admin Sign-In](guides/ADMIN_SIGNIN_GUIDE.md)                  | Admin authentication setup     |
+| [API Key Configuration](guides/API_KEY_GUIDE.md)               | Configure API keys and tokens  |
+| [OpenAI Assistant](guides/OPENAI_ASSISTANT_GUIDE.md)           | OpenAI assistant configuration |
+| [OpenAI Setup](guides/OPENAI_ASSISTANT_SETUP.md)               | Complete OpenAI integration    |
+| [OpenAI Quick Start](guides/OPENAI_QUICKSTART.md)              | Quick OpenAI setup             |
+| [Voice Chat](guides/VOICE_CHAT_GUIDE.md)                       | Voice chat feature guide       |
+| [Voice Chat Testing](guides/VOICE_CHAT_TEST.md)                | Test voice chat functionality  |
+| [Chat History](guides/CHAT_HISTORY_FEATURE.md)                 | Chat history feature           |
+| [Chat History User Guide](guides/CHAT_HISTORY_USER_GUIDE.md)   | Using chat history             |
+| [Testing Guide](guides/TESTING_GUIDE.md)                       | How to test the application    |
+| [Admin Email Verification](guides/admin-email-verification.md) | Admin email verification setup |
+| [Maintenance Guide](guides/maintenance.md)                     | System maintenance procedures  |
+
+---
+
+## 🔧 Bug Fixes & Troubleshooting
+
+Documentation of resolved issues and their solutions.
+
+| Document                                                    | Purpose                           |
+| ----------------------------------------------------------- | --------------------------------- |
+| [Email Verification Bugs](fixes/email-verification-bugs.md) | Email verification bug fixes      |
+| [Google OAuth 403 Fix](fixes/google-oauth-403.md)           | Resolving Google OAuth 403 errors |
 
 ---
 
@@ -43,6 +56,9 @@ Understand how the system is built and how components interact.
 | Document                                                                 | Purpose                      |
 | ------------------------------------------------------------------------ | ---------------------------- |
 | [Client-Server Architecture](architecture/CLIENT_SERVER_ARCHITECTURE.md) | System architecture overview |
+| [Folder Structure](architecture/folder-structure.md)                     | Detailed folder organization |
+| [Project Structure](architecture/project-structure.md)                   | Project structure overview   |
+| [Restructuring Summary](architecture/restructuring-summary.md)           | Recent restructuring changes |
 
 ### System Diagrams
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../components/common/Header';
+import Header from '../../components/common/Header';
 import { AlertTriangle } from 'lucide-react';
 import {
   AnalyticsGrid,
@@ -11,7 +11,7 @@ import {
   DisasterDetailModal,
   TabNavigation,
   EmptyState,
-} from '../components/dashboard';
+} from '../../components/dashboard';
 
 const DisasterDashboard = () => {
   const navigate = useNavigate();

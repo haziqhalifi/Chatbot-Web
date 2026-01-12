@@ -21,7 +21,8 @@ os.environ.setdefault("OPENAI_ASSISTANT_ID", "test-assistant-id")
 def test_client():
     """Create TestClient for the FastAPI app"""
     from main import app
-    return TestClient(app)
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture

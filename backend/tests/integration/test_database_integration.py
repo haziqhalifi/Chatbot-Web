@@ -65,7 +65,7 @@ class TestDatabaseIntegrity:
 
     def test_unique_constraints(self):
         """Test that unique constraints are enforced"""
-        with patch('database.users.create_user') as mock_create:
+        with patch('database.users.create_user', create=True) as mock_create:
             # Creating duplicate email should fail
             mock_create.side_effect = Exception('Unique constraint violation')
             
@@ -136,7 +136,7 @@ class TestDatabaseCRUDOperations:
 
     def test_create_user_record(self):
         """Test creating a new user record"""
-        with patch('database.users.create_user') as mock_create:
+        with patch('database.users.create_user', create=True) as mock_create:
             mock_create.return_value = {
                 'id': 1,
                 'email': 'test@example.com',
@@ -149,7 +149,7 @@ class TestDatabaseCRUDOperations:
 
     def test_read_user_record(self):
         """Test reading a user record"""
-        with patch('database.users.get_user_by_email') as mock_get:
+        with patch('database.users.get_user_by_email', create=True) as mock_get:
             mock_get.return_value = {
                 'id': 1,
                 'email': 'test@example.com',
@@ -160,7 +160,7 @@ class TestDatabaseCRUDOperations:
 
     def test_update_user_record(self):
         """Test updating a user record"""
-        with patch('database.users.update_user') as mock_update:
+        with patch('database.users.update_user', create=True) as mock_update:
             mock_update.return_value = True
             
             result = mock_update(user_id=1, email='newemail@example.com')
@@ -168,7 +168,7 @@ class TestDatabaseCRUDOperations:
 
     def test_delete_user_record(self):
         """Test deleting a user record"""
-        with patch('database.users.delete_user') as mock_delete:
+        with patch('database.users.delete_user', create=True) as mock_delete:
             mock_delete.return_value = True
             
             result = mock_delete(user_id=1)
@@ -233,8 +233,8 @@ class TestDatabaseDataConsistency:
 
     def test_user_session_consistency(self):
         """Test that user data is consistent across chat sessions"""
-        with patch('database.users.get_user_by_email') as mock_get_user:
-            with patch('database.chat.get_user_chat_sessions') as mock_get_sessions:
+        with patch('database.users.get_user_by_email', create=True) as mock_get_user:
+            with patch('database.chat.get_user_chat_sessions', create=True) as mock_get_sessions:
                 mock_get_user.return_value = {'id': 1, 'email': 'test@example.com'}
                 mock_get_sessions.return_value = [
                     {'id': 1, 'user_id': 1},
@@ -264,7 +264,8 @@ class TestDatabaseDataConsistency:
 
     def test_notification_user_consistency(self):
         """Test that notifications belong to correct user"""
-        with patch('database.notifications.get_notifications') as mock_get:
+        # Mock at the routes level where the function is actually used
+        with patch('routes.notifications.get_user_notifications', create=True) as mock_get:
             mock_get.return_value = [
                 {'id': 1, 'user_id': 1, 'title': 'Notif 1'},
                 {'id': 2, 'user_id': 1, 'title': 'Notif 2'},

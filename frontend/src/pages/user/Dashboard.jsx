@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Header from '../components/common/Header';
-import MapView from '../components/dashboard/MapView';
-import ChatInterface from '../components/dashboard/ChatInterface';
+import Header from '../../components/common/Header';
+import MapView from '../../components/dashboard/MapView';
+import ChatInterface from '../../components/dashboard/ChatInterface';
 
 const Dashboard = () => {
   const [mapView, setMapView] = useState(null);
