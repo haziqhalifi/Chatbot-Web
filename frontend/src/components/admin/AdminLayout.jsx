@@ -1,12 +1,27 @@
 import React from 'react';
 import AdminHeader from './AdminHeader';
+import AdminSidebar from './AdminSidebar';
+import { AdminSidebarProvider, useAdminSidebar } from '../../contexts/AdminSidebarContext';
+
+const AdminLayoutContent = ({ children }) => {
+  const { isCollapsed } = useAdminSidebar();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AdminHeader />
+      <AdminSidebar />
+      <main className={`${isCollapsed ? 'ml-16' : 'ml-64'} mt-16 p-6 transition-all duration-300`}>
+        {children}
+      </main>
+    </div>
+  );
+};
 
 const AdminLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
-      <AdminHeader />
-      <main className="w-full">{children}</main>
-    </div>
+    <AdminSidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminSidebarProvider>
   );
 };
 
