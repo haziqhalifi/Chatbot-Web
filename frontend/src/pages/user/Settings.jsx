@@ -317,151 +317,180 @@ const SettingsPage = ({ onClose }) => {
   const createdAt = profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : '';
 
   const content = (
-    <div className={`w-full bg-white rounded-lg shadow-lg ${isModal ? 'max-w-4xl' : 'max-w-4xl'}`}>
-      <SettingsHeader
-        isModal={isModal}
-        onClose={handleClose}
-        saveStatus={saveStatus}
-        saveMessage={saveMessage}
-        profileError={profileError}
-      />
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl h-[90vh] max-h-[800px] flex flex-col overflow-hidden">
+        <SettingsHeader
+          isModal={isModal}
+          onClose={handleClose}
+          saveStatus={saveStatus}
+          saveMessage={saveMessage}
+          profileError={profileError}
+        />
 
-      {/* Tabs */}
-      <div className="px-6 pb-4">
-        <div className="flex flex-wrap gap-2">
-          <TabButton
-            id="profile"
-            icon={User}
-            label="Profile"
-            isActive={activeTab === 'profile'}
-            onClick={setActiveTab}
-          />
-          <TabButton
-            id="interaction"
-            icon={MessageSquare}
-            label="Interaction"
-            isActive={activeTab === 'interaction'}
-            onClick={setActiveTab}
-          />
-          <TabButton
-            id="notifications"
-            icon={Bell}
-            label="Notifications"
-            isActive={activeTab === 'notifications'}
-            onClick={setActiveTab}
-          />
-          <TabButton
-            id="security"
-            icon={Shield}
-            label="Security"
-            isActive={activeTab === 'security'}
-            onClick={setActiveTab}
-          />
-          <TabButton
-            id="data"
-            icon={Database}
-            label="Data"
-            isActive={activeTab === 'data'}
-            onClick={setActiveTab}
-          />
-          <TabButton
-            id="help"
-            icon={HelpCircle}
-            label="Help"
-            isActive={activeTab === 'help'}
-            onClick={setActiveTab}
-          />
+        {/* Main Content - Sidebar + Content */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar Menu */}
+          <div className="w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto">
+            <nav className="p-4 space-y-1">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'profile'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">Profile</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('interaction')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'interaction'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span className="font-medium">Interaction</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'notifications'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Bell className="w-5 h-5" />
+                <span className="font-medium">Notifications</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('security')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'security'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                <span className="font-medium">Security</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('data')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'data'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Database className="w-5 h-5" />
+                <span className="font-medium">Data</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('help')}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                  activeTab === 'help'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span className="font-medium">Help</span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto p-6 bg-white">
+            {activeTab === 'profile' && (
+              <ProfileTab
+                profileLoading={profileLoading}
+                fullName={fullName}
+                setFullName={setFullName}
+                email={email}
+                setEmail={setEmail}
+                roleLabel={roleLabel}
+                createdAt={createdAt}
+                language={language}
+                setLanguage={setLanguage}
+                profile={profile}
+                navigate={navigate}
+                onSaveProfile={handleSaveProfile}
+              />
+            )}
+
+            {activeTab === 'interaction' && (
+              <InteractionTab
+                voiceInput={voiceInput}
+                setVoiceInput={setVoiceInput}
+                voiceLanguage={voiceLanguage}
+                setVoiceLanguage={setVoiceLanguage}
+                textSize={textSize}
+                setTextSize={setTextSize}
+                defaultChatLang={defaultChatLang}
+                setDefaultChatLang={setDefaultChatLang}
+                chatHistoryLogging={chatHistoryLogging}
+                setChatHistoryLogging={setChatHistoryLogging}
+              />
+            )}
+
+            {activeTab === 'notifications' && (
+              <NotificationsTab
+                disasterAlerts={disasterAlerts}
+                setDisasterAlerts={setDisasterAlerts}
+                notifySOP={notifySOP}
+                setNotifySOP={setNotifySOP}
+                notifyNearby={notifyNearby}
+                setNotifyNearby={setNotifyNearby}
+                navigate={navigate}
+              />
+            )}
+
+            {activeTab === 'security' && (
+              <SecurityTab
+                passwordForm={passwordForm}
+                setPasswordForm={setPasswordForm}
+                onChangePassword={handleChangePassword}
+                passwordStatus={passwordStatus}
+                passwordMessage={passwordMessage}
+                privacy={privacy}
+                setPrivacy={setPrivacy}
+                showDeleteConfirm={showDeleteConfirm}
+                setShowDeleteConfirm={setShowDeleteConfirm}
+                onDeleteAccount={handleDeleteAccount}
+              />
+            )}
+
+            {activeTab === 'data' && (
+              <DataTab
+                showChatHistory={showChatHistory}
+                setShowChatHistory={setShowChatHistory}
+                chatSessions={chatSessions}
+                chatSessionsLoading={chatSessionsLoading}
+                chatSessionsError={chatSessionsError}
+                onFetchChatHistory={fetchChatHistory}
+                onDownloadActivityPdf={handleDownloadActivityPdf}
+                onClearChatHistory={handleClearChatHistory}
+                navigate={navigate}
+                setActiveTab={setActiveTab}
+              />
+            )}
+
+            {activeTab === 'help' && <HelpTab navigate={navigate} />}
+          </div>
         </div>
       </div>
-
-      <div className={`px-6 pb-6 ${isModal ? 'max-h-[70vh] overflow-y-auto' : ''}`}>
-        {activeTab === 'profile' && (
-          <ProfileTab
-            profileLoading={profileLoading}
-            fullName={fullName}
-            setFullName={setFullName}
-            email={email}
-            setEmail={setEmail}
-            roleLabel={roleLabel}
-            createdAt={createdAt}
-            language={language}
-            setLanguage={setLanguage}
-            profile={profile}
-            navigate={navigate}
-            onSaveProfile={handleSaveProfile}
-          />
-        )}
-
-        {activeTab === 'interaction' && (
-          <InteractionTab
-            voiceInput={voiceInput}
-            setVoiceInput={setVoiceInput}
-            voiceLanguage={voiceLanguage}
-            setVoiceLanguage={setVoiceLanguage}
-            textSize={textSize}
-            setTextSize={setTextSize}
-            defaultChatLang={defaultChatLang}
-            setDefaultChatLang={setDefaultChatLang}
-            chatHistoryLogging={chatHistoryLogging}
-            setChatHistoryLogging={setChatHistoryLogging}
-          />
-        )}
-
-        {activeTab === 'notifications' && (
-          <NotificationsTab
-            disasterAlerts={disasterAlerts}
-            setDisasterAlerts={setDisasterAlerts}
-            notifySOP={notifySOP}
-            setNotifySOP={setNotifySOP}
-            notifyNearby={notifyNearby}
-            setNotifyNearby={setNotifyNearby}
-            navigate={navigate}
-          />
-        )}
-
-        {activeTab === 'security' && (
-          <SecurityTab
-            passwordForm={passwordForm}
-            setPasswordForm={setPasswordForm}
-            onChangePassword={handleChangePassword}
-            passwordStatus={passwordStatus}
-            passwordMessage={passwordMessage}
-            privacy={privacy}
-            setPrivacy={setPrivacy}
-            showDeleteConfirm={showDeleteConfirm}
-            setShowDeleteConfirm={setShowDeleteConfirm}
-            onDeleteAccount={handleDeleteAccount}
-          />
-        )}
-
-        {activeTab === 'data' && (
-          <DataTab
-            showChatHistory={showChatHistory}
-            setShowChatHistory={setShowChatHistory}
-            chatSessions={chatSessions}
-            chatSessionsLoading={chatSessionsLoading}
-            chatSessionsError={chatSessionsError}
-            onFetchChatHistory={fetchChatHistory}
-            onDownloadActivityPdf={handleDownloadActivityPdf}
-            onClearChatHistory={handleClearChatHistory}
-            navigate={navigate}
-            setActiveTab={setActiveTab}
-          />
-        )}
-
-        {activeTab === 'help' && <HelpTab navigate={navigate} />}
-      </div>
     </div>
   );
 
-  if (isModal) return content;
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="container mx-auto px-4 py-8">{content}</div>
-    </div>
-  );
+  // Always return the popup (no full-page mode)
+  return content;
 };
 
 export default SettingsPage;
