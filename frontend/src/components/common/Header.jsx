@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Navigation from './Navigation';
 import NotificationCenter from './NotificationCenter';
 import ProfileDropdown from './ProfileDropdown';
 import ModalsContainer from './ModalsContainer';
+import NotificationSettings from '../../pages/user/NotificationSettings';
 import useUserProfile from '../../hooks/useUserProfile';
 import { useNotifications } from '../../hooks/useNotifications';
 import { useNotificationService } from '../../services/notificationService';
@@ -14,6 +15,7 @@ import { Shield } from 'lucide-react';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
 
   // Custom hooks
   const { userProfile, logout } = useUserProfile();
@@ -47,7 +49,7 @@ const Header = () => {
 
   const handleNotificationSettings = () => {
     closeLayer(); // Close dropdown
-    window.location.href = '/notification-settings';
+    setIsNotificationSettingsOpen(true);
   };
 
   // Demo function to test notifications
@@ -126,6 +128,12 @@ const Header = () => {
         isSettingsOpen={isLayerActive('SETTINGS_MODAL')}
         isEmergencyOpen={isLayerActive('EMERGENCY_MODAL')}
         onClose={closeLayer}
+      />
+
+      {/* Notification Settings Sidebar */}
+      <NotificationSettings
+        isOpen={isNotificationSettingsOpen}
+        onClose={() => setIsNotificationSettingsOpen(false)}
       />
     </>
   );

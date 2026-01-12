@@ -40,13 +40,7 @@ const ModalsContainer = ({
         </div>
       )}
       {/* Settings Modal */}
-      {isSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm modal-backdrop">
-          <div className="animate-in fade-in duration-200 scale-95 animate-in">
-            <SettingsPage onClose={onClose} />
-          </div>
-        </div>
-      )}
+      {isSettingsOpen && <SettingsPage onClose={onClose} />}
       {/* Emergency Support Modal */}
       {isEmergencyOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm modal-backdrop">

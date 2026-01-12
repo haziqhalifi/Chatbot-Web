@@ -71,7 +71,7 @@ def get_user_subscription(user_id: int):
                 SELECT id, disaster_types, locations, notification_methods, 
                        radius_km, is_active, created_at, updated_at
                 FROM user_subscriptions 
-                WHERE user_id = ? AND is_active = 1
+                WHERE user_id = ?
             """, (user_id,))
             
             row = cursor.fetchone()
@@ -107,7 +107,7 @@ def get_user_subscription(user_id: int):
 @with_database_connection(max_retries=3, retry_delay=0.5)
 def create_or_update_subscription(user_id: int, disaster_types: List[str], 
                                 locations: List[str], notification_methods: List[str], 
-                                radius_km: int = 10):
+                                radius_km: int = 10, is_active: bool = True):
     """Create or update user's notification subscription"""
     try:
         with DatabaseConnection() as conn:
@@ -115,7 +115,7 @@ def create_or_update_subscription(user_id: int, disaster_types: List[str],
             
             # Check if subscription exists
             cursor.execute("""
-                SELECT id FROM user_subscriptions WHERE user_id = ? AND is_active = 1
+                SELECT id FROM user_subscriptions WHERE user_id = ?
             """, (user_id,))
             
             existing = cursor.fetchone()
@@ -129,17 +129,17 @@ def create_or_update_subscription(user_id: int, disaster_types: List[str],
                 cursor.execute("""
                     UPDATE user_subscriptions 
                     SET disaster_types = ?, locations = ?, notification_methods = ?, 
-                        radius_km = ?, updated_at = GETDATE()
-                    WHERE user_id = ? AND is_active = 1
-                """, (disaster_types_json, locations_json, methods_str, radius_km, user_id))
+                        radius_km = ?, is_active = ?, updated_at = GETDATE()
+                    WHERE user_id = ?
+                """, (disaster_types_json, locations_json, methods_str, radius_km, is_active, user_id))
                 subscription_id = existing[0]
             else:
                 # Create new subscription
                 cursor.execute("""
                     INSERT INTO user_subscriptions 
-                    (user_id, disaster_types, locations, notification_methods, radius_km, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, GETDATE(), GETDATE())
-                """, (user_id, disaster_types_json, locations_json, methods_str, radius_km))
+                    (user_id, disaster_types, locations, notification_methods, radius_km, is_active, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, GETDATE(), GETDATE())
+                """, (user_id, disaster_types_json, locations_json, methods_str, radius_km, is_active))
                 
                 cursor.execute("SELECT @@IDENTITY")
                 subscription_id = cursor.fetchone()[0]
