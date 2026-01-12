@@ -5,6 +5,7 @@ from middleware.database_middleware import with_database_connection
 from datetime import datetime
 from typing import List, Optional, Dict
 import json
+from services.email_notification_service import send_targeted_notification_emails
 
 # --- Subscription-related database logic ---
 
@@ -272,7 +273,7 @@ def get_popular_locations() -> List[str]:
 def create_targeted_disaster_notification(disaster_type: str, location: str, 
                                         title: str, message: str, 
                                         notification_type: str = "warning"):
-    """Create notifications for users subscribed to specific disaster type and location"""
+    """Create notifications for users subscribed to specific disaster type and location, and send emails"""
     from services.notification_service import create_notification
     
     # Get users who should receive this notification
@@ -292,9 +293,14 @@ def create_targeted_disaster_notification(disaster_type: str, location: str,
         except Exception as e:
             errors.append(f"User {user_id}: {str(e)}")
     
+    # Send emails to users who have email notifications enabled
+    email_result = send_targeted_notification_emails(disaster_type, location, title, message, notification_type)
+    
     return {
         "message": f"Notifications sent to {notifications_created} users",
         "users_notified": notifications_created,
+        "emails_sent": email_result.get("emails_sent", 0),
+        "emails_failed": email_result.get("emails_failed", 0),
         "errors": errors if errors else None
     }
 
