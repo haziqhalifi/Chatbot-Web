@@ -20,6 +20,7 @@ class SubscriptionRequest(BaseModel):
     locations: List[str] = []  # List of locations to subscribe to
     notification_methods: List[str] = ["web"]  # web, email, sms (future)
     radius_km: int = 10  # Alert radius in kilometers
+    is_active: bool = True  # Enable or disable notifications
 
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""
@@ -56,7 +57,8 @@ def create_or_update_user_subscription(
         request.disaster_types, 
         request.locations, 
         request.notification_methods, 
-        request.radius_km
+        request.radius_km,
+        request.is_active
     )
     
     # Create confirmation notification
