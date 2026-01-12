@@ -31,12 +31,12 @@ import AccessDenied from './pages/error/AccessDenied';
 import NotFound from './pages/error/NotFound';
 
 // Admin pages
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminReports from './pages/admin/Reports';
-import NadmaHistory from './pages/admin/NadmaHistory';
-import ManageUsers from './pages/admin/ManageUsers';
-import ManageFAQ from './pages/admin/ManageFAQ';
-import NotificationManagement from './pages/admin/NotificationManagement';
+import AdminDashboard from './pages/admin/Dashboard/SimplifiedDashboard';
+import AdminReports from './pages/admin/SimplifiedReports';
+import NadmaHistory from './pages/admin/SimplifiedNadmaHistory';
+import ManageUsers from './pages/admin/SimplifiedManageUsers';
+import ManageFAQ from './pages/admin/SimplifiedManageFAQ';
+import NotificationManagement from './pages/admin/SimplifiedNotificationManagement';
 
 const AppRoutes = () => {
   return (
