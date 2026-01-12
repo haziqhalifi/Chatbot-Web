@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Navigation from './Navigation';
 import NotificationCenter from './NotificationCenter';
-import LanguageDropdown from './LanguageDropdown';
 import ProfileDropdown from './ProfileDropdown';
 import ModalsContainer from './ModalsContainer';
 import useUserProfile from '../../hooks/useUserProfile';
@@ -15,11 +14,6 @@ import { Shield } from 'lucide-react';
 
 const Header = () => {
   const { t, i18n } = useTranslation();
-
-  // Get current language display name based on i18n language
-  const getCurrentLanguageDisplay = () => {
-    return i18n.language === 'ms' ? 'Malay' : 'English';
-  };
 
   // Custom hooks
   const { userProfile, logout } = useUserProfile();
@@ -49,12 +43,6 @@ const Header = () => {
       fetchNotifications();
     }
     toggleLayer('NOTIFICATION_DROPDOWN');
-  };
-  // Event handlers
-  const handleLanguageChange = (lang) => {
-    // The LanguageDropdown component will handle i18n.changeLanguage
-    // We just need to close the layer
-    closeLayer(); // Close language dropdown after selection
   };
 
   const handleNotificationSettings = () => {
@@ -117,12 +105,6 @@ const Header = () => {
             onDelete={deleteNotification}
             onClearAll={clearAllNotifications}
           />
-          <LanguageDropdown
-            isOpen={isLayerActive('LANGUAGE_DROPDOWN')}
-            language={getCurrentLanguageDisplay()}
-            onLanguageChange={handleLanguageChange}
-            onToggle={() => toggleLayer('LANGUAGE_DROPDOWN')}
-          />{' '}
           <ProfileDropdown
             isOpen={isLayerActive('PROFILE_DROPDOWN')}
             userProfile={userProfile}
