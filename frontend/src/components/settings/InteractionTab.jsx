@@ -32,12 +32,12 @@ const InteractionTab = ({
             localStorage.setItem('voiceLanguage', e.target.value);
           }}
         >
-          <option value="auto">Auto-detect</option>
-          <option value="ms">Bahasa Melayu (Malay)</option>
-          <option value="en">English</option>
+          <option value="en-US">English (United States)</option>
+          <option value="en-GB">English (United Kingdom)</option>
+          <option value="ms-MY">Bahasa Melayu (Malay)</option>
         </select>
         <p className="text-xs text-gray-500 mt-1">
-          Select the language for voice recognition. Auto-detect works for both languages.
+          Select the language for voice recognition. Uses Web Speech API from Chrome/Edge browser.
         </p>
       </div>
 
