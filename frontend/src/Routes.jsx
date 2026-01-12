@@ -19,6 +19,10 @@ import SignIn from './pages/auth/SignIn';
 import SignUp from './pages/auth/SignUp';
 import AdminSignIn from './pages/auth/AdminSignIn';
 
+// Legal pages
+import TermsOfUse from './pages/legal/TermsOfUse';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminReports from './pages/admin/Reports';
@@ -53,6 +57,8 @@ const AppRoutes = () => {
         <Route path="/notification-settings" element={<NotificationSettings />} />
         <Route path="/admin/notifications" element={<AdminNotifications />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/terms-of-use" element={<TermsOfUse />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       </Routes>
     </Router>
   );
