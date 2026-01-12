@@ -45,7 +45,6 @@ const AccountPage = ({ onClose }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('Public');
-  const [language, setLanguage] = useState('English');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -87,7 +86,6 @@ const AccountPage = ({ onClose }) => {
         setFullName(userData.name || '');
         setEmail(userData.email || '');
         setRole(userData.role || 'Public');
-        setLanguage(userData.language || 'English');
         setPhone(userData.phone || '');
         setAddress(userData.address || '');
         setCity(userData.city || '');
@@ -108,7 +106,6 @@ const AccountPage = ({ onClose }) => {
           setFullName(user.name || '');
           setEmail(user.email || '');
           setRole(user.role || 'Public');
-          setLanguage(user.language || 'English');
         }
 
         if (error.response?.status === 401) {
@@ -163,7 +160,6 @@ const AccountPage = ({ onClose }) => {
         '/profile',
         {
           name: fullName,
-          language: language,
           phone: phone,
           address: address,
           city: city,
@@ -430,20 +426,6 @@ const AccountPage = ({ onClose }) => {
                     readOnly
                   />
                 </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-gray-700 font-medium mb-1">Language Preference</label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="English">English</option>
-                  <option value="Bahasa Melayu">Bahasa Melayu</option>
-                  <option value="Mandarin">中文 (Mandarin)</option>
-                  <option value="Tamil">தமிழ் (Tamil)</option>
-                </select>
               </div>
             </div>
           )}
