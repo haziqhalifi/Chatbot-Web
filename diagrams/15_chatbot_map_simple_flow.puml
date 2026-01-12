@@ -1,0 +1,126 @@
+@startuml Simple Chatbot to Map Trigger Flow
+!theme plain
+skinparam defaultTextAlignment center
+skinparam backgroundColor #FEFEFE
+
+title Chatbot to ArcGIS Map Integration - Simple Flow
+
+start
+
+:User types message in chatbot;
+note right
+  Example:
+  "Show me flood areas 
+  in Kuala Lumpur"
+end note
+
+:Frontend sends message to Backend
+POST /chat/generate;
+
+:Backend forwards to 
+OpenAI Assistant API;
+
+:AI analyzes message with
+**15 Map Tools** available;
+note left
+  Available Tools:
+  • Search location
+  • Zoom in/out
+  • Toggle layers
+  • Find nearest features
+  • Draw buffer
+  • Pan map
+  • Query data
+end note
+
+if (Does query need map?) then (yes)
+  :AI generates text response
+  **+** Map Commands;
+  
+  note right
+    Example Response:
+    {
+      "response": "I'll show you 
+                   flood areas in KL",
+      "map_commands": [
+        {function: "Search",
+         args: {place: "KL"}},
+        {function: "ToggleLayer",
+         args: {layer: "flood"}}
+      ]
+    }
+  end note
+  
+else (no)
+  :AI generates text response only;
+  
+  :Display chat message;
+  
+  stop
+endif
+
+:Backend returns response
++ map commands to Frontend;
+
+:Display AI text response
+in chat interface;
+
+:Frontend dispatches
+map command event;
+
+partition "Map Execution" {
+  
+  :Map Controller receives commands;
+  
+  repeat
+    :Execute next command;
+    
+    if (Command type?) then (Search)
+      :Call ArcGIS Geocoding API;
+      :Get coordinates;
+      :Zoom map to location;
+      :Add marker;
+      
+    elseif (ToggleLayer) then
+      :Fetch layer URL from backend;
+      :Create ArcGIS FeatureLayer;
+      :Load data from ArcGIS Server;
+      :Display layer on map;
+      
+    elseif (Zoom) then
+      :Zoom map in/out;
+      
+    elseif (Pan) then
+      :Pan map direction;
+      
+    else (Other)
+      :Execute command;
+    endif
+    
+  repeat while (more commands?) is (yes)
+  ->no;
+  
+}
+
+:Map updates complete;
+
+:User sees:
+**Chat Response + Updated Map**;
+
+note right
+  User Experience:
+  ✓ Chat shows text answer
+  ✓ Map automatically zooms
+  ✓ Relevant layers appear
+  ✓ Visual + conversational response
+end note
+
+if (User satisfied?) then (yes)
+  stop
+else (no)
+  :User asks follow-up question;
+  
+  -[#blue]-> User types message in chatbot;
+endif
+
+@enduml
