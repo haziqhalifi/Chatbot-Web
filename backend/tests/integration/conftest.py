@@ -7,7 +7,7 @@ import sys
 import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 import json
 
@@ -113,8 +113,8 @@ def valid_jwt_token():
     payload = {
         'user_id': 1,
         'email': 'test@example.com',
-        'exp': datetime.utcnow() + timedelta(hours=1),
-        'iat': datetime.utcnow(),
+        'exp': datetime.now(timezone.utc) + timedelta(hours=1),
+        'iat': datetime.now(timezone.utc),
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
@@ -126,8 +126,8 @@ def expired_jwt_token():
     payload = {
         'user_id': 1,
         'email': 'test@example.com',
-        'exp': datetime.utcnow() - timedelta(hours=1),
-        'iat': datetime.utcnow() - timedelta(hours=2),
+        'exp': datetime.now(timezone.utc) - timedelta(hours=1),
+        'iat': datetime.now(timezone.utc) - timedelta(hours=2),
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token

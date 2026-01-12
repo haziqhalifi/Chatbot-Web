@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Depends, Query
 import jwt
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Import from new organized structure
 from services.user_service import create_user, verify_user, pwd_context
@@ -278,7 +278,7 @@ def forgot_password(request: ForgotPasswordRequest):
         user_id = user_row[0]
         # Generate token and expiry
         token = generate_secure_token(48)
-        expires_at = (datetime.utcnow() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+        expires_at = (datetime.now(timezone.utc) + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
         # Store token
         cursor.execute("""
             INSERT INTO password_reset_tokens (user_id, token, expires_at, used)
@@ -342,7 +342,7 @@ def reset_password(request: ResetPasswordRequest):
         if bool(used):
             raise HTTPException(status_code=400, detail="Token already used.")
         expires_at_dt = _coerce_datetime(expires_at)
-        if datetime.utcnow() > expires_at_dt:
+        if datetime.now(timezone.utc) > expires_at_dt:
             raise HTTPException(status_code=400, detail="Token expired.")
         # Update password
         hashed = pwd_context.hash(new_password)

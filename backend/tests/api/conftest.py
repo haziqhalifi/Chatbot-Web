@@ -2,7 +2,7 @@ import pytest
 import sys
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from pathlib import Path
 
@@ -21,8 +21,10 @@ os.environ.setdefault("OPENAI_ASSISTANT_ID", "test-assistant-id")
 def test_client():
     """Create TestClient for the FastAPI app"""
     from main import app
-    with TestClient(app) as client:
-        yield client
+    # TestClient uses ASGITransport internally, no need to pass explicitly
+    client = TestClient(app)
+    yield client
+    client.close()
 
 
 @pytest.fixture
@@ -32,7 +34,7 @@ def valid_jwt_token():
     payload = {
         "user_id": 1,
         "email": "testuser@example.com",
-        "exp": datetime.utcnow() + timedelta(hours=1)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
     }
     return jwt.encode(payload, secret, algorithm="HS256")
 
@@ -45,7 +47,7 @@ def admin_jwt_token():
         "user_id": 999,
         "email": "admin@example.com",
         "is_admin": True,
-        "exp": datetime.utcnow() + timedelta(hours=1)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1)
     }
     return jwt.encode(payload, secret, algorithm="HS256")
 
@@ -57,7 +59,7 @@ def expired_jwt_token():
     payload = {
         "user_id": 1,
         "email": "testuser@example.com",
-        "exp": datetime.utcnow() - timedelta(hours=1)
+        "exp": datetime.now(timezone.utc) - timedelta(hours=1)
     }
     return jwt.encode(payload, secret, algorithm="HS256")
 

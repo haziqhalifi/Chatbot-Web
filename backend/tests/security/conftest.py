@@ -10,7 +10,7 @@ if str(backend_path) not in sys.path:
     sys.path.insert(0, str(backend_path))
 
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 
@@ -32,7 +32,7 @@ def valid_jwt_token(jwt_secret, jwt_algorithm):
     payload = {
         "user_id": 1,
         "email": "test@example.com",
-        "exp": datetime.utcnow() + timedelta(hours=24)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
     }
     return jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
 
@@ -43,7 +43,7 @@ def expired_jwt_token(jwt_secret, jwt_algorithm):
     payload = {
         "user_id": 1,
         "email": "test@example.com",
-        "exp": datetime.utcnow() - timedelta(hours=1)
+        "exp": datetime.now(timezone.utc) - timedelta(hours=1)
     }
     return jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
 
@@ -60,7 +60,7 @@ def invalid_jwt_signature(jwt_secret, jwt_algorithm):
     payload = {
         "user_id": 1,
         "email": "test@example.com",
-        "exp": datetime.utcnow() + timedelta(hours=24)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
     }
     token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
     # Tamper with the signature
@@ -76,7 +76,7 @@ def admin_token(jwt_secret, jwt_algorithm):
         "user_id": 99,
         "email": "admin@example.com",
         "role": "admin",
-        "exp": datetime.utcnow() + timedelta(hours=24)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
     }
     return jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
 
@@ -88,7 +88,7 @@ def user_token(jwt_secret, jwt_algorithm):
         "user_id": 1,
         "email": "user@example.com",
         "role": "user",
-        "exp": datetime.utcnow() + timedelta(hours=24)
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
     }
     return jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
 
