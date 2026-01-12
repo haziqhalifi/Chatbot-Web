@@ -3,11 +3,15 @@ from .users import update_users_table
 from .chat import create_chat_tables
 from .faq import create_faq_table, insert_default_faqs
 from .nadma import create_nadma_tables
+from .reports import update_disaster_reports_table
 
 def update_database_schema():
     """Update database schema including all tables"""
     # Update users table with new columns
     update_users_table()
+    
+    # Update disaster_reports table with status columns
+    update_disaster_reports_table()
     
     # Create notifications table
     create_notifications_table()

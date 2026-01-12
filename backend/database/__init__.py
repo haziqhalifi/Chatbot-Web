@@ -24,6 +24,8 @@ __all__ = [
     'insert_report',
     'get_all_reports', 
     'get_report_by_id',
+    'update_report_status',
+    'update_disaster_reports_table',
     
     # Chat functions
     'create_chat_session',
