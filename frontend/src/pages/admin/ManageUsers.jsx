@@ -18,6 +18,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AdminLayout from '../../components/admin/AdminLayout';
 
 const ManageUsers = () => {
   const navigate = useNavigate();
@@ -177,18 +178,11 @@ const ManageUsers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <button
-                onClick={() => navigate('/admin/dashboard')}
-                className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="h-6 w-6 text-gray-600" />
-              </button>
+    <AdminLayout>
+      <div className="bg-gray-50">
+        <div className="bg-white shadow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                   <UserCog className="h-8 w-8 mr-3 text-blue-600" />
@@ -418,7 +412,7 @@ const ManageUsers = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

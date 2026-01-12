@@ -41,25 +41,25 @@ const AdminHeader = () => {
           <Shield className="h-8 w-8 text-red-500 mr-3" />
           <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch Admin</h1>
         </Link>
-        
+
         {/* Admin Navigation */}
         <nav className="flex items-center space-x-6">
-          <Link 
-            to="/admin" 
+          <Link
+            to="/admin"
             className="text-[#f0f0f0] hover:text-red-400 transition-colors duration-200 flex items-center"
           >
             <Home className="h-4 w-4 mr-2" />
             {t('admin.home', 'Admin Home')}
           </Link>
-          <Link 
-            to="/admin/dashboard" 
+          <Link
+            to="/admin/dashboard"
             className="text-[#f0f0f0] hover:text-red-400 transition-colors duration-200 flex items-center"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
             {t('admin.dashboard', 'Dashboard')}
           </Link>
-          <Link 
-            to="/admin/reports" 
+          <Link
+            to="/admin/reports"
             className="text-[#f0f0f0] hover:text-red-400 transition-colors duration-200 flex items-center"
           >
             <Users className="h-4 w-4 mr-2" />

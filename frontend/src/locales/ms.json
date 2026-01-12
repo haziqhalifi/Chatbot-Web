@@ -18,7 +18,8 @@
     "filter": "Tapis",
     "clear": "Kosongkan",
     "selectLanguage": "Pilih Bahasa"
-  },  "navigation": {
+  },
+  "navigation": {
     "home": "Laman Utama",
     "chat": "Sembang",
     "profile": "Akaun Saya",
@@ -59,6 +60,13 @@
     "severity": "Keterukan",
     "reportSuccess": "Laporan bencana berjaya dihantar",
     "reportError": "Gagal menghantar laporan bencana"
+  },
+  "admin": {
+    "home": "Halaman Utama Admin",
+    "dashboard": "Papan Pemuka",
+    "reports": "Laporan",
+    "welcome": "Selamat Datang",
+    "logout": "Log Keluar"
   },
   "errors": {
     "networkError": "Ralat rangkaian. Sila semak sambungan anda.",

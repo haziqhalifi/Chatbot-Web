@@ -13,7 +13,7 @@ import {
   X,
   RefreshCw,
 } from 'lucide-react';
-import Header from '../../components/common/Header';
+import AdminLayout from '../../components/admin/AdminLayout';
 import { adminNotificationAPI } from '../../api';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 
@@ -252,8 +252,7 @@ const NotificationManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <AdminLayout>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -773,7 +772,7 @@ const NotificationManagement = () => {
           </div>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

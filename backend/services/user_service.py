@@ -68,7 +68,8 @@ def verify_user(email: str, password: str):
             "user": {
                 "id": row[0],
                 "email": email,
-                "name": row[2] or ""
+                "name": row[2] or "",
+                "role": "user"
             }
         }
     except Exception as e:
