@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import AdminLayout from '../../../components/admin/AdminLayout';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -47,30 +48,6 @@ const AdminDashboard = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Redirect if not authenticated
-  useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-
-    if (!token && !user) {
-      // No token and no user, redirect to signin
-      navigate('/signin');
-      return;
-    }
-
-    // If we have a token but no user yet, wait for auth context to load
-    if (token && !user) {
-      // Don't redirect yet, auth context might still be loading
-      return;
-    }
-
-    // If user exists but no admin role, check if they came from admin signin
-    if (user && !user.role) {
-      // For admin pages, we can assume they're admin if they have a valid token
-      // and are accessing admin routes
-      console.log('User logged in, assuming admin access for admin routes');
-    }
-  }, [user, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -349,638 +326,621 @@ const AdminDashboard = () => {
     );
   }
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-[#2c2c2c] h-20 w-full flex items-center justify-between px-11">
-        <div className="flex items-center">
-          <div className="flex items-center">
-            <Shield className="h-8 w-8 text-red-500 mr-3" />
-            <h1 className="text-2xl font-bold text-[#f0f0f0] mr-16">DisasterWatch Admin</h1>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
+    <AdminLayout>
+      <div className="min-h-screen bg-gray-50">
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Refresh Button */}
-          <button
-            onClick={() => {
-              fetchDashboardStats();
-              fetchSystemStatus();
-              fetchNadmaDisasters();
-            }}
-            className="text-gray-300 hover:text-white flex items-center px-3 py-2 rounded-md transition-colors"
-            disabled={loading}
-            title="Refresh Dashboard"
-          >
-            <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => {
+                fetchDashboardStats();
+                fetchSystemStatus();
+                fetchNadmaDisasters();
+              }}
+              className="text-gray-600 hover:text-gray-900 flex items-center px-3 py-2 rounded-md transition-colors border border-gray-300 hover:border-gray-400"
+              disabled={loading}
+              title="Refresh Dashboard"
+            >
+              <RefreshCw className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
+          </div>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center">
+                <AlertTriangle className="h-8 w-8 text-red-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Active Alerts</p>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats.active_alerts}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center">
+                <Users className="h-8 w-8 text-blue-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {dashboardStats.total_users.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center">
+                <Activity className="h-8 w-8 text-green-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Response Teams</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {dashboardStats.response_teams}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center">
+                <FileText className="h-8 w-8 text-purple-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Reports</p>
+                  <p className="text-2xl font-bold text-gray-900">{dashboardStats.total_reports}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center">
+                <MapPin className="h-8 w-8 text-orange-600" />
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">NADMA Disasters</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {nadmaLoading ? '...' : nadmaDisasters.length}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          {/* Admin Profile Info */}
-          <div className="text-right">
-            <div className="text-sm text-gray-300">Welcome back,</div>
-            <div className="text-sm font-medium text-[#f0f0f0]">
-              {user?.name || user?.email || 'Admin'}
-            </div>
-          </div>
-
-          {/* Sign Out Button */}
-          <button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Alerts</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardStats.active_alerts}</p>
+          {/* Recent Reports */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Recent Disaster Reports</h2>
               </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {dashboardStats.total_users.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <Activity className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Response Teams</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardStats.response_teams}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Reports</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboardStats.total_reports}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <MapPin className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">NADMA Disasters</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {nadmaLoading ? '...' : nadmaDisasters.length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Reports */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Recent Disaster Reports</h2>
-            </div>
-            <div className="p-6">
-              {' '}
-              <div className="space-y-4">
-                {dashboardStats.recent_reports.length > 0 ? (
-                  dashboardStats.recent_reports.map((report) => (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium text-gray-900">{report.title}</p>
-                          <p className="text-sm text-gray-600">{report.location}</p>
-                          <p className="text-xs text-gray-500">by {report.reporter}</p>
+              <div className="p-6">
+                {' '}
+                <div className="space-y-4">
+                  {dashboardStats.recent_reports.length > 0 ? (
+                    dashboardStats.recent_reports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <MapPin className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="font-medium text-gray-900">{report.title}</p>
+                            <p className="text-sm text-gray-600">{report.location}</p>
+                            <p className="text-xs text-gray-500">by {report.reporter}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(report.severity)}`}
+                          >
+                            {report.severity}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {formatRelativeTime(report.timestamp)}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(report.severity)}`}
-                        >
-                          {report.severity}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatRelativeTime(report.timestamp)}
-                        </p>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-500 py-8">
+                      <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                      <p>No recent reports available</p>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-500 py-8">
-                    <FileText className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>No recent reports available</p>
-                  </div>
-                )}
-              </div>{' '}
-              <button
-                onClick={() => navigate('/admin/reports')}
-                className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                View All Reports
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
-            </div>
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => navigate('/admin/faq')}
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <HelpCircle className="h-8 w-8 text-purple-600 mb-2" />
-                  <span className="text-sm font-medium">Manage FAQ</span>
-                </button>
-                <button
-                  onClick={() => navigate('/admin/users')}
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Users className="h-8 w-8 text-blue-600 mb-2" />
-                  <span className="text-sm font-medium">Manage Users</span>
-                </button>{' '}
+                  )}
+                </div>{' '}
                 <button
                   onClick={() => navigate('/admin/reports')}
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
                 >
-                  <FileText className="h-8 w-8 text-green-600 mb-2" />
-                  <span className="text-sm font-medium">View Reports</span>
+                  View All Reports
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => navigate('/admin/faq')}
+                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <HelpCircle className="h-8 w-8 text-purple-600 mb-2" />
+                    <span className="text-sm font-medium">Manage FAQ</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/users')}
+                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Users className="h-8 w-8 text-blue-600 mb-2" />
+                    <span className="text-sm font-medium">Manage Users</span>
+                  </button>{' '}
+                  <button
+                    onClick={() => navigate('/admin/reports')}
+                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <FileText className="h-8 w-8 text-green-600 mb-2" />
+                    <span className="text-sm font-medium">View Reports</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/notifications')}
+                    className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <AlertTriangle className="h-8 w-8 text-orange-600 mb-2" />
+                    <span className="text-sm font-medium">Notifications</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* NADMA Real-time Disasters */}
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-gray-900">NADMA Real-time Disasters</h2>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => navigate('/admin/nadma-history')}
+                  className="text-sm text-green-600 hover:text-green-700 flex items-center px-3 py-1 border border-green-600 rounded-md hover:bg-green-50"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View All History
                 </button>
                 <button
-                  onClick={() => navigate('/admin/notifications')}
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={fetchNadmaDisasters}
+                  disabled={nadmaLoading}
+                  className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
                 >
-                  <AlertTriangle className="h-8 w-8 text-orange-600 mb-2" />
-                  <span className="text-sm font-medium">Notifications</span>
+                  <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
+                  {nadmaLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              {nadmaLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-gray-600">Loading NADMA disasters...</p>
+                </div>
+              ) : nadmaDisasters.length > 0 ? (
+                <div className="overflow-x-auto">
+                  {/* Search + Filters */}
+                  <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search NADMA disasters..."
+                        value={nadmaSearchTerm}
+                        onChange={(e) => setNadmaSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                      <select
+                        value={nadmaStatusFilter}
+                        onChange={(e) => setNadmaStatusFilter(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        aria-label="Filter NADMA by status"
+                      >
+                        <option value="All">All Status</option>
+                        {availableNadmaStatuses.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={nadmaCategoryFilter}
+                        onChange={(e) => setNadmaCategoryFilter(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        aria-label="Filter NADMA by category"
+                      >
+                        <option value="All">All Categories</option>
+                        {availableNadmaCategories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={nadmaStateFilter}
+                        onChange={(e) => setNadmaStateFilter(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        aria-label="Filter NADMA by state"
+                      >
+                        <option value="All">All States</option>
+                        {availableNadmaStates.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          ID
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Category
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Location
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Special Case
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Victims
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                          Started
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredNadmaDisasters.slice(0, 10).map((disaster) => (
+                        <tr
+                          key={disaster.id}
+                          onClick={() => handleRowClick(disaster)}
+                          className="hover:bg-blue-50 cursor-pointer transition-colors"
+                        >
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            #{disaster.id}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {disaster.kategori?.name || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                disaster.status?.toLowerCase() === 'aktif'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}
+                            >
+                              {disaster.status || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {[disaster.district?.name, disaster.state?.name]
+                              .filter(Boolean)
+                              .join(', ') || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
+                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                YES
+                              </span>
+                            ) : (
+                              <span className="text-sm text-gray-500">No</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            {disaster.case?.jumlah_mangsa
+                              ? `${disaster.case.jumlah_mangsa} people`
+                              : 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {disaster.datetime_start
+                              ? new Date(disaster.datetime_start).toLocaleDateString()
+                              : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {filteredNadmaDisasters.length === 0 ? (
+                    <div className="text-center mt-4 text-sm text-gray-500">
+                      No disasters match your search/filters
+                    </div>
+                  ) : filteredNadmaDisasters.length > 10 ? (
+                    <div className="text-center mt-4">
+                      <p className="text-sm text-gray-500 mb-3">
+                        Showing 10 of {filteredNadmaDisasters.length} disasters
+                      </p>
+                      <button
+                        onClick={() => navigate('/admin/nadma-history')}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
+                      >
+                        View All {filteredNadmaDisasters.length} Disasters in History
+                        <ExternalLink className="h-4 w-4 ml-1" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p>No NADMA disasters data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="mt-8 bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-900">System Status</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div
+                    className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.api).bg} rounded-full mb-2`}
+                  >
+                    <Activity
+                      className={`h-6 w-6 ${getSystemStatusColor(systemStatus.api).text}`}
+                    />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">API Status</p>
+                  <p className={`text-sm ${getSystemStatusColor(systemStatus.api).text}`}>
+                    {getSystemStatusColor(systemStatus.api).label}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div
+                    className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.database).bg} rounded-full mb-2`}
+                  >
+                    <Activity
+                      className={`h-6 w-6 ${getSystemStatusColor(systemStatus.database).text}`}
+                    />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">Database</p>
+                  <p className={`text-sm ${getSystemStatusColor(systemStatus.database).text}`}>
+                    {getSystemStatusColor(systemStatus.database).label}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div
+                    className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.monitoring).bg} rounded-full mb-2`}
+                  >
+                    <Eye
+                      className={`h-6 w-6 ${getSystemStatusColor(systemStatus.monitoring).text}`}
+                    />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">Monitoring</p>
+                  <p className={`text-sm ${getSystemStatusColor(systemStatus.monitoring).text}`}>
+                    {getSystemStatusColor(systemStatus.monitoring).label}
+                  </p>
+                </div>
+
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
+                    <Clock className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">Uptime</p>
+                  <p className="text-sm text-blue-600">{systemStatus.uptime}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        {/* Detail Modal */}
+        {showDetailModal && selectedDisaster && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <AlertTriangle className="h-6 w-6 text-orange-600" />
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Disaster #{selectedDisaster.id}
+                  </h2>
+                  {selectedDisaster.bencana_khas?.toLowerCase() === 'ya' && (
+                    <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                      SPECIAL CASE
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="px-6 py-6 space-y-6">
+                {/* Status Badge */}
+                <div className="flex items-center space-x-3">
+                  <span
+                    className={`inline-flex px-4 py-2 text-sm font-semibold rounded-full ${
+                      selectedDisaster.status?.toLowerCase() === 'aktif'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {selectedDisaster.status || 'N/A'}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    Category: {selectedDisaster.kategori?.name || 'N/A'}
+                  </span>
+                </div>
+
+                {/* Location Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Location Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">State:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.state?.name || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">District:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.district?.name || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Latitude:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.latitude || 'N/A'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Longitude:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.longitude || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                  {selectedDisaster.latitude && selectedDisaster.longitude && (
+                    <a
+                      href={`https://maps.google.com/?q=${selectedDisaster.latitude},${selectedDisaster.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1" />
+                      View on Google Maps
+                    </a>
+                  )}
+                </div>
+
+                {/* Timeline Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Timeline
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-gray-600">Started:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.datetime_start
+                          ? new Date(selectedDisaster.datetime_start).toLocaleString()
+                          : 'N/A'}
+                      </span>
+                    </div>
+                    {selectedDisaster.datetime_end && (
+                      <div>
+                        <span className="text-gray-600">Ended:</span>
+                        <span className="ml-2 font-medium text-gray-900">
+                          {new Date(selectedDisaster.datetime_end).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Case Information (Relief Centers & Victims) */}
+                {selectedDisaster.case && (
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      Case Information
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {selectedDisaster.case.jumlah_pps || 0}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">Relief Centers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {selectedDisaster.case.jumlah_keluarga || 0}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">Families Affected</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {selectedDisaster.case.jumlah_mangsa || 0}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">Total Victims</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                {selectedDisaster.description && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
+                    <p className="text-sm text-gray-700">{selectedDisaster.description}</p>
+                  </div>
+                )}
+
+                {/* Additional Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                    Additional Information
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-gray-600">Disaster ID:</span>
+                      <span className="ml-2 font-medium text-gray-900">#{selectedDisaster.id}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Special Case:</span>
+                      <span className="ml-2 font-medium text-gray-900">
+                        {selectedDisaster.bencana_khas?.toLowerCase() === 'ya' ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                    {selectedDisaster.kategori?.group_helper && (
+                      <div className="col-span-2">
+                        <span className="text-gray-600">Category Icon:</span>
+                        <span className="ml-2 font-medium text-gray-900">
+                          {selectedDisaster.kategori.group_helper}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4">
+                <button
+                  onClick={closeModal}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                >
+                  Close
                 </button>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* NADMA Real-time Disasters */}
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="text-lg font-medium text-gray-900">NADMA Real-time Disasters</h2>
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => navigate('/admin/nadma-history')}
-                className="text-sm text-green-600 hover:text-green-700 flex items-center px-3 py-1 border border-green-600 rounded-md hover:bg-green-50"
-              >
-                <Eye className="h-4 w-4 mr-1" />
-                View All History
-              </button>
-              <button
-                onClick={fetchNadmaDisasters}
-                disabled={nadmaLoading}
-                className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
-              >
-                <RefreshCw className={`h-4 w-4 mr-1 ${nadmaLoading ? 'animate-spin' : ''}`} />
-                {nadmaLoading ? 'Loading...' : 'Refresh'}
-              </button>
-            </div>
-          </div>
-          <div className="p-6">
-            {nadmaLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-gray-600">Loading NADMA disasters...</p>
-              </div>
-            ) : nadmaDisasters.length > 0 ? (
-              <div className="overflow-x-auto">
-                {/* Search + Filters */}
-                <div className="mb-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search NADMA disasters..."
-                      value={nadmaSearchTerm}
-                      onChange={(e) => setNadmaSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-                    <select
-                      value={nadmaStatusFilter}
-                      onChange={(e) => setNadmaStatusFilter(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      aria-label="Filter NADMA by status"
-                    >
-                      <option value="All">All Status</option>
-                      {availableNadmaStatuses.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={nadmaCategoryFilter}
-                      onChange={(e) => setNadmaCategoryFilter(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      aria-label="Filter NADMA by category"
-                    >
-                      <option value="All">All Categories</option>
-                      {availableNadmaCategories.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={nadmaStateFilter}
-                      onChange={(e) => setNadmaStateFilter(e.target.value)}
-                      className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      aria-label="Filter NADMA by state"
-                    >
-                      <option value="All">All States</option>
-                      {availableNadmaStates.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        ID
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Category
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Location
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Special Case
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Victims
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                        Started
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredNadmaDisasters.slice(0, 10).map((disaster) => (
-                      <tr
-                        key={disaster.id}
-                        onClick={() => handleRowClick(disaster)}
-                        className="hover:bg-blue-50 cursor-pointer transition-colors"
-                      >
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                          #{disaster.id}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {disaster.kategori?.name || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              disaster.status?.toLowerCase() === 'aktif'
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-green-100 text-green-800'
-                            }`}
-                          >
-                            {disaster.status || 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {[disaster.district?.name, disaster.state?.name]
-                            .filter(Boolean)
-                            .join(', ') || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {disaster.bencana_khas?.toLowerCase() === 'ya' ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                              YES
-                            </span>
-                          ) : (
-                            <span className="text-sm text-gray-500">No</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {disaster.case?.jumlah_mangsa
-                            ? `${disaster.case.jumlah_mangsa} people`
-                            : 'N/A'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {disaster.datetime_start
-                            ? new Date(disaster.datetime_start).toLocaleDateString()
-                            : 'N/A'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {filteredNadmaDisasters.length === 0 ? (
-                  <div className="text-center mt-4 text-sm text-gray-500">
-                    No disasters match your search/filters
-                  </div>
-                ) : filteredNadmaDisasters.length > 10 ? (
-                  <div className="text-center mt-4">
-                    <p className="text-sm text-gray-500 mb-3">
-                      Showing 10 of {filteredNadmaDisasters.length} disasters
-                    </p>
-                    <button
-                      onClick={() => navigate('/admin/nadma-history')}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center justify-center mx-auto"
-                    >
-                      View All {filteredNadmaDisasters.length} Disasters in History
-                      <ExternalLink className="h-4 w-4 ml-1" />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 py-8">
-                <MapPin className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>No NADMA disasters data available</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* System Status */}
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">System Status</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div
-                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.api).bg} rounded-full mb-2`}
-                >
-                  <Activity className={`h-6 w-6 ${getSystemStatusColor(systemStatus.api).text}`} />
-                </div>
-                <p className="text-sm font-medium text-gray-900">API Status</p>
-                <p className={`text-sm ${getSystemStatusColor(systemStatus.api).text}`}>
-                  {getSystemStatusColor(systemStatus.api).label}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div
-                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.database).bg} rounded-full mb-2`}
-                >
-                  <Activity
-                    className={`h-6 w-6 ${getSystemStatusColor(systemStatus.database).text}`}
-                  />
-                </div>
-                <p className="text-sm font-medium text-gray-900">Database</p>
-                <p className={`text-sm ${getSystemStatusColor(systemStatus.database).text}`}>
-                  {getSystemStatusColor(systemStatus.database).label}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div
-                  className={`inline-flex items-center justify-center w-12 h-12 ${getSystemStatusColor(systemStatus.monitoring).bg} rounded-full mb-2`}
-                >
-                  <Eye
-                    className={`h-6 w-6 ${getSystemStatusColor(systemStatus.monitoring).text}`}
-                  />
-                </div>
-                <p className="text-sm font-medium text-gray-900">Monitoring</p>
-                <p className={`text-sm ${getSystemStatusColor(systemStatus.monitoring).text}`}>
-                  {getSystemStatusColor(systemStatus.monitoring).label}
-                </p>
-              </div>
-
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
-                  <Clock className="h-6 w-6 text-blue-600" />
-                </div>
-                <p className="text-sm font-medium text-gray-900">Uptime</p>
-                <p className="text-sm text-blue-600">{systemStatus.uptime}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Detail Modal */}
-      {showDetailModal && selectedDisaster && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <AlertTriangle className="h-6 w-6 text-orange-600" />
-                <h2 className="text-xl font-bold text-gray-900">Disaster #{selectedDisaster.id}</h2>
-                {selectedDisaster.bencana_khas?.toLowerCase() === 'ya' && (
-                  <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                    SPECIAL CASE
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="px-6 py-6 space-y-6">
-              {/* Status Badge */}
-              <div className="flex items-center space-x-3">
-                <span
-                  className={`inline-flex px-4 py-2 text-sm font-semibold rounded-full ${
-                    selectedDisaster.status?.toLowerCase() === 'aktif'
-                      ? 'bg-orange-100 text-orange-800'
-                      : 'bg-green-100 text-green-800'
-                  }`}
-                >
-                  {selectedDisaster.status || 'N/A'}
-                </span>
-                <span className="text-sm text-gray-500">
-                  Category: {selectedDisaster.kategori?.name || 'N/A'}
-                </span>
-              </div>
-
-              {/* Location Information */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Location Details
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">State:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.state?.name || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">District:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.district?.name || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Latitude:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.latitude || 'N/A'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Longitude:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.longitude || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-                {selectedDisaster.latitude && selectedDisaster.longitude && (
-                  <a
-                    href={`https://maps.google.com/?q=${selectedDisaster.latitude},${selectedDisaster.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1" />
-                    View on Google Maps
-                  </a>
-                )}
-              </div>
-
-              {/* Timeline Information */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Timeline
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="text-gray-600">Started:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.datetime_start
-                        ? new Date(selectedDisaster.datetime_start).toLocaleString()
-                        : 'N/A'}
-                    </span>
-                  </div>
-                  {selectedDisaster.datetime_end && (
-                    <div>
-                      <span className="text-gray-600">Ended:</span>
-                      <span className="ml-2 font-medium text-gray-900">
-                        {new Date(selectedDisaster.datetime_end).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Case Information (Relief Centers & Victims) */}
-              {selectedDisaster.case && (
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center">
-                    <Users className="h-4 w-4 mr-2" />
-                    Case Information
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedDisaster.case.jumlah_pps || 0}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">Relief Centers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedDisaster.case.jumlah_keluarga || 0}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">Families Affected</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {selectedDisaster.case.jumlah_mangsa || 0}
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">Total Victims</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Description */}
-              {selectedDisaster.description && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">Description</h3>
-                  <p className="text-sm text-gray-700">{selectedDisaster.description}</p>
-                </div>
-              )}
-
-              {/* Additional Information */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Additional Information</h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-600">Disaster ID:</span>
-                    <span className="ml-2 font-medium text-gray-900">#{selectedDisaster.id}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Special Case:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {selectedDisaster.bencana_khas?.toLowerCase() === 'ya' ? 'Yes' : 'No'}
-                    </span>
-                  </div>
-                  {selectedDisaster.kategori?.group_helper && (
-                    <div className="col-span-2">
-                      <span className="text-gray-600">Category Icon:</span>
-                      <span className="ml-2 font-medium text-gray-900">
-                        {selectedDisaster.kategori.group_helper}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4">
-              <button
-                onClick={closeModal}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminLayout>
   );
 };
 
