@@ -9,3 +9,4 @@ export { default as DataTab } from './DataTab';
 export { default as HelpTab } from './HelpTab';
 export { default as PasswordChangeForm } from './PasswordChangeForm';
 export { default as DeleteAccountModal } from './DeleteAccountModal';
+export { default as SubscriptionSettings } from './SubscriptionSettings';
