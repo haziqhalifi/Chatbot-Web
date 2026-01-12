@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import Header from '../../../components/common/Header';
+import AdminLayout from '../../../components/admin/AdminLayout';
 import PageHeader from '../../../components/common/PageHeader';
 
 // Components
@@ -69,13 +69,6 @@ const AdminReports = () => {
 
   // Export dropdown state
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!user && !localStorage.getItem('token')) {
-      navigate('/login');
-    }
-  }, [user, navigate]);
 
   // Fetch reports from API
   const fetchReports = async () => {
@@ -419,21 +412,19 @@ const AdminReports = () => {
   // Show loading state for initial load
   if (loading && reports.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
+      <AdminLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-300 rounded w-1/4"></div>
             <div className="h-64 bg-gray-300 rounded"></div>
           </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <PageHeader title="Disaster Reports" icon={null} />
@@ -521,7 +512,7 @@ const AdminReports = () => {
         getStatusColor={getStatusColor}
         formatDate={formatDate}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

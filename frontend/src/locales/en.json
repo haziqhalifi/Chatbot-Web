@@ -18,7 +18,8 @@
     "filter": "Filter",
     "clear": "Clear",
     "selectLanguage": "Select Language"
-  },  "navigation": {
+  },
+  "navigation": {
     "home": "Home",
     "chat": "Chat",
     "profile": "My Account",
@@ -59,6 +60,13 @@
     "severity": "Severity",
     "reportSuccess": "Disaster report submitted successfully",
     "reportError": "Failed to submit disaster report"
+  },
+  "admin": {
+    "home": "Admin Home",
+    "dashboard": "Dashboard",
+    "reports": "Reports",
+    "welcome": "Welcome",
+    "logout": "Logout"
   },
   "errors": {
     "networkError": "Network error. Please check your connection.",
