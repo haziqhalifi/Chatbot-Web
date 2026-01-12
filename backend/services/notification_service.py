@@ -3,6 +3,7 @@ from database import get_db_conn
 from datetime import datetime
 from typing import List, Optional
 import json
+from services.email_notification_service import send_system_notification_emails, send_targeted_notification_emails
 
 def get_notifications(user_id: int, limit: int = 10, offset: int = 0, unread_only: bool = False):
     """Get notifications for a user"""
@@ -394,7 +395,7 @@ def clear_all_notifications(user_id: int):
             pass
 
 def create_system_notification(title: str, message: str, notification_type: str = "info", user_ids: Optional[List[int]] = None):
-    """Create system notifications for specific users or all users"""
+    """Create system notifications for specific users or all users, and send emails to subscribed users"""
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
@@ -417,10 +418,16 @@ def create_system_notification(title: str, message: str, notification_type: str 
                 continue
         
         conn.commit()
+        
+        # Send emails to users who have email notifications enabled
+        email_result = send_system_notification_emails(title, message, notification_type, user_ids)
+        
         return {
             "message": f"System notification sent to {created_count} users",
             "users_notified": created_count,
-            "notifications_sent": created_count
+            "notifications_sent": created_count,
+            "emails_sent": email_result.get("emails_sent", 0),
+            "emails_failed": email_result.get("emails_failed", 0)
         }
         
     except Exception as e:

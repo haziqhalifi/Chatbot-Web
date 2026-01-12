@@ -156,8 +156,9 @@ const NotificationManagement = () => {
     setResult(null);
 
     try {
+      let response;
       if (notificationType === 'system') {
-        await adminNotificationAPI.createSystemNotification({
+        response = await adminNotificationAPI.createSystemNotification({
           title: formData.title,
           message: formData.message,
           type: formData.type,
@@ -166,7 +167,7 @@ const NotificationManagement = () => {
         const finalDisasterType = customDisasterType.trim() || formData.disaster_type;
         const finalLocation = customLocation.trim() || formData.location;
 
-        await adminNotificationAPI.createTargetedNotification({
+        response = await adminNotificationAPI.createTargetedNotification({
           disaster_type: finalDisasterType,
           location: finalLocation,
           title: formData.title,
@@ -175,7 +176,21 @@ const NotificationManagement = () => {
         });
       }
 
-      setResult({ success: true, message: 'Notification sent successfully!' });
+      // Show success message with email stats
+      const data = response.data;
+      let successMessage = 'Notification sent successfully!';
+      if (data.emails_sent !== undefined) {
+        successMessage += ` (${data.users_notified || 0} users notified`;
+        if (data.emails_sent > 0) {
+          successMessage += `, ${data.emails_sent} emails sent`;
+        }
+        if (data.emails_failed > 0) {
+          successMessage += `, ${data.emails_failed} emails failed`;
+        }
+        successMessage += ')';
+      }
+
+      setResult({ success: true, message: successMessage, data });
       setFormData({
         title: '',
         message: '',
