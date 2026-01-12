@@ -12,7 +12,7 @@ Tests for:
 import pytest
 import jwt
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 class TestJWTTokenValidation:
@@ -44,7 +44,7 @@ class TestJWTTokenValidation:
         """Token missing user_id claim should be rejected"""
         payload = {
             "email": "test@example.com",
-            "exp": datetime.utcnow() + timedelta(hours=24)
+            "exp": datetime.now(timezone.utc) + timedelta(hours=24)
         }
         token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
         decoded = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
@@ -65,7 +65,7 @@ class TestJWTTokenValidation:
         payload = {
             "user_id": 1,
             "email": "test@example.com",
-            "exp": datetime.utcnow() + timedelta(hours=24)
+            "exp": datetime.now(timezone.utc) + timedelta(hours=24)
         }
         token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
         
@@ -230,13 +230,13 @@ class TestSessionSecurity:
         """New tokens should have valid expiration"""
         payload = {
             "user_id": 1,
-            "exp": datetime.utcnow() + timedelta(hours=1)
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1)
         }
         token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
         decoded = jwt.decode(token, jwt_secret, algorithms=[jwt_algorithm])
         
         assert "exp" in decoded
-        assert decoded["exp"] > datetime.utcnow().timestamp()
+        assert decoded["exp"] > datetime.now(timezone.utc).timestamp()
 
 
 class TestCredentialValidation:
