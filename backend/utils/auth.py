@@ -56,7 +56,18 @@ def google_authenticate(credential: str, client_id: str, jwt_secret: str, jwt_al
             "exp": datetime.utcnow() + timedelta(days=7)
         }
         token = jwt.encode(payload, jwt_secret, algorithm=jwt_algorithm)
-        return {"message": "Google authentication successful", "token": token, "email": email, "name": name}
+        return {
+            "message": "Google authentication successful",
+            "token": token,
+            "email": email,
+            "name": name,
+            "user": {
+                "id": user_id,
+                "email": email,
+                "name": name,
+                "role": "user"
+            }
+        }
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid Google token")
     except Exception as e:

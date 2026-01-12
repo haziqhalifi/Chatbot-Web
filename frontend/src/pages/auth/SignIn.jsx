@@ -301,7 +301,9 @@ const SignInPage = () => {
         throw new Error('Invalid response from server. Please try again.');
       }
 
-      login(data.token, { email: data.email, name: data.name });
+      // Use user object from backend if available, otherwise construct it
+      const user = data.user || { email: data.email, name: data.name, role: 'user' };
+      login(data.token, user);
       navigate('/dashboard');
     } catch (error) {
       let errorMessage = 'Google sign in failed. Please try again.';

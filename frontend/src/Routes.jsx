@@ -1,6 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
+// Protected Route
+import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute';
+
 // Import page components
 // User pages
 import Dashboard from './pages/user/Dashboard';
@@ -23,6 +26,10 @@ import AdminSignIn from './pages/auth/AdminSignIn';
 import TermsOfUse from './pages/legal/TermsOfUse';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 
+// Error pages
+import AccessDenied from './pages/error/AccessDenied';
+import NotFound from './pages/error/NotFound';
+
 // Admin pages
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminReports from './pages/admin/Reports';
@@ -41,11 +48,54 @@ const AppRoutes = () => {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/signin" element={<AdminSignIn />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/reports" element={<AdminReports />} />
-        <Route path="/admin/nadma-history" element={<NadmaHistory />} />
-        <Route path="/admin/users" element={<ManageUsers />} />
-        <Route path="/admin/faq" element={<ManageFAQ />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedAdminRoute>
+              <AdminDashboard />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedAdminRoute>
+              <AdminReports />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/nadma-history"
+          element={
+            <ProtectedAdminRoute>
+              <NadmaHistory />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedAdminRoute>
+              <ManageUsers />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/faq"
+          element={
+            <ProtectedAdminRoute>
+              <ManageFAQ />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <ProtectedAdminRoute>
+              <NotificationManagement />
+            </ProtectedAdminRoute>
+          }
+        />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/disaster-map" element={<Dashboard />} />
         <Route path="/report-disaster" element={<ReportDisaster />} />
@@ -55,10 +105,11 @@ const AppRoutes = () => {
         <Route path="/help-faq" element={<FAQ />} />
         <Route path="/report" element={<Report />} />
         <Route path="/notification-settings" element={<NotificationSettings />} />
-        <Route path="/admin/notifications" element={<NotificationManagement />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/terms-of-use" element={<TermsOfUse />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/access-denied" element={<AccessDenied />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
