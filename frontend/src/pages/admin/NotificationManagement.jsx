@@ -99,7 +99,7 @@ const NotificationManagement = () => {
         message: notification.message,
         notification_type: notification.type,
       };
-      
+
       // Only add disaster_type and location if they have values
       if (notification.disaster_type) {
         params.disaster_type = notification.disaster_type;
@@ -211,7 +211,8 @@ const NotificationManagement = () => {
   const handlePageChange = (direction) => {
     setPagination((prev) => ({
       ...prev,
-      offset: direction === 'next' ? prev.offset + prev.limit : Math.max(0, prev.offset - prev.limit),
+      offset:
+        direction === 'next' ? prev.offset + prev.limit : Math.max(0, prev.offset - prev.limit),
     }));
   };
 
@@ -420,7 +421,8 @@ const NotificationManagement = () => {
                             )}
                             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
                               <Users className="w-3 h-3 inline mr-1" />
-                              {notification.user_count} {notification.user_count === 1 ? 'user' : 'users'}
+                              {notification.user_count}{' '}
+                              {notification.user_count === 1 ? 'user' : 'users'}
                             </span>
                             {notification.unread_count > 0 && (
                               <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">
@@ -428,9 +430,7 @@ const NotificationManagement = () => {
                               </span>
                             )}
                           </div>
-                          <h3 className="font-semibold text-gray-800 mb-1">
-                            {notification.title}
-                          </h3>
+                          <h3 className="font-semibold text-gray-800 mb-1">{notification.title}</h3>
                           <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
                           <div className="flex items-center gap-4 text-xs text-gray-500">
                             <span>
@@ -594,9 +594,7 @@ const NotificationManagement = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Title *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
                     <input
                       type="text"
                       value={formData.title}
@@ -655,7 +653,9 @@ const NotificationManagement = () => {
                 <div className="flex-1">
                   <h2 className="text-xl font-bold text-gray-800">Notification Recipients</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    {selectedNotification?.user_count} {selectedNotification?.user_count === 1 ? 'user' : 'users'} received this notification
+                    {selectedNotification?.user_count}{' '}
+                    {selectedNotification?.user_count === 1 ? 'user' : 'users'} received this
+                    notification
                   </p>
                 </div>
                 <button
@@ -670,7 +670,9 @@ const NotificationManagement = () => {
               {selectedNotification && (
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getTypeColor(selectedNotification.type)}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-semibold ${getTypeColor(selectedNotification.type)}`}
+                    >
                       {selectedNotification.type}
                     </span>
                     {selectedNotification.disaster_type && (
