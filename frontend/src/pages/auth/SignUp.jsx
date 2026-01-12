@@ -9,7 +9,7 @@ import {
   VerificationCodeInput,
   PasswordStrengthIndicator,
   AuthLayout,
-} from '../components/auth';
+} from '../../components/auth';
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({

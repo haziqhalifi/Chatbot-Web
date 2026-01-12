@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI, chatAPI, profileAPI } from '../api';
-import Header from '../components/common/Header';
-import i18n from '../i18n';
-import { loadSettings, saveSettings } from '../utils/settingsStorage';
+import { authAPI, chatAPI, profileAPI } from '../../api';
+import Header from '../../components/common/Header';
+import i18n from '../../i18n';
+import { loadSettings, saveSettings } from '../../utils/settingsStorage';
 import jsPDF from 'jspdf';
 import { Bell, Database, HelpCircle, MessageSquare, Shield, User } from 'lucide-react';
 import {
@@ -15,7 +15,7 @@ import {
   SecurityTab,
   DataTab,
   HelpTab,
-} from '../components/settings';
+} from '../../components/settings';
 
 const SettingsPage = ({ onClose }) => {
   const navigate = useNavigate();

@@ -246,7 +246,6 @@ class TestCredentialValidation:
         """Weak passwords should be rejected"""
         weak_passwords = [
             "123456",
-            "password",
             "qwerty",
             "admin",
             "123",

@@ -22,10 +22,10 @@ import {
   X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import Header from '../../components/common/Header';
-import PageHeader from '../../components/common/PageHeader';
-import StatusMessage from '../../components/common/StatusMessage';
+import { useAuth } from '../../../contexts/AuthContext';
+import Header from '../../../components/common/Header';
+import PageHeader from '../../../components/common/PageHeader';
+import StatusMessage from '../../../components/common/StatusMessage';
 
 const AdminReports = () => {
   const { user, logout } = useAuth();

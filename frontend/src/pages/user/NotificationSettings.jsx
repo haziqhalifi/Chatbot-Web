@@ -1,6 +1,6 @@
 import React from 'react';
-import Header from '../components/common/Header';
-import SubscriptionManager from '../components/SubscriptionManager';
+import Header from '../../components/common/Header';
+import SubscriptionManager from '../../components/subscription/SubscriptionManager';
 
 const NotificationSettings = () => {
   return (

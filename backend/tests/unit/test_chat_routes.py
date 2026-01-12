@@ -40,7 +40,8 @@ def make_token(user_id=1, secret="test_secret"):
 
 @pytest.fixture
 def client(app):
-    return TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 def test_create_session(client):

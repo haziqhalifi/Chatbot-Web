@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader';
-import StatusMessage from '../components/common/StatusMessage';
+import PageHeader from '../../components/common/PageHeader';
+import StatusMessage from '../../components/common/StatusMessage';
 
 const ReportPage = ({ onClose }) => {
   const [form, setForm] = useState({ subject: '', message: '' });

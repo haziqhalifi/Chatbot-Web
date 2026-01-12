@@ -36,12 +36,14 @@ def test_process_chat_message_success(monkeypatch):
 
     # Session exists
     monkeypatch.setattr(chat_service, "get_chat_session", lambda sid, uid: {"id": sid, "ai_provider": "openai", "openai_thread_id": None})
+    # Mock get_chat_messages to return empty history
+    monkeypatch.setattr(chat_service, "get_chat_messages", lambda *args, **kwargs: [])
     # Save user/bot messages
     monkeypatch.setattr(chat_service.ChatService, "save_user_message", staticmethod(lambda *args, **kwargs: {"id": 1, "content": kwargs.get("content", "")}))
     monkeypatch.setattr(chat_service.ChatService, "save_bot_message", staticmethod(lambda *args, **kwargs: {"id": 2, "content": args[1] if len(args) > 1 else ""}))
 
     fake_service = types.SimpleNamespace(
-        generate_response=lambda prompt, thread_id=None: {
+        generate_response=lambda prompt, thread_id=None, history=None: {
             "response": "pong",
             "duration": 0.1,
             "thread_id": "t1",
