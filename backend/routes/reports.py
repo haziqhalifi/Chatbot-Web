@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 import jwt
 import os
-from database import insert_report, get_all_reports, get_report_by_id, get_db_conn, insert_system_report, migrate_reports_tables, get_all_system_reports
+from database import insert_report, get_all_reports, get_report_by_id, get_db_conn, insert_system_report, migrate_reports_tables, get_all_system_reports, update_report_status
 from utils.chat import verify_api_key
 from services.notification_service import create_report_confirmation_notification
 from services.subscription_service import create_targeted_disaster_notification
@@ -35,6 +35,15 @@ class ReportRequest(BaseModel):
 class SystemReportRequest(BaseModel):
     subject: str
     message: str
+
+class UpdateReportStatusRequest(BaseModel):
+    status: str  # PENDING, APPROVED, DECLINED, UNDER_REVIEW
+    admin_notes: Optional[str] = None
+    severity: Optional[str] = None  # Low, Medium, High, Critical
+    coordinates: Optional[str] = None  # GPS coordinates
+    affected_people: Optional[int] = None  # Number of affected people
+    estimated_damage: Optional[str] = None  # Damage estimate
+    response_team: Optional[str] = None  # Assigned response team
 
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""
@@ -197,6 +206,182 @@ def _matches_report_query(report: dict, needle: str) -> bool:
     ]
     combined = " ".join(haystacks).lower()
     return needle in combined
+
+
+@router.put("/admin/reports/{report_id}/status")
+def update_disaster_report_status(
+    report_id: int,
+    status_update: UpdateReportStatusRequest,
+    authorization: str = Header(None),
+    x_api_key: str = Header(None)
+):
+    """Update disaster report status and details (Admin only)
+    
+    Allows admins to:
+    - Approve, decline, or update the status of user-submitted disaster reports
+    - Assign severity level
+    - Add GPS coordinates
+    - Record number of affected people
+    - Estimate damage
+    - Assign response teams
+    - Add administrative notes
+    
+    Status values:
+    - PENDING: Initial state, awaiting review
+    - APPROVED: Report verified and approved
+    - DECLINED: Report rejected or invalid
+    - UNDER_REVIEW: Currently being investigated
+    
+    Severity values:
+    - Low: Minor incident
+    - Medium: Moderate impact
+    - High: Significant damage/danger
+    - Critical: Extreme emergency
+    """
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    # Get admin user_id from token
+    admin_id = get_user_id_from_token(authorization)
+    
+    try:
+        # Validate status value
+        valid_statuses = ["PENDING", "APPROVED", "DECLINED", "UNDER_REVIEW"]
+        if status_update.status not in valid_statuses:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+        
+        # Validate severity if provided
+        if status_update.severity:
+            valid_severities = ["Low", "Medium", "High", "Critical"]
+            if status_update.severity not in valid_severities:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid severity. Must be one of: {', '.join(valid_severities)}"
+                )
+        
+        # Validate affected_people if provided
+        if status_update.affected_people is not None and status_update.affected_people < 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Affected people count cannot be negative"
+            )
+        
+        # Update the report with all provided fields
+        result = update_report_status(
+            report_id=report_id,
+            status=status_update.status,
+            admin_notes=status_update.admin_notes,
+            reviewed_by=admin_id,
+            severity=status_update.severity,
+            coordinates=status_update.coordinates,
+            affected_people=status_update.affected_people,
+            estimated_damage=status_update.estimated_damage,
+            response_team=status_update.response_team
+        )
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        if "Report not found" in str(e):
+            raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/reports/{report_id}/approve")
+def approve_disaster_report(
+    report_id: int,
+    authorization: str = Header(None),
+    x_api_key: str = Header(None)
+):
+    """Quick action: Approve a disaster report (Admin only)
+    
+    This is a convenience endpoint that sets the status to APPROVED.
+    For more detailed updates, use PUT /admin/reports/{report_id}/status
+    """
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    admin_id = get_user_id_from_token(authorization)
+    
+    try:
+        result = update_report_status(
+            report_id=report_id,
+            status="APPROVED",
+            admin_notes="Report approved by admin",
+            reviewed_by=admin_id
+        )
+        return result
+    except Exception as e:
+        if "Report not found" in str(e):
+            raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/reports/{report_id}/decline")
+def decline_disaster_report(
+    report_id: int,
+    reason: Optional[str] = None,
+    authorization: str = Header(None),
+    x_api_key: str = Header(None)
+):
+    """Quick action: Decline a disaster report (Admin only)
+    
+    This is a convenience endpoint that sets the status to DECLINED.
+    
+    Query params:
+      - reason: Optional reason for declining the report
+    """
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    admin_id = get_user_id_from_token(authorization)
+    
+    try:
+        admin_notes = f"Report declined. Reason: {reason}" if reason else "Report declined by admin"
+        result = update_report_status(
+            report_id=report_id,
+            status="DECLINED",
+            admin_notes=admin_notes,
+            reviewed_by=admin_id
+        )
+        return result
+    except Exception as e:
+        if "Report not found" in str(e):
+            raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/reports/{report_id}/review")
+def mark_under_review(
+    report_id: int,
+    authorization: str = Header(None),
+    x_api_key: str = Header(None)
+):
+    """Quick action: Mark report as under review (Admin only)
+    
+    This is a convenience endpoint that sets the status to UNDER_REVIEW.
+    """
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    admin_id = get_user_id_from_token(authorization)
+    
+    try:
+        result = update_report_status(
+            report_id=report_id,
+            status="UNDER_REVIEW",
+            admin_notes="Report is currently under investigation",
+            reviewed_by=admin_id
+        )
+        return result
+    except Exception as e:
+        if "Report not found" in str(e):
+            raise HTTPException(status_code=404, detail="Report not found")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/admin/reports/{report_id}")
@@ -425,10 +610,7 @@ def export_reports_pdf(
         meta_info.append(['Total Reports:', str(len(reports))])
         
         # Add filter information
-        if normalized_source != 'all':
-            meta_info.append(['Data Source:', normalized_source.capitalize()])
-        else:
-            meta_info.append(['Data Source:', 'All Sources'])
+        meta_info.append(['Data Source:', 'User Disaster Reports'])
         
         if q:
             meta_info.append(['Search Query:', q])
