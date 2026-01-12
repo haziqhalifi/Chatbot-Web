@@ -462,3 +462,291 @@ def create_emergency_alert_notification(user_ids: List[int], disaster_type: str,
         notification_type="danger",
         user_ids=user_ids
     )
+
+def get_all_notifications(limit: int = 100, offset: int = 0, notification_type: str = None, 
+                         disaster_type: str = None, search: str = None, grouped: bool = True):
+    """Get all notifications across all users (admin only), optionally grouped by content"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Build query with filters
+        where_clauses = []
+        params = []
+        
+        if notification_type:
+            where_clauses.append("type = ?")
+            params.append(notification_type)
+        
+        if disaster_type:
+            where_clauses.append("disaster_type = ?")
+            params.append(disaster_type)
+        
+        if search:
+            where_clauses.append("(title LIKE ? OR message LIKE ?)")
+            search_term = f"%{search}%"
+            params.extend([search_term, search_term])
+        
+        where_clause = " AND ".join(where_clauses) if where_clauses else "1=1"
+        
+        if grouped:
+            # Get grouped notifications with user aggregation
+            # Use ISNULL to handle NULL values in GROUP BY for proper grouping
+            query = f"""
+                WITH GroupedNotifications AS (
+                    SELECT 
+                        n.title, 
+                        n.message, 
+                        n.type, 
+                        ISNULL(n.disaster_type, '') as disaster_type,
+                        ISNULL(n.location, '') as location,
+                        MAX(n.created_at) as latest_created_at,
+                        MIN(n.created_at) as first_created_at,
+                        COUNT(DISTINCT n.user_id) as user_count,
+                        COUNT(*) as total_notifications,
+                        SUM(CASE WHEN n.is_read = 0 THEN 1 ELSE 0 END) as unread_count
+                    FROM notifications n
+                    WHERE {where_clause}
+                    GROUP BY n.title, n.message, n.type, ISNULL(n.disaster_type, ''), ISNULL(n.location, '')
+                )
+                SELECT * FROM GroupedNotifications
+                ORDER BY latest_created_at DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """
+            
+            params.extend([offset, limit])
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            notifications = []
+            for row in rows:
+                # Convert empty strings back to None for disaster_type and location
+                disaster_type_val = row[3] if row[3] else None
+                location_val = row[4] if row[4] else None
+                
+                notifications.append({
+                    "title": row[0],
+                    "message": row[1],
+                    "type": row[2],
+                    "disaster_type": disaster_type_val,
+                    "location": location_val,
+                    "latest_created_at": row[5].isoformat() if row[5] else None,
+                    "first_created_at": row[6].isoformat() if row[6] else None,
+                    "user_count": row[7],
+                    "total_notifications": row[8],
+                    "unread_count": row[9],
+                    "is_grouped": True
+                })
+            
+            # Get total count of unique notification groups
+            count_query = f"""
+                SELECT COUNT(*) FROM (
+                    SELECT 1 as grp FROM notifications n
+                    WHERE {where_clause}
+                    GROUP BY n.title, n.message, n.type, ISNULL(n.disaster_type, ''), ISNULL(n.location, '')
+                ) as groups
+            """
+            cursor.execute(count_query, params[:-2])
+            total_count = cursor.fetchone()[0]
+        else:
+            # Get individual notifications with user info
+            query = f"""
+                SELECT 
+                    n.id, n.user_id, n.title, n.message, n.type, 
+                    n.disaster_type, n.location, n.is_read, n.created_at,
+                    u.email, u.name
+                FROM notifications n
+                LEFT JOIN users u ON n.user_id = u.id
+                WHERE {where_clause}
+                ORDER BY n.created_at DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """
+            
+            params.extend([offset, limit])
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            
+            notifications = []
+            for row in rows:
+                notifications.append({
+                    "id": row[0],
+                    "user_id": row[1],
+                    "title": row[2],
+                    "message": row[3],
+                    "type": row[4],
+                    "disaster_type": row[5],
+                    "location": row[6],
+                    "is_read": bool(row[7]),
+                    "created_at": row[8].isoformat() if row[8] else None,
+                    "user_email": row[9],
+                    "user_name": row[10],
+                    "is_grouped": False
+                })
+            
+            # Get total count
+            count_query = f"SELECT COUNT(*) FROM notifications WHERE {where_clause}"
+            cursor.execute(count_query, params[:-2])
+            total_count = cursor.fetchone()[0]
+        
+        return {
+            "notifications": notifications,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset,
+            "grouped": grouped
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def get_notification_users(title: str, message: str, notification_type: str, 
+                          disaster_type: str = None, location: str = None):
+    """Get all users who received a specific notification"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Handle empty strings as None
+        if disaster_type == '':
+            disaster_type = None
+        if location == '':
+            location = None
+        
+        query = """
+            SELECT 
+                n.id, n.user_id, n.is_read, n.created_at,
+                u.email, u.name
+            FROM notifications n
+            LEFT JOIN users u ON n.user_id = u.id
+            WHERE n.title = ? AND n.message = ? AND n.type = ?
+                AND (
+                    (n.disaster_type = ? AND ? IS NOT NULL) OR 
+                    (n.disaster_type IS NULL AND ? IS NULL)
+                )
+                AND (
+                    (n.location = ? AND ? IS NOT NULL) OR 
+                    (n.location IS NULL AND ? IS NULL)
+                )
+            ORDER BY n.created_at DESC
+        """
+        
+        cursor.execute(query, (title, message, notification_type, 
+                              disaster_type, disaster_type, disaster_type,
+                              location, location, location))
+        rows = cursor.fetchall()
+        
+        users = []
+        for row in rows:
+            users.append({
+                "notification_id": row[0],
+                "user_id": row[1],
+                "is_read": bool(row[2]),
+                "created_at": row[3].isoformat() if row[3] else None,
+                "user_email": row[4],
+                "user_name": row[5]
+            })
+        
+        return {
+            "users": users,
+            "total": len(users)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def get_notification_stats():
+    """Get notification statistics for admin dashboard"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Total notifications
+        cursor.execute("SELECT COUNT(*) FROM notifications")
+        total_notifications = cursor.fetchone()[0]
+        
+        # Unread notifications
+        cursor.execute("SELECT COUNT(*) FROM notifications WHERE is_read = 0")
+        unread_notifications = cursor.fetchone()[0]
+        
+        # Notifications by type
+        cursor.execute("""
+            SELECT type, COUNT(*) as count
+            FROM notifications
+            GROUP BY type
+        """)
+        by_type = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        # Notifications by disaster type
+        cursor.execute("""
+            SELECT disaster_type, COUNT(*) as count
+            FROM notifications
+            WHERE disaster_type IS NOT NULL
+            GROUP BY disaster_type
+        """)
+        by_disaster_type = {row[0]: row[1] for row in cursor.fetchall()}
+        
+        # Recent notifications (last 24 hours)
+        cursor.execute("""
+            SELECT COUNT(*) FROM notifications
+            WHERE created_at >= DATEADD(hour, -24, GETDATE())
+        """)
+        recent_24h = cursor.fetchone()[0]
+        
+        # Recent notifications (last 7 days)
+        cursor.execute("""
+            SELECT COUNT(*) FROM notifications
+            WHERE created_at >= DATEADD(day, -7, GETDATE())
+        """)
+        recent_7days = cursor.fetchone()[0]
+        
+        return {
+            "total_notifications": total_notifications,
+            "unread_notifications": unread_notifications,
+            "read_notifications": total_notifications - unread_notifications,
+            "by_type": by_type,
+            "by_disaster_type": by_disaster_type,
+            "recent_24h": recent_24h,
+            "recent_7days": recent_7days
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
+
+def delete_notification_admin(notification_id: int):
+    """Delete any notification (admin only)"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM notifications WHERE id = ?", (notification_id,))
+        
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        conn.commit()
+        return {"message": "Notification deleted successfully"}
+        
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        try:
+            conn.close()
+        except:
+            pass

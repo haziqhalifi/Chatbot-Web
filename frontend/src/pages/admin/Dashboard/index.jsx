@@ -527,9 +527,12 @@ const AdminDashboard = () => {
                   <FileText className="h-8 w-8 text-green-600 mb-2" />
                   <span className="text-sm font-medium">View Reports</span>
                 </button>
-                <button className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Settings className="h-8 w-8 text-gray-600 mb-2" />
-                  <span className="text-sm font-medium">Settings</span>
+                <button
+                  onClick={() => navigate('/admin/notifications')}
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <AlertTriangle className="h-8 w-8 text-orange-600 mb-2" />
+                  <span className="text-sm font-medium">Notifications</span>
                 </button>
               </div>
             </div>
