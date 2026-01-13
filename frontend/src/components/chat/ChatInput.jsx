@@ -1,7 +1,7 @@
 import React from 'react';
-import api from '../../api';
 import VoiceInput from './VoiceInput';
 import useAppSettings from '../../hooks/useAppSettings';
+import useWebSpeechAPI from '../../hooks/useWebSpeechAPI';
 
 const ChatInput = ({
   inputValue,
@@ -9,162 +9,60 @@ const ChatInput = ({
   onKeyPress,
   onSendMessage,
   onSendMessageWithText,
-  isListening,
-  setIsListening,
-  audioLevel,
-  setAudioLevel,
   canSendMessage,
-  mediaRecorderRef,
-  audioChunksRef,
-  audioContextRef,
-  analyserRef,
-  sourceRef,
-  animationFrameRef,
   width,
-  isTranscribing,
-  setIsTranscribing,
 }) => {
   const settings = useAppSettings();
   const voiceInputEnabled = settings?.voiceInputEnabled !== false;
+  const {
+    isListening,
+    transcript,
+    isFinal,
+    error,
+    isSupported,
+    startListening,
+    stopListening,
+    abort,
+  } = useWebSpeechAPI();
   const [transcriptionError, setTranscriptionError] = React.useState('');
+  const lastSentTranscriptRef = React.useRef('');
 
-  const handleVoiceClick = async () => {
-    if (!isListening) {
-      // Start recording
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const mediaRecorder = new window.MediaRecorder(stream);
-          mediaRecorderRef.current = mediaRecorder;
-          audioChunksRef.current = [];
-
-          // Audio context for waveform
-          audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-          sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-          analyserRef.current = audioContextRef.current.createAnalyser();
-          sourceRef.current.connect(analyserRef.current);
-          analyserRef.current.fftSize = 32;
-          const bufferLength = analyserRef.current.frequencyBinCount;
-          const dataArray = new Uint8Array(bufferLength);
-
-          const updateWave = () => {
-            analyserRef.current.getByteTimeDomainData(dataArray);
-            let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
-              sum += Math.abs(dataArray[i] - 128);
-            }
-            setAudioLevel(sum / bufferLength);
-            animationFrameRef.current = requestAnimationFrame(updateWave);
-          };
-          updateWave();
-
-          mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) {
-              audioChunksRef.current.push(e.data);
-            }
-          };
-
-          mediaRecorder.onstop = async () => {
-            if (audioContextRef.current) {
-              audioContextRef.current.close();
-              audioContextRef.current = null;
-            }
-            if (animationFrameRef.current) {
-              cancelAnimationFrame(animationFrameRef.current);
-            }
-            setAudioLevel(0);
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'voice.wav');
-
-            setIsTranscribing(true);
-            setTranscriptionError('');
-            try {
-              // Get user's preferred language from localStorage (default to auto-detect)
-              const voiceLanguage = localStorage.getItem('voiceLanguage') || 'auto';
-
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-              const res = await api.post('/transcribe', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-                params: {
-                  language: voiceLanguage,
-                  method: 'auto',
-                },
-                signal: controller.signal,
-              });
-
-              clearTimeout(timeoutId);
-
-              const transcript = res.data.transcript;
-              const method = res.data.method || 'unknown';
-              console.log(`Transcription successful using ${method}`);
-
-              if (!transcript || transcript.trim() === '') {
-                setTranscriptionError('No speech detected. Please try again.');
-                return;
-              }
-
-              onInputChange({ target: { value: transcript } });
-
-              if (transcript.trim()) {
-                onSendMessageWithText(transcript, 'voice');
-              }
-            } catch (err) {
-              console.error('Voice transcription failed:', err);
-
-              let errorMsg = 'Voice transcription failed. Please try again.';
-
-              if (err.name === 'AbortError') {
-                errorMsg = 'Transcription timeout. Please try recording a shorter message.';
-              } else if (err.code === 'ECONNABORTED' || err.message.includes('timeout')) {
-                errorMsg = 'Request timeout. Please check your internet connection.';
-              } else if (err.message.includes('Network Error')) {
-                errorMsg = 'Network error. Please check your internet connection.';
-              } else if (err.response) {
-                if (err.response.status === 503) {
-                  errorMsg = 'Transcription service unavailable. Please try again later.';
-                } else if (err.response.status === 413) {
-                  errorMsg = 'Audio file too large. Please record a shorter message.';
-                } else if (err.response.data?.detail) {
-                  errorMsg = err.response.data.detail;
-                }
-              }
-
-              setTranscriptionError(errorMsg);
-            } finally {
-              setIsTranscribing(false);
-            }
-          };
-
-          mediaRecorder.start();
-          setIsListening(true);
-          setTranscriptionError('');
-        } catch (err) {
-          console.error('Microphone access error:', err);
-
-          let errorMsg = 'Microphone access denied or not available.';
-
-          if (err.name === 'NotAllowedError') {
-            errorMsg =
-              'Microphone permission denied. Please allow microphone access in your browser settings.';
-          } else if (err.name === 'NotFoundError') {
-            errorMsg = 'No microphone found. Please connect a microphone and try again.';
-          } else if (err.name === 'NotReadableError') {
-            errorMsg = 'Microphone is in use by another application.';
-          }
-
-          setTranscriptionError(errorMsg);
+  // Handle voice input using Web Speech API
+  React.useEffect(() => {
+    if (!isListening && isFinal && transcript && transcript.trim()) {
+      // Only send if this is a new transcript (not already sent)
+      if (transcript !== lastSentTranscriptRef.current) {
+        lastSentTranscriptRef.current = transcript;
+        onInputChange({ target: { value: transcript } });
+        if (transcript.trim()) {
+          onSendMessageWithText(transcript, 'voice');
         }
       }
+    }
+  }, [isListening, isFinal, transcript, onInputChange, onSendMessageWithText]);
+
+  // Update transcription error from Web Speech API
+  React.useEffect(() => {
+    if (error) {
+      setTranscriptionError(error);
+    }
+  }, [error]);
+
+  const handleVoiceClick = () => {
+    if (!isSupported) {
+      setTranscriptionError(
+        'Web Speech API is not supported in your browser. Please use Chrome, Edge, or another Chromium-based browser.'
+      );
+      return;
+    }
+
+    if (!isListening) {
+      // Start listening
+      setTranscriptionError('');
+      startListening();
     } else {
-      // Stop recording
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-        setIsListening(false);
-      }
+      // Stop listening
+      stopListening();
     }
   };
 
@@ -202,7 +100,7 @@ const ChatInput = ({
       )}
 
       {/* Voice recording indicator */}
-      {voiceInputEnabled && isListening && <VoiceInput audioLevel={audioLevel} />}
+      {voiceInputEnabled && isListening && <VoiceInput isListening={isListening} />}
 
       <div className="bg-gray-50 rounded-[16px] flex items-center p-2 border border-gray-200">
         <input
@@ -211,7 +109,7 @@ const ChatInput = ({
             !canSendMessage
               ? 'Sending message...'
               : voiceInputEnabled && isListening
-                ? 'Recording... Tap microphone to stop'
+                ? 'Listening... Tap microphone to stop'
                 : 'Type your message...'
           }
           value={inputValue}
@@ -247,8 +145,8 @@ const ChatInput = ({
               !canSendMessage
                 ? 'Sending message...'
                 : isListening
-                  ? 'Stop recording'
-                  : 'Hold to record voice message'
+                  ? 'Stop listening'
+                  : 'Tap to start voice input'
             }
           >
             {isListening ? (
