@@ -261,10 +261,10 @@ const DisasterDashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
             <AlertTriangle className="text-orange-500" size={32} />
-            Disaster Dashboard
+            Disaster Reports
           </h1>
           <p className="mt-2 text-gray-600">
-            Real-time disaster monitoring and analytics from NADMA MyDIMS
+            View official disaster reports from NADMA and track your submitted reports
           </p>
         </div>
 
