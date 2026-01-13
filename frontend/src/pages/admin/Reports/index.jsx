@@ -18,6 +18,7 @@ import {
   getSeverityColor,
   getStatusColor,
   formatDate,
+  formatStatus,
   filterReports,
   getAvailableTypes,
 } from './utils/helperFunctions';
@@ -94,6 +95,7 @@ const AdminReports = () => {
       }
 
       const data = await response.json();
+      console.log('Reports data received:', data.reports?.slice(0, 1)); // Log first report to verify data structure
       setReports(data.reports || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -226,7 +228,7 @@ const AdminReports = () => {
     setUpdatingReport(report);
     setUpdateForm({
       status: report.status || 'PENDING',
-      severity: report.severity || 'Medium',
+      severity: report.severity || '',
       admin_notes: report.adminNotes || '',
       coordinates: report.coordinates || '',
       affected_people: report.affectedPeople || 0,
@@ -463,6 +465,7 @@ const AdminReports = () => {
               getSeverityColor={getSeverityColor}
               getStatusColor={getStatusColor}
               formatDate={formatDate}
+              formatStatus={formatStatus}
               fetchReportDetails={fetchReportDetails}
               setSelectedReport={setSelectedReport}
               handleUpdateReport={handleUpdateReport}
@@ -503,6 +506,7 @@ const AdminReports = () => {
         handleConfirmNotification={handleConfirmNotification}
         getSeverityColor={getSeverityColor}
         getStatusColor={getStatusColor}
+        formatStatus={formatStatus}
       />
 
       <ReportDetailModal
@@ -511,6 +515,7 @@ const AdminReports = () => {
         getSeverityColor={getSeverityColor}
         getStatusColor={getStatusColor}
         formatDate={formatDate}
+        formatStatus={formatStatus}
       />
     </AdminLayout>
   );

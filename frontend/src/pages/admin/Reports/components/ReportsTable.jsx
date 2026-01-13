@@ -18,6 +18,7 @@ const ReportsTable = ({
   getSeverityColor,
   getStatusColor,
   formatDate,
+  formatStatus,
   fetchReportDetails,
   setSelectedReport,
   handleUpdateReport,
@@ -105,21 +106,25 @@ const ReportsTable = ({
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
-                    >
-                      {report.severity}
-                    </span>
+                    {report.severity ? (
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(report.severity)}`}
+                      >
+                        {report.severity}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 font-medium">-</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(report.status)}`}
                     >
-                      {report.status}
+                      {formatStatus(report.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.reportedBy}
+                    {report.reportedBy || report.reporter_name || 'Unknown User'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
