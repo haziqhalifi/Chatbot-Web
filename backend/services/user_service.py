@@ -36,17 +36,32 @@ def verify_user(email: str, password: str):
     try:
         conn = get_db_conn()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, hashed_password, name FROM users WHERE email = ?", (email,))
+        cursor.execute("""
+            SELECT id, hashed_password, name, role, account_status, status_reason 
+            FROM users WHERE email = ?
+        """, (email,))
         row = cursor.fetchone()
         
         if not row:
             raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Check account status
+        account_status = (row[4] or 'active').lower()
+        if account_status == 'suspended':
+            reason = row[5] or "Your account has been suspended"
+            raise HTTPException(status_code=403, detail=f"Account suspended. {reason}")
+        elif account_status == 'blocked':
+            reason = row[5] or "Your account has been blocked"
+            raise HTTPException(status_code=403, detail=f"Account blocked. {reason}")
         
         if not row[1]:
             raise HTTPException(status_code=401, detail="No password set for this account. Please use social login or reset your password.")
         
         if not pwd_context.verify(password, row[1]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Get user role
+        user_role = row[3] or "Public"
         
         # Generate JWT token
         JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
@@ -55,6 +70,7 @@ def verify_user(email: str, password: str):
             "user_id": row[0],
             "email": email,
             "name": row[2] or "",
+            "role": user_role,
             "exp": datetime.utcnow() + timedelta(days=7)
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
@@ -69,7 +85,7 @@ def verify_user(email: str, password: str):
                 "id": row[0],
                 "email": email,
                 "name": row[2] or "",
-                "role": "user"
+                "role": user_role
             }
         }
     except Exception as e:
