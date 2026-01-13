@@ -270,14 +270,7 @@ export const useChat = () => {
           timestamp: new Date().toISOString(),
         };
 
-        const typingMessage = {
-          id: messages.length + 2,
-          sender: 'bot',
-          text: 'Tiara is typing...',
-          timestamp: new Date().toISOString(),
-        };
-
-        setMessages((prev) => [...prev, userMessage, typingMessage]);
+        setMessages((prev) => [...prev, userMessage]);
 
         // Send to backend for AI response
         const response = await chatAPI.generateResponse(
@@ -287,34 +280,33 @@ export const useChat = () => {
         );
         const aiResponse = response.data;
 
-        // Replace typing message with actual response
+        // Add bot response to messages
         const botMessage = {
           id: aiResponse.bot_message.id || messages.length + 2,
           sender: 'bot',
           text: aiResponse.ai_response.response || aiResponse.bot_message.content,
           timestamp: aiResponse.bot_message.timestamp,
+          mapCommands: aiResponse.ai_response.map_commands || null, // Include map commands in message
         };
 
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = botMessage; // Replace typing message
-          return updated;
-        });
+        setMessages((prev) => [...prev, botMessage]);
 
         // Handle map commands if present
         if (aiResponse.ai_response.map_commands && aiResponse.ai_response.map_commands.length > 0) {
           console.log('Dispatching map commands:', aiResponse.ai_response.map_commands);
           window.dispatchEvent(
             new CustomEvent(MAP_COMMAND_EVENT, {
-              detail: { commands: aiResponse.ai_response.map_commands },
+              detail: {
+                commands: aiResponse.ai_response.map_commands,
+                messageId: botMessage.id, // Pass message ID to link results
+              },
             })
           );
         }
 
         return aiResponse;
       } catch (err) {
-        // Remove typing message on error
-        setMessages((prev) => prev.slice(0, -1));
+        // Keep messages as is on error (user message already added)
         setError(err.response?.data?.detail || 'Failed to send message');
         throw err;
       } finally {
