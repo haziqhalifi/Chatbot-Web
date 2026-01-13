@@ -40,22 +40,12 @@ const ChatBox = ({
   const { userProfile } = useUserProfile();
 
   const [inputValue, setInputValue] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
-
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState('chat');
 
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const sourceRef = useRef(null);
-  const animationFrameRef = useRef(null);
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const mapControllerRef = useRef(null);
@@ -159,19 +149,7 @@ const ChatBox = ({
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [displayMessages, isListening]);
-
-  // Clean up audio context on unmount
-  useEffect(() => {
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
+  }, [displayMessages]);
 
   // Close export dropdown when clicking outside
   useEffect(() => {
@@ -256,8 +234,6 @@ const ChatBox = ({
           ref={chatContainerRef}
           displayMessages={displayMessages}
           userProfile={userProfile}
-          isListening={isListening}
-          isTranscribing={isTranscribing}
           chatEndRef={chatEndRef}
           height={height}
           width={width}
@@ -269,20 +245,8 @@ const ChatBox = ({
           onKeyPress={handleKeyPress}
           onSendMessage={handleSendMessage}
           onSendMessageWithText={handleSendMessageWithText}
-          isListening={isListening}
-          setIsListening={setIsListening}
-          audioLevel={audioLevel}
-          setAudioLevel={setAudioLevel}
           canSendMessage={canSendMessage}
-          mediaRecorderRef={mediaRecorderRef}
-          audioChunksRef={audioChunksRef}
-          audioContextRef={audioContextRef}
-          analyserRef={analyserRef}
-          sourceRef={sourceRef}
-          animationFrameRef={animationFrameRef}
           width={width}
-          isTranscribing={isTranscribing}
-          setIsTranscribing={setIsTranscribing}
         />
       </div>
     </>
