@@ -316,6 +316,22 @@ html[data-text-size='Large'] {
   }
 }
 
+/* Fade-in animation for expandable content */
+.animate-fadeIn {
+  animation: fadeInContent 0.3s ease-in-out;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
 /* Resize border animation */
 .resize-border {
   animation: pulse 1s infinite;

@@ -1,10 +1,20 @@
 import React, { forwardRef } from 'react';
 import UserAvatar from './UserAvatar';
 import renderMarkdown from '../../utils/renderMarkdown';
+import MapCommandDetails from './MapCommandDetails';
 
 const ChatMessages = forwardRef(
   (
-    { displayMessages, userProfile, isListening, isTranscribing, chatEndRef, height, width },
+    {
+      displayMessages,
+      userProfile,
+      isListening,
+      isTranscribing,
+      isSending,
+      chatEndRef,
+      height,
+      width,
+    },
     ref
   ) => {
     // Calculate responsive message width based on chat window width
@@ -101,6 +111,17 @@ const ChatMessages = forwardRef(
                     message.text
                   )}
                 </div>
+
+                {/* Map Command Details - Only for bot messages with map commands */}
+                {message.sender === 'bot' &&
+                  message.mapCommands &&
+                  message.mapCommands.length > 0 && (
+                    <MapCommandDetails
+                      commands={message.mapCommands}
+                      results={message.mapCommandResults}
+                      isProcessing={message.isProcessingCommands}
+                    />
+                  )}
               </div>
 
               {/* Message timestamp */}
@@ -170,6 +191,48 @@ const ChatMessages = forwardRef(
             </div>
             <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
               <span className="text-sm text-gray-600">Transcribing your voice...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tiara typing indicator */}
+        {isSending && (
+          <div className="flex justify-start items-end space-x-2">
+            <div className="flex-shrink-0">
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
+            </div>
+            <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
+              <div className="flex items-center space-x-2">
+                <svg
+                  className="w-4 h-4 animate-spin text-blue-600"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="xMidYMid"
+                >
+                  <circle
+                    strokeDasharray="164.93361431346415 56.97787143782138"
+                    r="35"
+                    strokeWidth="10"
+                    stroke="currentColor"
+                    fill="none"
+                    cy="50"
+                    cx="50"
+                  >
+                    <animateTransform
+                      keyTimes="0;1"
+                      values="0 50 50;360 50 50"
+                      dur="1s"
+                      repeatCount="indefinite"
+                      type="rotate"
+                      attributeName="transform"
+                    ></animateTransform>
+                  </circle>
+                </svg>
+                <span className="text-sm text-gray-600">Tiara is typing...</span>
+              </div>
             </div>
           </div>
         )}
