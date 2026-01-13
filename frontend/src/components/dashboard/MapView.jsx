@@ -21,30 +21,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
   const [showLayerInfo, setShowLayerInfo] = useState(null);
   const [showOpacityControl, setShowOpacityControl] = useState(null);
   const [apiEndpoints, setApiEndpoints] = useState([]);
-  const [layers, setLayers] = useState([
-    {
-      id: 'malaysia-boundaries',
-      name: 'Malaysia Administrative Boundaries',
-      visible: false,
-      type: 'feature',
-      icon: 'Building',
-      description: 'Administrative boundaries of Malaysia states and districts',
-      opacity: 0.8,
-      color: [0, 0, 0, 0.8],
-      isStatic: true, // Mark as static layer (not from API)
-    },
-    {
-      id: 'emergency-services-malaysia',
-      name: 'Emergency Services (Malaysia)',
-      visible: false,
-      type: 'feature',
-      icon: 'MapPin',
-      description: 'Hospitals, police stations, fire stations, and emergency response centers',
-      opacity: 1.0,
-      color: [0, 0, 255, 0.8],
-      isStatic: true, // Mark as static layer (not from API)
-    },
-  ]);
+  const [layers, setLayers] = useState([]);
   const [layerGraphics, setLayerGraphics] = useState(new Map());
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -104,14 +81,9 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     },
   ];
 
-  // Icon mapping for layer types
+  // Icon mapping for layer types (used in layer list)
   const iconMap = {
-    Building,
     AlertTriangle,
-    TreePine,
-    MapPin,
-    Droplets,
-    Mountain,
   };
 
   // Initialize map on component mount
@@ -194,6 +166,14 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
               icon = 'Building';
               color = [128, 0, 128, 0.3];
               break;
+            case 'nadma-natural-disaster':
+              icon = 'AlertTriangle';
+              color = [255, 0, 0, 0.6];
+              break;
+            case 'plan-malaysia-disaster':
+              icon = 'MapIcon';
+              color = [220, 53, 69, 0.5];
+              break;
             default:
               icon = 'AlertTriangle';
               color = [255, 165, 0, 0.4];
@@ -202,11 +182,19 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           return {
             id: `api-${endpoint.type}`,
             name: endpoint.name,
-            visible: false,
+            visible:
+              endpoint.type === 'nadma-natural-disaster' ||
+              endpoint.type === 'plan-malaysia-disaster'
+                ? true
+                : false, // Show disaster layers by default
             type: 'api-feature',
             icon: icon,
             description: endpoint.description,
-            opacity: 0.5,
+            opacity:
+              endpoint.type === 'nadma-natural-disaster' ||
+              endpoint.type === 'plan-malaysia-disaster'
+                ? 0.7
+                : 0.5,
             color: color,
             url: endpoint.url, // Store the ArcGIS Feature Server URL
             apiType: endpoint.type,
@@ -228,45 +216,34 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
     const fetchNadmaDisasters = async () => {
       try {
-        console.log('Fetching NADMA disasters directly from NADMA API...');
-        const NADMA_API_URL = 'https://mydims.nadma.gov.my/api/disasters';
-        const NADMA_TOKEN = '6571756|yN5L6StiHQOlyouD5FjmMFBOeywAxjPE79x0m7n843ac4e63';
-
-        const response = await fetch(NADMA_API_URL, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${NADMA_TOKEN}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({}),
-        });
+        console.log('Fetching NADMA disasters from backend database...');
+        const response = await fetch('http://localhost:8000/map/nadma/disasters/db');
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('NADMA disasters fetched:', result);
+        console.log('NADMA DB disasters fetched:', result);
 
         // Add NADMA disasters as a layer
         const nadmaLayer = {
-          id: 'nadma-disasters',
-          name: 'NADMA Real-time Disasters',
-          visible: false,
+          id: 'nadma-db-disasters',
+          name: 'NADMA Active Disasters (Database)',
+          visible: true,
           type: 'nadma-feature',
           icon: 'AlertTriangle',
-          description: 'Real-time disaster data from NADMA MyDIMS',
-          opacity: 1.0,
+          description: 'Active disaster data from NADMA database',
+          opacity: 0.9,
           color: [255, 0, 0, 0.8],
-          nadmaData: Array.isArray(result) ? result : result.data || [],
+          nadmaData: result.data || [],
           isStatic: false,
         };
 
         setLayers((prevLayers) => [...prevLayers, nadmaLayer]);
-        console.log('NADMA layer added to map');
+        console.log('NADMA DB layer added to map');
       } catch (error) {
-        console.error('Error fetching NADMA disasters:', error);
+        console.error('Error fetching NADMA DB disasters:', error);
       }
     };
 
@@ -394,11 +371,11 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const useSecuredWebMap = true; // Using the WebMap from index.html by default
 
       if (useSecuredWebMap && ArcGISWebMap && token) {
-        console.log('Creating secured WebMap with ID: 9186757d793f4b0d87d58a65ae16c736');
+        console.log('Creating secured WebMap with ID: 84651c5dc3714cb1b9e89376a57b7c99');
         try {
           map = new ArcGISWebMap({
             portalItem: {
-              id: '9186757d793f4b0d87d58a65ae16c736', // WebMap ID from index.html
+              id: '84651c5dc3714cb1b9e89376a57b7c99', // WebMap ID with disaster layers
             },
           });
           console.log(
@@ -486,13 +463,9 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Initialize basic navigation widgets (like in index.html)
       await initializeBasicWidgets(view);
 
-      // Only initialize custom layers if not using WebMap (WebMap has its own layers)
-      if (!useSecuredWebMap) {
-        await initializeLayers(view);
-      } else {
-        console.log('Using WebMap layers - skipping custom layer initialization');
-        setLoading(false);
-      }
+      // Initialize custom API layers (NADMA, Plan Malaysia, etc.) even with WebMap
+      console.log('Initializing custom API layers...');
+      await initializeLayers(view);
 
       // Initialize Bookmarks widget
       await initializeBookmarks(view);
@@ -559,302 +532,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         let graphicsLayer;
 
         switch (layer.id) {
-          case 'malaysia-boundaries':
-            console.log('Creating Malaysia boundaries layer...');
-            // Use the real Malaysia state boundaries service
-            const stateLayer = new FeatureLayer({
-              url: 'https://services7.arcgis.com/IyvyFk20mB7Wpc95/arcgis/rest/services/MALAYSIA_STATE_BOUNDARIES/FeatureServer',
-              outFields: ['*'],
-              visible: layer.visible,
-              opacity: layer.opacity,
-              title: layer.name,
-              renderer: {
-                type: 'simple',
-                symbol: {
-                  type: 'simple-fill',
-                  color: [255, 255, 0, 0.2],
-                  outline: {
-                    color: 'red',
-                    width: 1,
-                  },
-                },
-              },
-              popupTemplate: {
-                title: layer.name,
-                content: layer.description,
-              },
-            });
-
-            view.map.add(stateLayer);
-            newLayerGraphics.set(layer.id, stateLayer);
-            console.log('Added Malaysia boundaries layer successfully');
-            continue;
-
-          case 'flood-risk-malaysia':
-            // Create flood risk area over Kelantan (Kota Bharu)
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-
-            const floodGeometry = new Polygon({
-              rings: [
-                [
-                  [102.15, 6.1], // Near Kota Bharu, Kelantan
-                  [102.3, 6.1],
-                  [102.3, 6.25],
-                  [102.15, 6.25],
-                  [102.15, 6.1],
-                ],
-              ],
-              spatialReference: { wkid: 4326 },
-            });
-            const floodSymbol = new SimpleFillSymbol({
-              color: layer.color,
-              outline: new SimpleLineSymbol({
-                color: [0, 0, 255, 0.8],
-                width: 1,
-              }),
-            });
-            const floodGraphic = new Graphic({
-              geometry: floodGeometry,
-              symbol: floodSymbol,
-              attributes: {
-                name: layer.name,
-                description: layer.description,
-              },
-              popupTemplate: {
-                title: layer.name,
-                content: layer.description,
-              },
-            });
-            graphicsLayer.add(floodGraphic);
-            break;
-
-          case 'emergency-services-malaysia':
-            // Create emergency service points at real hospitals
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-
-            const emergencyPoints = [
-              { longitude: 101.6869, latitude: 3.139, name: 'Hospital Kuala Lumpur' },
-              {
-                longitude: 102.2405,
-                latitude: 6.1254,
-                name: 'Hospital Raja Perempuan Zainab II, Kota Bharu',
-              },
-              { longitude: 100.3075, latitude: 5.4164, name: 'Hospital Pulau Pinang' },
-              {
-                longitude: 103.4271,
-                latitude: 3.8236,
-                name: 'Hospital Tengku Ampuan Afzan, Kuantan',
-              },
-              {
-                longitude: 116.0735,
-                latitude: 5.9804,
-                name: 'Hospital Queen Elizabeth, Kota Kinabalu',
-              },
-            ];
-
-            emergencyPoints.forEach((point) => {
-              const pointGeometry = new Point({
-                longitude: point.longitude,
-                latitude: point.latitude,
-                spatialReference: { wkid: 4326 },
-              });
-              const pointSymbol = new SimpleMarkerSymbol({
-                color: layer.color,
-                size: 12,
-                outline: new SimpleLineSymbol({
-                  color: [255, 255, 255, 1],
-                  width: 2,
-                }),
-              });
-              const pointGraphic = new Graphic({
-                geometry: pointGeometry,
-                symbol: pointSymbol,
-                attributes: { name: point.name },
-                popupTemplate: {
-                  title: 'Emergency Service',
-                  content: point.name,
-                },
-              });
-              graphicsLayer.add(pointGraphic);
-            });
-            break;
-
-          case 'landslide-risk-malaysia':
-            // Landslide risk polygon over Genting Highlands
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-            const landslideGeometry = new Polygon({
-              rings: [
-                [
-                  [101.76, 3.4],
-                  [101.8, 3.4],
-                  [101.8, 3.45],
-                  [101.76, 3.45],
-                  [101.76, 3.4],
-                ],
-              ],
-              spatialReference: { wkid: 4326 },
-            });
-            const landslideSymbol = new SimpleFillSymbol({
-              color: layer.color,
-              outline: new SimpleLineSymbol({
-                color: [139, 69, 19, 1],
-                width: 1,
-              }),
-            });
-            const landslideGraphic = new Graphic({
-              geometry: landslideGeometry,
-              symbol: landslideSymbol,
-              attributes: {
-                name: layer.name,
-                description: layer.description,
-              },
-              popupTemplate: {
-                title: layer.name,
-                content: layer.description,
-              },
-            });
-            graphicsLayer.add(landslideGraphic);
-            break;
-
-          case 'tsunami-risk-malaysia':
-            // Tsunami risk polygon over Penang coast
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-            const tsunamiGeometry = new Polygon({
-              rings: [
-                [
-                  [100.2, 5.2],
-                  [100.4, 5.2],
-                  [100.4, 5.5],
-                  [100.2, 5.5],
-                  [100.2, 5.2],
-                ],
-              ],
-              spatialReference: { wkid: 4326 },
-            });
-            const tsunamiSymbol = new SimpleFillSymbol({
-              color: layer.color,
-              outline: new SimpleLineSymbol({
-                color: [255, 165, 0, 1],
-                width: 1,
-              }),
-            });
-            const tsunamiGraphic = new Graphic({
-              geometry: tsunamiGeometry,
-              symbol: tsunamiSymbol,
-              attributes: {
-                name: layer.name,
-                description: layer.description,
-              },
-              popupTemplate: {
-                title: layer.name,
-                content: layer.description,
-              },
-            });
-            graphicsLayer.add(tsunamiGraphic);
-            break;
-
-          case 'earthquake-risk-malaysia':
-            // Earthquake risk polygon over Ranau, Sabah
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-            const earthquakeGeometry = new Polygon({
-              rings: [
-                [
-                  [116.6, 5.9],
-                  [116.8, 5.9],
-                  [116.8, 6.1],
-                  [116.6, 6.1],
-                  [116.6, 5.9],
-                ],
-              ],
-              spatialReference: { wkid: 4326 },
-            });
-            const earthquakeSymbol = new SimpleFillSymbol({
-              color: layer.color,
-              outline: new SimpleLineSymbol({
-                color: [255, 0, 0, 1],
-                width: 1,
-              }),
-            });
-            const earthquakeGraphic = new Graphic({
-              geometry: earthquakeGeometry,
-              symbol: earthquakeSymbol,
-              attributes: {
-                name: layer.name,
-                description: layer.description,
-              },
-              popupTemplate: {
-                title: layer.name,
-                content: layer.description,
-              },
-            });
-            graphicsLayer.add(earthquakeGraphic);
-            break;
-
-          case 'transportation-network-malaysia':
-            // Create transportation lines
-            graphicsLayer = new GraphicsLayer({
-              title: layer.name,
-              visible: layer.visible,
-              opacity: layer.opacity,
-            });
-
-            const transportLines = [
-              [
-                [100.0, 3.0],
-                [110.0, 3.0],
-              ], // East-West highway
-              [
-                [101.0, 2.0],
-                [101.0, 6.0],
-              ], // North-South highway
-              [
-                [103.0, 1.5],
-                [103.0, 5.5],
-              ], // Another major road
-            ];
-
-            transportLines.forEach((line) => {
-              const lineGeometry = new Polyline({
-                paths: [line],
-                spatialReference: { wkid: 4326 },
-              });
-              const lineSymbol = new SimpleLineSymbol({
-                color: layer.color,
-                width: 3,
-              });
-              const lineGraphic = new Graphic({
-                geometry: lineGeometry,
-                symbol: lineSymbol,
-                attributes: { name: 'Major Highway' },
-                popupTemplate: {
-                  title: 'Transportation',
-                  content: 'Major transportation route',
-                },
-              });
-              graphicsLayer.add(lineGraphic);
-            });
-            break;
-
           case 'nadma-disasters':
             // Handle NADMA disasters layer
             console.log('Creating NADMA disasters layer...');
