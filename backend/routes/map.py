@@ -46,6 +46,18 @@ MAP_ENDPOINTS = [
         "url": "https://services7.arcgis.com/DpGu4Fz48xobufjF/arcgis/rest/services/Population/FeatureServer",
         "type": "population",
         "description": "Population density across Malaysia for evacuation planning"
+    },
+    {
+        "name": "NADMA Natural Disasters",
+        "url": "https://services7.arcgis.com/S0zwYu2nP7GNUdBM/arcgis/rest/services/Nadma_Natural_Disaster/FeatureServer/0",
+        "type": "nadma-natural-disaster",
+        "description": "NADMA official natural disaster data from ArcGIS Online"
+    },
+    {
+        "name": "Plan Malaysia Disaster Data",
+        "url": "https://scharms.planmalaysia.gov.my/arcgis/rest/services/DPFDN/Bencana/MapServer",
+        "type": "plan-malaysia-disaster",
+        "description": "Official disaster and hazard data from Department of Town and Country Planning Malaysia"
     }
 ]
 
@@ -79,7 +91,7 @@ def get_map_endpoint_by_type(endpoint_type: str):
     
     raise HTTPException(
         status_code=404, 
-        detail=f"Map endpoint type '{endpoint_type}' not found. Available types: landslide, flood, poi, population"
+        detail=f"Map endpoint type '{endpoint_type}' not found. Available types: landslide, flood, poi, population, nadma-natural-disaster, plan-malaysia-disaster"
     )
 
 @router.get("/types")
