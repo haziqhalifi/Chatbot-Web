@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Query
 from pydantic import BaseModel
 from typing import Optional
 import os
@@ -154,7 +154,8 @@ def get_all_users(x_api_key: str = Header(None)):
                 SELECT 
                     id, email, name, role, auth_provider, 
                     created_at, last_login, email_verified,
-                    phone, city, country
+                    phone, city, country, account_status, 
+                    status_reason, status_updated_at
                 FROM users 
                 ORDER BY created_at DESC
             """)
@@ -168,6 +169,11 @@ def get_all_users(x_api_key: str = Header(None)):
                     user_dict['created_at'] = user_dict['created_at'].isoformat()
                 if user_dict.get('last_login'):
                     user_dict['last_login'] = user_dict['last_login'].isoformat()
+                if user_dict.get('status_updated_at'):
+                    user_dict['status_updated_at'] = user_dict['status_updated_at'].isoformat()
+                # Set default account status if null
+                if not user_dict.get('account_status'):
+                    user_dict['account_status'] = 'active'
                 users.append(user_dict)
             
             return {"users": users, "total": len(users)}
@@ -239,6 +245,126 @@ def demote_admin_to_user(user_id: int, x_api_key: str = Header(None)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to demote user: {str(e)}")
+
+@router.post("/admin/users/{user_id}/suspend")
+def suspend_user(user_id: int, x_api_key: str = Header(None), reason: Optional[str] = Query(None)):
+    """Suspend a user account"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT id, email, account_status FROM users WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Update user status to suspended
+            cursor.execute("""
+                UPDATE users 
+                SET account_status = 'suspended', 
+                    status_reason = ?, 
+                    status_updated_at = GETDATE()
+                WHERE id = ?
+            """, (reason or "Suspended by admin", user_id))
+            conn.commit()
+            
+            return {
+                "message": "User suspended successfully",
+                "user_id": user_id,
+                "email": user[1],
+                "status": "suspended"
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to suspend user: {str(e)}")
+
+@router.post("/admin/users/{user_id}/block")
+def block_user(user_id: int, x_api_key: str = Header(None), reason: Optional[str] = Query(None)):
+    """Block a user account"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT id, email, account_status FROM users WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Update user status to blocked
+            cursor.execute("""
+                UPDATE users 
+                SET account_status = 'blocked', 
+                    status_reason = ?, 
+                    status_updated_at = GETDATE()
+                WHERE id = ?
+            """, (reason or "Blocked by admin", user_id))
+            conn.commit()
+            
+            return {
+                "message": "User blocked successfully",
+                "user_id": user_id,
+                "email": user[1],
+                "status": "blocked"
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to block user: {str(e)}")
+
+@router.post("/admin/users/{user_id}/unblock")
+def unblock_user(user_id: int, x_api_key: str = Header(None)):
+    """Unblock/reactivate a user account"""
+    from config.settings import API_KEY_CREDITS
+    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    try:
+        from database.connection import DatabaseConnection
+        
+        with DatabaseConnection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user exists
+            cursor.execute("SELECT id, email, account_status FROM users WHERE id = ?", (user_id,))
+            user = cursor.fetchone()
+            
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            
+            # Update user status to active
+            cursor.execute("""
+                UPDATE users 
+                SET account_status = 'active', 
+                    status_reason = NULL, 
+                    status_updated_at = GETDATE()
+                WHERE id = ?
+            """, (user_id,))
+            conn.commit()
+            
+            return {
+                "message": "User account reactivated successfully",
+                "user_id": user_id,
+                "email": user[1],
+                "status": "active"
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to unblock user: {str(e)}")
 
 # Admin notification endpoint
 @router.post("/admin/notifications/send")

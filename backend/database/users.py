@@ -74,6 +74,19 @@ def update_users_table():
             if 'last_login' not in existing_columns:
                 cursor.execute("ALTER TABLE users ADD last_login DATETIME")
                 
+            # Add account status columns for suspend/block functionality
+            if 'account_status' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD account_status NVARCHAR(20) DEFAULT 'active'")
+                
+            if 'status_reason' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD status_reason NVARCHAR(500)")
+                
+            if 'status_updated_at' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD status_updated_at DATETIME")
+                
+            if 'status_updated_by' not in existing_columns:
+                cursor.execute("ALTER TABLE users ADD status_updated_by INT")
+                
             conn.commit()
             conn.autocommit = True
             cursor.close()
