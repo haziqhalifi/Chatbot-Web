@@ -49,6 +49,8 @@ const ChatBox = ({
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const mapControllerRef = useRef(null);
+  const mapCommandResultsRef = useRef(new Map()); // Store results by message ID
+  const processingMessagesRef = useRef(new Set()); // Track messages currently processing map commands
 
   // Initialize map controller when mapView is available
   useEffect(() => {
@@ -61,20 +63,34 @@ const ChatBox = ({
   // Listen for map commands from AI responses
   useEffect(() => {
     const handleMapCommands = async (event) => {
-      const { commands } = event.detail;
+      const { commands, messageId } = event.detail;
       if (commands && commands.length > 0 && mapControllerRef.current) {
         console.log('Executing map commands:', commands);
+
+        // Mark as processing
+        if (messageId) {
+          processingMessagesRef.current.add(messageId);
+        }
+
         try {
           const results = await mapControllerRef.current.executeCommands(commands);
           console.log('Map command results:', results);
 
-          // Optionally, you can add a system message to chat showing the command results
+          // Store results and remove from processing
+          if (messageId) {
+            mapCommandResultsRef.current.set(messageId, results);
+            processingMessagesRef.current.delete(messageId);
+          }
+
           const successCount = results.filter((r) => r.success).length;
           if (successCount > 0) {
             console.log(`Successfully executed ${successCount} of ${commands.length} map commands`);
           }
         } catch (error) {
           console.error('Error executing map commands:', error);
+          if (messageId) {
+            processingMessagesRef.current.delete(messageId);
+          }
         }
       }
     };
@@ -85,23 +101,33 @@ const ChatBox = ({
     };
   }, []);
 
-  // Computed messages with personalized welcome message
+  // Computed messages with personalized welcome message and map command data
   const displayMessages = useMemo(() => {
     if (messages.length === 0) return messages;
 
-    const firstMessage = messages[0];
+    let processedMessages = messages.map((msg) => {
+      // Add map command results if available
+      if (msg.sender === 'bot' && msg.id) {
+        const results = mapCommandResultsRef.current.get(msg.id);
+        if (results) {
+          return { ...msg, mapCommandResults: results };
+        }
+      }
+      return msg;
+    });
+
+    // Personalize first message
+    const firstMessage = processedMessages[0];
     if (firstMessage.sender === 'bot' && firstMessage.text.includes('Greetings! I am Tiara.')) {
       if (userProfile?.name) {
-        return [
-          {
-            ...firstMessage,
-            text: `Greetings ${userProfile.name}! I am Tiara. 👋 How may I assist you today?`,
-          },
-          ...messages.slice(1),
-        ];
+        processedMessages[0] = {
+          ...firstMessage,
+          text: `Greetings ${userProfile.name}! I am Tiara. 👋 How may I assist you today?`,
+        };
       }
     }
-    return messages;
+
+    return processedMessages;
   }, [messages, userProfile]);
 
   // Handle new chat button
@@ -237,6 +263,7 @@ const ChatBox = ({
           chatEndRef={chatEndRef}
           height={height}
           width={width}
+          isSending={isSending}
         />
 
         <ChatInput

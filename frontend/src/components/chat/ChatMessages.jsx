@@ -1,12 +1,32 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState } from 'react';
 import UserAvatar from './UserAvatar';
 import renderMarkdown from '../../utils/renderMarkdown';
+import MapCommandDetails from './MapCommandDetails';
+import ReportIssueModal from './ReportIssueModal';
 
 const ChatMessages = forwardRef(
   (
-    { displayMessages, userProfile, isListening, isTranscribing, chatEndRef, height, width },
+    {
+      displayMessages,
+      userProfile,
+      isListening,
+      isTranscribing,
+      isSending,
+      chatEndRef,
+      height,
+      width,
+    },
     ref
   ) => {
+    const [reportMessage, setReportMessage] = useState(null);
+    const [showCopyToast, setShowCopyToast] = useState(false);
+
+    const handleCopyMessage = (text) => {
+      navigator.clipboard.writeText(text);
+      setShowCopyToast(true);
+      setTimeout(() => setShowCopyToast(false), 2000);
+    };
+
     // Calculate responsive message width based on chat window width
     const getMessageMaxWidth = () => {
       if (!width) return '75%';
@@ -101,6 +121,63 @@ const ChatMessages = forwardRef(
                     message.text
                   )}
                 </div>
+
+                {/* Map Command Details - Only for bot messages with map commands */}
+                {message.sender === 'bot' &&
+                  message.mapCommands &&
+                  message.mapCommands.length > 0 && (
+                    <MapCommandDetails
+                      commands={message.mapCommands}
+                      results={message.mapCommandResults}
+                      isProcessing={message.isProcessingCommands}
+                    />
+                  )}
+
+                {/* Action buttons - only for bot messages */}
+                {message.sender === 'bot' && (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={() => handleCopyMessage(message.text)}
+                      className="flex items-center gap-1 text-gray-500 hover:text-gray-700 text-xs transition-colors"
+                      title="Copy message"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span>Copy</span>
+                    </button>
+                    <button
+                      onClick={() => setReportMessage(message)}
+                      className="flex items-center gap-1 text-gray-500 hover:text-red-600 text-xs transition-colors"
+                      title="Report an issue"
+                    >
+                      <svg
+                        className="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+                        />
+                      </svg>
+                      <span>Report</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Message timestamp */}
@@ -174,8 +251,50 @@ const ChatMessages = forwardRef(
           </div>
         )}
 
+        {/* Tiara typing indicator */}
+        {isSending && (
+          <div className="flex justify-start items-end space-x-2">
+            <div className="flex-shrink-0">
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
+            </div>
+            <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Tiara is typing</span>
+                <div className="flex gap-1 items-center">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot" style={{ animationDelay: '0.2s' }}></span>
+                  <span className="typing-dot" style={{ animationDelay: '0.4s' }}></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Auto-scroll anchor */}
         <div ref={chatEndRef} />
+
+        {/* Copy Toast Notification */}
+        {showCopyToast && (
+          <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm flex items-center gap-2 z-50 animate-fadeIn">
+            <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Text copied!
+          </div>
+        )}
+
+        {/* Report Issue Modal */}
+        {reportMessage && (
+          <ReportIssueModal message={reportMessage} onClose={() => setReportMessage(null)} />
+        )}
       </div>
     );
   }

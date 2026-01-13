@@ -316,6 +316,22 @@ html[data-text-size='Large'] {
   }
 }
 
+/* Fade-in animation for expandable content */
+.animate-fadeIn {
+  animation: fadeInContent 0.3s ease-in-out;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
 /* Resize border animation */
 .resize-border {
   animation: pulse 1s infinite;
@@ -334,4 +350,27 @@ html[data-text-size='Large'] {
 /* Sidebar specific styles */
 .chat-window[style*='height: 100vh'] {
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Typing dots animation */
+.typing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #65676b;
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
 }
