@@ -28,24 +28,49 @@ export class MapController {
       return [];
     }
 
+    // Log the raw commands received from OpenAI
+    console.group('🗺️ OpenAI Map Commands Execution');
+    console.log('📥 Raw commands received from OpenAI:');
+    console.log(JSON.stringify(commands, null, 2));
+    console.log(`📊 Total commands to execute: ${commands.length}`);
+    console.groupEnd();
+
     const results = [];
-    for (const command of commands) {
+    for (let i = 0; i < commands.length; i++) {
+      const command = commands[i];
+      console.group(`🔧 Executing Command ${i + 1}/${commands.length}: ${command.function}`);
+      console.log('📋 Command Details:');
+      console.log(JSON.stringify(command, null, 2));
+
       try {
         const result = await this.executeCommand(command.function, command.arguments);
+        console.log('✅ Execution successful');
+        console.log('📤 Result:', JSON.stringify(result, null, 2));
         results.push({
           function: command.function,
           success: true,
           result: result,
         });
       } catch (error) {
-        console.error(`Error executing ${command.function}:`, error);
+        console.error(`❌ Error executing ${command.function}:`, error);
         results.push({
           function: command.function,
           success: false,
           error: error.message,
         });
       }
+      console.groupEnd();
     }
+
+    // Summary of execution
+    console.group('📊 Execution Summary');
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.length - successCount;
+    console.log(`✅ Successful: ${successCount}`);
+    console.log(`❌ Failed: ${failureCount}`);
+    console.log('📄 Full results:', JSON.stringify(results, null, 2));
+    console.groupEnd();
+
     return results;
   }
 
@@ -57,7 +82,8 @@ export class MapController {
       throw new Error('Map view not initialized');
     }
 
-    console.log(`Executing map command: ${functionName}`, args);
+    console.log(`⚡ Executing: ${functionName}`);
+    console.log('📥 Arguments:', JSON.stringify(args, null, 2));
 
     switch (functionName) {
       case 'Zoom':
@@ -107,8 +133,9 @@ export class MapController {
     }
 
     await this.view.goTo({ zoom: newZoom });
-    console.log(`Zoomed ${direction} to level ${newZoom}`);
-    return { zoom: newZoom, message: `Zoomed ${direction}` };
+    const result = { zoom: newZoom, message: `Zoomed ${direction}` };
+    console.log(`🔍 Zoom result:`, JSON.stringify(result, null, 2));
+    return result;
   }
 
   async pan(direction) {
@@ -137,8 +164,12 @@ export class MapController {
     center.latitude += dy;
 
     await this.view.goTo({ center });
-    console.log(`Panned ${direction}`);
-    return { message: `Panned ${direction}` };
+    const result = {
+      message: `Panned ${direction}`,
+      newCenter: { longitude: center.longitude, latitude: center.latitude },
+    };
+    console.log(`🧭 Pan result:`, JSON.stringify(result, null, 2));
+    return result;
   }
 
   async toggleLayer(layerName, visible) {
@@ -149,12 +180,13 @@ export class MapController {
     }
 
     layer.visible = Boolean(visible);
-    console.log(`Layer "${layer.title}" visibility set to ${visible}`);
-    return {
+    const result = {
       layer: layer.title,
       visible: visible,
       message: `Layer ${layer.title} ${visible ? 'shown' : 'hidden'}`,
     };
+    console.log(`🗂️ ToggleLayer result:`, JSON.stringify(result, null, 2));
+    return result;
   }
 
   async search(place) {
@@ -186,15 +218,18 @@ export class MapController {
         // Add a marker
         await this.addMarker(location.longitude, location.latitude, normalized);
 
-        console.log(`Found and zoomed to ${normalized}`);
-        return {
+        const result = {
           found: true,
           place: normalized,
           coordinates: { longitude: location.longitude, latitude: location.latitude },
           message: `Found and zoomed to ${normalized}`,
         };
+        console.log(`🔍 Search result:`, JSON.stringify(result, null, 2));
+        return result;
       } else {
-        return { found: false, place: normalized, message: `Could not find ${normalized}` };
+        const result = { found: false, place: normalized, message: `Could not find ${normalized}` };
+        console.log(`❌ Search result:`, JSON.stringify(result, null, 2));
+        return result;
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -209,8 +244,9 @@ export class MapController {
     }
 
     this.map.basemap = id;
-    console.log(`Basemap changed to ${id}`);
-    return { basemap: id, message: `Switched to ${id} basemap` };
+    const result = { basemap: id, message: `Switched to ${id} basemap` };
+    console.log(`🗺️ ToggleBasemap result:`, JSON.stringify(result, null, 2));
+    return result;
   }
 
   async describeMap(option) {
@@ -231,8 +267,9 @@ export class MapController {
         .map((l) => l.title || l.id),
     };
 
-    console.log('Map description:', info);
-    return { ok: true, message: 'DescribeMap completed', data: info };
+    const result = { ok: true, message: 'DescribeMap completed', data: info };
+    console.log('📍 DescribeMap result:', JSON.stringify(result, null, 2));
+    return result;
   }
 
   async clear() {
@@ -242,8 +279,9 @@ export class MapController {
     this.store.results.clear();
     this.store.buffers.clear();
 
-    console.log('Cleared graphics and results');
-    return { message: 'Cleared all graphics and selections' };
+    const result = { message: 'Cleared all graphics and selections' };
+    console.log('🧹 Clear result:', JSON.stringify(result, null, 2));
+    return result;
   }
 
   // ============================================================
