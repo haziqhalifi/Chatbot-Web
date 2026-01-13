@@ -206,32 +206,13 @@ const ChatMessages = forwardRef(
               />
             </div>
             <div className="bg-white text-[#333333] rounded-2xl rounded-bl-md border border-gray-100 px-4 py-3 shadow-sm">
-              <div className="flex items-center space-x-2">
-                <svg
-                  className="w-4 h-4 animate-spin text-blue-600"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="xMidYMid"
-                >
-                  <circle
-                    strokeDasharray="164.93361431346415 56.97787143782138"
-                    r="35"
-                    strokeWidth="10"
-                    stroke="currentColor"
-                    fill="none"
-                    cy="50"
-                    cx="50"
-                  >
-                    <animateTransform
-                      keyTimes="0;1"
-                      values="0 50 50;360 50 50"
-                      dur="1s"
-                      repeatCount="indefinite"
-                      type="rotate"
-                      attributeName="transform"
-                    ></animateTransform>
-                  </circle>
-                </svg>
-                <span className="text-sm text-gray-600">Tiara is typing...</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Tiara is typing</span>
+                <div className="flex gap-1 items-center">
+                  <span className="typing-dot"></span>
+                  <span className="typing-dot" style={{ animationDelay: '0.2s' }}></span>
+                  <span className="typing-dot" style={{ animationDelay: '0.4s' }}></span>
+                </div>
               </div>
             </div>
           </div>
