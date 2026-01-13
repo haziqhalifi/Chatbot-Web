@@ -351,3 +351,26 @@ html[data-text-size='Large'] {
 .chat-window[style*='height: 100vh'] {
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
 }
+
+/* Typing dots animation */
+.typing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #65676b;
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+@keyframes typingBounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
