@@ -8,6 +8,7 @@ from database import (
 )
 from utils.chat import verify_api_key
 from utils.performance import get_performance_stats
+from routes.utils import get_user_id_from_token
 
 router = APIRouter()
 
@@ -88,13 +89,22 @@ def get_faq(faq_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/admin/faqs")
-def create_faq(faq: FAQCreate, x_api_key: str = Header(None)):
+def create_faq(faq: FAQCreate, x_api_key: str = Header(None), authorization: str = Header(None)):
     """Create a new FAQ (Admin only)"""
     from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
+    # Get admin user ID from JWT token
+    admin_user_id = get_user_id_from_token(authorization)
+    
     try:
-        faq_id = add_faq(faq.question, faq.answer, faq.category, faq.order_index)
+        faq_id = add_faq(
+            faq.question, 
+            faq.answer, 
+            faq.category, 
+            faq.order_index,
+            created_by=admin_user_id
+        )
         if faq_id:
             return {"message": "FAQ created successfully", "faq_id": faq_id}
         else:
@@ -103,10 +113,13 @@ def create_faq(faq: FAQCreate, x_api_key: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/admin/faqs/{faq_id}")
-def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(None)):
+def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(None), authorization: str = Header(None)):
     """Update an existing FAQ (Admin only)"""
     from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    
+    # Get admin user ID from JWT token
+    admin_user_id = get_user_id_from_token(authorization)
     
     try:
         success = update_faq(
@@ -114,7 +127,8 @@ def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(Non
             faq.question, 
             faq.answer, 
             faq.category, 
-            faq.order_index
+            faq.order_index,
+            updated_by=admin_user_id
         )
         if success:
             return {"message": "FAQ updated successfully"}
@@ -124,13 +138,16 @@ def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(Non
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/admin/faqs/{faq_id}")
-def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None)):
+def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None), authorization: str = Header(None)):
     """Delete an FAQ (Admin only)"""
     from config.settings import API_KEY_CREDITS
     x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
     
+    # Get admin user ID from JWT token
+    admin_user_id = get_user_id_from_token(authorization)
+    
     try:
-        success = delete_faq(faq_id)
+        success = delete_faq(faq_id, deleted_by=admin_user_id)
         if success:
             return {"message": "FAQ deleted successfully"}
         else:

@@ -22,10 +22,44 @@ const SimplifiedManageFAQ = () => {
     answer: '',
     category: '',
   });
+  const [validationErrors, setValidationErrors] = useState({});
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     fetchFAQs();
   }, []);
+
+  const validateForm = () => {
+    const errors = {};
+
+    // Question validation
+    if (!formData.question.trim()) {
+      errors.question = 'Question is required';
+    } else if (formData.question.trim().length < 10) {
+      errors.question = 'Question must be at least 10 characters long';
+    } else if (formData.question.trim().length > 500) {
+      errors.question = 'Question must not exceed 500 characters';
+    }
+
+    // Answer validation
+    if (!formData.answer.trim()) {
+      errors.answer = 'Answer is required';
+    } else if (formData.answer.trim().length < 20) {
+      errors.answer = 'Answer must be at least 20 characters long';
+    } else if (formData.answer.trim().length > 5000) {
+      errors.answer = 'Answer must not exceed 5000 characters';
+    }
+
+    // Category validation
+    if (!formData.category.trim()) {
+      errors.category = 'Category is required';
+    } else if (formData.category.trim().length < 3) {
+      errors.category = 'Category must be at least 3 characters long';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const fetchFAQs = async () => {
     try {
@@ -45,8 +79,22 @@ const SimplifiedManageFAQ = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError(null);
+
+    // Validate form before submission
+    if (!validateForm()) {
+      setSubmitError('Please fix the validation errors before submitting.');
+      return;
+    }
 
     try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        setSubmitError('You must be logged in to manage FAQs. Please log in again.');
+        return;
+      }
+
       const url = editingFaq
         ? `http://localhost:8000/admin/faqs/${editingFaq.id}`
         : 'http://localhost:8000/admin/faqs';
@@ -55,7 +103,8 @@ const SimplifiedManageFAQ = () => {
         method: editingFaq ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'secretkey',
+          'x-api-key': 'secretkey',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
       });
@@ -65,9 +114,16 @@ const SimplifiedManageFAQ = () => {
         setShowModal(false);
         setEditingFaq(null);
         setFormData({ question: '', answer: '', category: '' });
+        setValidationErrors({});
+        setSubmitError(null);
+      } else {
+        const error = await response.json();
+        console.error('Error saving FAQ:', error);
+        setSubmitError(error.detail || 'Failed to save FAQ. Please try again.');
       }
     } catch (error) {
       console.error('Error saving FAQ:', error);
+      setSubmitError('Network error. Please check your connection and try again.');
     }
   };
 
@@ -75,16 +131,25 @@ const SimplifiedManageFAQ = () => {
     if (!confirm('Are you sure you want to delete this FAQ?')) return;
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/admin/faqs/${faqId}`, {
         method: 'DELETE',
-        headers: { 'X-API-Key': 'secretkey' },
+        headers: {
+          'x-api-key': 'secretkey',
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
         await fetchFAQs();
+      } else {
+        const error = await response.json();
+        console.error('Error deleting FAQ:', error);
+        alert(`Failed to delete FAQ: ${error.detail || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error deleting FAQ:', error);
+      alert('Failed to delete FAQ. Please try again.');
     }
   };
 
@@ -95,6 +160,8 @@ const SimplifiedManageFAQ = () => {
       answer: faq.answer,
       category: faq.category,
     });
+    setValidationErrors({});
+    setSubmitError(null);
     setShowModal(true);
   };
 
@@ -237,44 +304,101 @@ const SimplifiedManageFAQ = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
                 {editingFaq ? 'Edit FAQ' : 'Add New FAQ'}
               </h2>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {submitError && (
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                  <p className="text-sm font-medium">{submitError}</p>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Question <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.question}
-                  onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, question: e.target.value });
+                    if (validationErrors.question) {
+                      setValidationErrors({ ...validationErrors, question: null });
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.question
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                  placeholder="Enter a clear and concise question (min. 10 characters)"
                 />
+                {validationErrors.question && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.question}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.question.length}/500 characters
+                </p>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, category: e.target.value });
+                    if (validationErrors.category) {
+                      setValidationErrors({ ...validationErrors, category: null });
+                    }
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.category
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                  placeholder="e.g., Account, Support, Security"
                 />
+                {validationErrors.category && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.category}</p>
+                )}
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Answer <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={formData.answer}
-                  onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, answer: e.target.value });
+                    if (validationErrors.answer) {
+                      setValidationErrors({ ...validationErrors, answer: null });
+                    }
+                  }}
+                  rows={6}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                    validationErrors.answer
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                  placeholder="Provide a detailed answer (min. 20 characters)"
                 />
+                {validationErrors.answer && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.answer}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.answer.length}/5000 characters
+                </p>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
@@ -282,11 +406,13 @@ const SimplifiedManageFAQ = () => {
                     setShowModal(false);
                     setEditingFaq(null);
                     setFormData({ question: '', answer: '', category: '' });
+                    setValidationErrors({});
+                    setSubmitError(null);
                   }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit">{editingFaq ? 'Update' : 'Create'}</Button>
+                <Button type="submit">{editingFaq ? 'Update FAQ' : 'Create FAQ'}</Button>
               </div>
             </form>
           </div>
