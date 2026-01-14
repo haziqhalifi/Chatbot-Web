@@ -3,6 +3,11 @@
 !define TABLE_REF_COLOR #F4D03F
 !define TABLE_DATA_COLOR #E5E7E9
 
+' Layout settings for better spread
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
 title Disaster Management Chatbot - Database Entity Relationship Diagram
 
 ' ===================================
@@ -78,6 +83,10 @@ entity "password_reset_tokens" as password_reset_tokens TABLE_REF_COLOR {
   created_at : DATETIME DEFAULT GETDATE()
 }
 
+' Layout: Position verification codes above users
+admin_verification_codes -[hidden]down- users
+user_verification_codes -[hidden]down- users
+
 ' ===================================
 ' CHAT & AI CONVERSATION TABLES
 ' ===================================
@@ -103,6 +112,10 @@ entity "chat_messages" as chat_messages TABLE_MAIN_COLOR {
   message_type : VARCHAR(50) DEFAULT 'text'
   timestamp : DATETIME DEFAULT GETDATE()
 }
+
+' Layout: Position chat tables to the left of users
+chat_sessions -[hidden]right- users
+chat_messages -[hidden]down- chat_sessions
 
 ' ===================================
 ' DISASTER REPORTING TABLES
@@ -141,7 +154,11 @@ entity "system_reports" as system_reports TABLE_MAIN_COLOR {
   status : NVARCHAR(50) DEFAULT 'PENDING'
   admin_notes : NVARCHAR(MAX)
   created_at : DATETIME DEFAULT GETDATE()
-  updated_at : DATETIME DEFAULT GETDATE()
+  Layout: Position disaster reports to the right of users
+disaster_reports -[hidden]left- users
+system_reports -[hidden]down- disaster_reports
+
+' updated_at : DATETIME DEFAULT GETDATE()
   resolved_at : DATETIME
 }
 
@@ -158,7 +175,11 @@ entity "notifications" as notifications TABLE_MAIN_COLOR {
   type : NVARCHAR(50) DEFAULT 'info'
   is_read : BIT DEFAULT 0
   expires_at : DATETIME
-  created_at : DATETIME DEFAULT GETDATE()
+  Layout: Position notifications below users
+notifications -[hidden]up- users
+password_reset_tokens -[hidden]right- notifications
+
+' created_at : DATETIME DEFAULT GETDATE()
   updated_at : DATETIME DEFAULT GETDATE()
 }
 
@@ -177,7 +198,10 @@ entity "faqs" as faqs TABLE_DATA_COLOR {
   --
   created_by : INT [FK]
   updated_by : INT [FK]
-  created_at : DATETIME DEFAULT GETDATE()
+  Layout: Position FAQs below notifications
+faqs -[hidden]up- password_reset_tokens
+
+' created_at : DATETIME DEFAULT GETDATE()
   updated_at : DATETIME DEFAULT GETDATE()
 }
 
@@ -250,7 +274,13 @@ entity "nadma_disaster_cases" as nadma_disaster_cases TABLE_DATA_COLOR {
   --
   disaster_id : INT [FK]
   district_id : INT
-  jumlah_pps : INT DEFAULT 0
+  Layout: NADMA tables in bottom section
+nadma_disasters -[hidden]down- nadma_categories
+nadma_states -[hidden]right- nadma_disasters
+nadma_districts -[hidden]down- nadma_states
+nadma_disaster_cases -[hidden]right- nadma_disasters
+
+' jumlah_pps : INT DEFAULT 0
   jumlah_keluarga : INT DEFAULT 0
   jumlah_mangsa : INT DEFAULT 0
   created_at : DATETIME
@@ -270,6 +300,10 @@ users ||--o{ password_reset_tokens : "requests"
 disaster_reports }o--o| users : "reviewed_by"
 users ||--o{ faqs : "created_by"
 users ||--o{ faqs : "updated_by"
+
+' Verification code relationships (email-based)
+users ||..o{ admin_verification_codes : "verified_by (email)"
+users ||..o{ user_verification_codes : "verified_by (email)"
 
 ' Chat system relationships
 chat_sessions ||--o{ chat_messages : "contains"
@@ -320,6 +354,22 @@ note right of faqs
   - updated_by: Admin who last modified FAQ
   - Soft delete (is_active flag)
   - Full audit trail of changes
+end note
+
+note right of admin_verification_codes
+  **Admin Email Verification**
+  - Sent during admin registration
+  - 6-digit code expires in 10 minutes
+  - Matched by email (pre-account creation)
+  - Max 3 attempts before new code needed
+end note
+
+note right of user_verification_codes
+  **User Email Verification**
+  - Sent during user signup
+  - 6-digit code expires in 10 minutes
+  - Required before account activation
+  - Links to user via email matching
 end note
 
 legend right

@@ -218,7 +218,7 @@ const SimplifiedAdminReports = () => {
     const matchesSearch =
       report.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.disaster_type?.toLowerCase().includes(searchTerm.toLowerCase());
+      report.type?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || report.status === statusFilter;
     const matchesSeverity = severityFilter === 'All' || report.severity === severityFilter;
     return matchesSearch && matchesStatus && matchesSeverity;
@@ -350,7 +350,7 @@ const SimplifiedAdminReports = () => {
                 {filteredReports.map((report) => (
                   <Table.Row key={report.id}>
                     <Table.Cell className="font-medium">{report.title}</Table.Cell>
-                    <Table.Cell>{report.disaster_type}</Table.Cell>
+                    <Table.Cell>{report.type}</Table.Cell>
                     <Table.Cell>{report.location}</Table.Cell>
                     <Table.Cell>
                       <Badge variant={getSeverityVariant(report.severity)}>{report.severity}</Badge>
@@ -359,7 +359,7 @@ const SimplifiedAdminReports = () => {
                       <Badge variant={getStatusVariant(report.status)}>{report.status}</Badge>
                     </Table.Cell>
                     <Table.Cell className="text-gray-500">
-                      {formatDate(report.created_at)}
+                      {formatDate(report.timestamp)}
                     </Table.Cell>
                     <Table.Cell>
                       <div className="relative">
