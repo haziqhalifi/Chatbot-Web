@@ -38,6 +38,15 @@ export const formatDate = (timestamp) => {
   return new Date(timestamp).toLocaleString();
 };
 
+export const formatStatus = (status) => {
+  if (!status) return 'Pending';
+  return status
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 export const filterReports = (
   reports,
   searchTerm,

@@ -13,6 +13,7 @@ const NotificationModal = ({
   handleConfirmNotification,
   getSeverityColor,
   getStatusColor,
+  formatStatus,
 }) => {
   if (!showNotificationModal || !notificationReport) return null;
 
@@ -44,18 +45,22 @@ const NotificationModal = ({
               </div>
               <div>
                 <span className="font-medium text-gray-600">Severity:</span>
-                <span
-                  className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getSeverityColor(notificationReport.severity)}`}
-                >
-                  {notificationReport.severity}
-                </span>
+                {notificationReport.severity ? (
+                  <span
+                    className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(notificationReport.severity)}`}
+                  >
+                    {notificationReport.severity}
+                  </span>
+                ) : (
+                  <span className="ml-2 text-gray-400 font-medium">-</span>
+                )}
               </div>
               <div>
                 <span className="font-medium text-gray-600">Status:</span>
                 <span
-                  className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(notificationReport.status)}`}
+                  className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(notificationReport.status)}`}
                 >
-                  {notificationReport.status}
+                  {formatStatus(notificationReport.status)}
                 </span>
               </div>
             </div>

@@ -13,22 +13,17 @@ const faqAPI = {
   },
 
   // Admin endpoints (require API key)
+  // Note: Authorization header is automatically added by client.js interceptor
   createFAQ: (data, apiKey) => {
-    return api.post('/admin/faqs', data, {
-      headers: { 'X-API-Key': apiKey },
-    });
+    return api.post('/admin/faqs', data);
   },
 
   updateFAQ: (faqId, data, apiKey) => {
-    return api.put(`/admin/faqs/${faqId}`, data, {
-      headers: { 'X-API-Key': apiKey },
-    });
+    return api.put(`/admin/faqs/${faqId}`, data);
   },
 
   deleteFAQ: (faqId, apiKey) => {
-    return api.delete(`/admin/faqs/${faqId}`, {
-      headers: { 'X-API-Key': apiKey },
-    });
+    return api.delete(`/admin/faqs/${faqId}`);
   },
 };
 

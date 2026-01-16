@@ -6,6 +6,7 @@ const ReportDetailModal = ({
   getSeverityColor,
   getStatusColor,
   formatDate,
+  formatStatus,
 }) => {
   if (!selectedReport) return null;
 
@@ -40,18 +41,22 @@ const ReportDetailModal = ({
                   </div>
                   <div>
                     <span className="font-medium">Severity:</span>
-                    <span
-                      className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(selectedReport.severity)}`}
-                    >
-                      {selectedReport.severity}
-                    </span>
+                    {selectedReport.severity ? (
+                      <span
+                        className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full border ${getSeverityColor(selectedReport.severity)}`}
+                      >
+                        {selectedReport.severity}
+                      </span>
+                    ) : (
+                      <span className="ml-2 text-gray-400 font-medium">-</span>
+                    )}
                   </div>
                   <div>
                     <span className="font-medium">Status:</span>
                     <span
                       className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(selectedReport.status)}`}
                     >
-                      {selectedReport.status}
+                      {formatStatus(selectedReport.status)}
                     </span>
                   </div>
                   <div>

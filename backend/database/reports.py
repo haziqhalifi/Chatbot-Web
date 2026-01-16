@@ -63,7 +63,7 @@ def update_disaster_reports_table():
                 )
                 BEGIN
                     ALTER TABLE disaster_reports 
-                    ADD severity NVARCHAR(50) DEFAULT 'Medium'
+                    ADD severity NVARCHAR(50) NULL
                 END
             """)
             
@@ -201,7 +201,7 @@ def get_all_reports():
                     "updatedAt": format_timestamp(row[12]) if row[12] else None,
                     "reviewedBy": row[13],
                     "reviewerName": row[14] or "",
-                    "severity": row[15] or "Medium",
+                    "severity": row[15] if row[15] else None,
                     "coordinates": row[16] or "",
                     "affectedPeople": row[17] or 0,
                     "estimatedDamage": row[18] or "Unknown",
@@ -272,7 +272,7 @@ def get_report_by_id(report_id):
                 "updatedAt": format_timestamp(row[12]) if row[12] else None,
                 "reviewedBy": row[13],
                 "reviewerName": row[14] or "",
-                "severity": row[15] or "Medium",
+                "severity": row[15] if row[15] else None,
                 "coordinates": row[16] or "",
                 "affectedPeople": row[17] or 0,
                 "estimatedDamage": row[18] or "Unknown",

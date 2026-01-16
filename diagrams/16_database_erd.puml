@@ -1,0 +1,381 @@
+@startuml Database ERD - Disaster Management Chatbot
+!define TABLE_MAIN_COLOR #A9DCDF
+!define TABLE_REF_COLOR #F4D03F
+!define TABLE_DATA_COLOR #E5E7E9
+
+' Layout settings for better spread
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+title Disaster Management Chatbot - Database Entity Relationship Diagram
+
+' ===================================
+' MAIN USER & AUTHENTICATION TABLES
+' ===================================
+
+entity "users" as users TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  email : NVARCHAR(255)
+  password_hash : NVARCHAR(255)
+  name : NVARCHAR(255)
+  language : NVARCHAR(50) DEFAULT 'English'
+  role : NVARCHAR(50) DEFAULT 'Public'
+  --
+  .. OAuth/Google Auth ..
+  given_name : NVARCHAR(255)
+  family_name : NVARCHAR(255)
+  profile_picture : NVARCHAR(1000)
+  email_verified : BIT DEFAULT 0
+  auth_provider : NVARCHAR(50) DEFAULT 'local'
+  --
+  .. Contact Information ..
+  phone : NVARCHAR(20)
+  address : NVARCHAR(500)
+  city : NVARCHAR(100)
+  state : NVARCHAR(100)
+  postcode : NVARCHAR(10)
+  country : NVARCHAR(100)
+  timezone : NVARCHAR(50)
+  --
+  .. Account Status ..
+  account_status : NVARCHAR(20) DEFAULT 'active'
+  status_reason : NVARCHAR(500)
+  status_updated_at : DATETIME
+  status_updated_by : INT
+  --
+  .. Timestamps ..
+  created_at : DATETIME DEFAULT GETDATE()
+  updated_at : DATETIME DEFAULT GETDATE()
+  last_login : DATETIME
+}
+
+entity "admin_verification_codes" as admin_verification_codes TABLE_REF_COLOR {
+  + id : INT [PK]
+  --
+  email : NVARCHAR(255)
+  code : NVARCHAR(6)
+  expires_at : DATETIME
+  used : BIT DEFAULT 0
+  attempts : INT DEFAULT 0
+  created_at : DATETIME DEFAULT GETDATE()
+}
+
+entity "user_verification_codes" as user_verification_codes TABLE_REF_COLOR {
+  + id : INT [PK]
+  --
+  email : NVARCHAR(255)
+  code : NVARCHAR(6)
+  expires_at : DATETIME
+  used : BIT DEFAULT 0
+  attempts : INT DEFAULT 0
+  created_at : DATETIME DEFAULT GETDATE()
+}
+
+entity "password_reset_tokens" as password_reset_tokens TABLE_REF_COLOR {
+  + id : INT [PK]
+  --
+  user_id : INT [FK]
+  token : NVARCHAR(128)
+  expires_at : DATETIME
+  used : BIT DEFAULT 0
+  created_at : DATETIME DEFAULT GETDATE()
+}
+
+' Layout: Position verification codes above users
+admin_verification_codes -[hidden]down- users
+user_verification_codes -[hidden]down- users
+
+' ===================================
+' CHAT & AI CONVERSATION TABLES
+' ===================================
+
+entity "chat_sessions" as chat_sessions TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  user_id : INT [FK]
+  title : VARCHAR(500)
+  ai_provider : VARCHAR(50) DEFAULT 'openai'
+  metadata : NVARCHAR(MAX)
+  is_active : BIT DEFAULT 1
+  created_at : DATETIME DEFAULT GETDATE()
+  updated_at : DATETIME DEFAULT GETDATE()
+}
+
+entity "chat_messages" as chat_messages TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  session_id : INT [FK]
+  sender_type : VARCHAR(10)
+  content : TEXT
+  message_type : VARCHAR(50) DEFAULT 'text'
+  timestamp : DATETIME DEFAULT GETDATE()
+}
+
+' Layout: Position chat tables to the left of users
+chat_sessions -[hidden]right- users
+chat_messages -[hidden]down- chat_sessions
+
+' ===================================
+' DISASTER REPORTING TABLES
+' ===================================
+
+entity "disaster_reports" as disaster_reports TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  user_id : INT [FK]
+  reviewed_by : INT [FK]
+  --
+  title : NVARCHAR(255)
+  location : NVARCHAR(255)
+  disaster_type : NVARCHAR(100)
+  description : NVARCHAR(MAX)
+  --
+  status : NVARCHAR(50) DEFAULT 'PENDING'
+  severity : NVARCHAR(50)
+  coordinates : NVARCHAR(100)
+  --
+  affected_people : INT DEFAULT 0
+  estimated_damage : NVARCHAR(255)
+  response_team : NVARCHAR(255)
+  --
+  admin_notes : NVARCHAR(MAX)
+  created_at : DATETIME DEFAULT GETDATE()
+  updated_at : DATETIME DEFAULT GETDATE()
+}
+
+entity "system_reports" as system_reports TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  user_id : INT [FK]
+  subject : NVARCHAR(255)
+  message : NVARCHAR(MAX)
+  status : NVARCHAR(50) DEFAULT 'PENDING'
+  admin_notes : NVARCHAR(MAX)
+  created_at : DATETIME DEFAULT GETDATE()
+  Layout: Position disaster reports to the right of users
+disaster_reports -[hidden]left- users
+system_reports -[hidden]down- disaster_reports
+
+' updated_at : DATETIME DEFAULT GETDATE()
+  resolved_at : DATETIME
+}
+
+' ===================================
+' NOTIFICATION SYSTEM
+' ===================================
+
+entity "notifications" as notifications TABLE_MAIN_COLOR {
+  + id : INT [PK]
+  --
+  user_id : INT [FK]
+  title : NVARCHAR(255)
+  message : NVARCHAR(MAX)
+  type : NVARCHAR(50) DEFAULT 'info'
+  is_read : BIT DEFAULT 0
+  expires_at : DATETIME
+  Layout: Position notifications below users
+notifications -[hidden]up- users
+password_reset_tokens -[hidden]right- notifications
+
+' created_at : DATETIME DEFAULT GETDATE()
+  updated_at : DATETIME DEFAULT GETDATE()
+}
+
+' ===================================
+' FAQ & HELP CONTENT
+' ===================================
+
+entity "faqs" as faqs TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  question : NVARCHAR(500)
+  answer : NVARCHAR(MAX)
+  category : NVARCHAR(100)
+  order_index : INT DEFAULT 0
+  is_active : BIT DEFAULT 1
+  --
+  created_by : INT [FK]
+  updated_by : INT [FK]
+  Layout: Position FAQs below notifications
+faqs -[hidden]up- password_reset_tokens
+
+' created_at : DATETIME DEFAULT GETDATE()
+  updated_at : DATETIME DEFAULT GETDATE()
+}
+
+' ===================================
+' NADMA DISASTER DATA (EXTERNAL API)
+' ===================================
+
+entity "nadma_disasters" as nadma_disasters TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  disaster_id : INT
+  district_id : INT [FK]
+  state_id : INT [FK]
+  kategori_id : INT [FK]
+  level_id : INT
+  parish_id : INT
+  created_by_id : INT
+  --
+  name : NVARCHAR(255)
+  description : NVARCHAR(MAX)
+  status : NVARCHAR(50)
+  bencana_khas : NVARCHAR(50)
+  is_backdated : BIT
+  --
+  latitude : DECIMAL(10,8)
+  longitude : DECIMAL(11,8)
+  datetime_start : DATETIME
+  datetime_end : DATETIME
+  --
+  special_report : NVARCHAR(MAX)
+  raw_data : NVARCHAR(MAX)
+  --
+  created_at : DATETIME
+  updated_at : DATETIME
+  deleted_at : DATETIME
+  last_synced_at : DATETIME DEFAULT GETDATE()
+}
+
+entity "nadma_categories" as nadma_categories TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  meta_id : INT
+  name : NVARCHAR(255)
+  group_helper : NVARCHAR(500)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "nadma_states" as nadma_states TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  name : NVARCHAR(255)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "nadma_districts" as nadma_districts TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  state_id : INT [FK]
+  name : NVARCHAR(255)
+  latitude : DECIMAL(10,8)
+  longitude : DECIMAL(11,8)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "nadma_disaster_cases" as nadma_disaster_cases TABLE_DATA_COLOR {
+  + id : INT [PK]
+  --
+  disaster_id : INT [FK]
+  district_id : INT
+  Layout: NADMA tables in bottom section
+nadma_disasters -[hidden]down- nadma_categories
+nadma_states -[hidden]right- nadma_disasters
+nadma_districts -[hidden]down- nadma_states
+nadma_disaster_cases -[hidden]right- nadma_disasters
+
+' jumlah_pps : INT DEFAULT 0
+  jumlah_keluarga : INT DEFAULT 0
+  jumlah_mangsa : INT DEFAULT 0
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+' ===================================
+' RELATIONSHIPS
+' ===================================
+
+' User-related relationships
+users ||--o{ chat_sessions : "creates"
+users ||--o{ disaster_reports : "submits"
+users ||--o{ system_reports : "submits"
+users ||--o{ notifications : "receives"
+users ||--o{ password_reset_tokens : "requests"
+disaster_reports }o--o| users : "reviewed_by"
+users ||--o{ faqs : "created_by"
+users ||--o{ faqs : "updated_by"
+
+' Verification code relationships (email-based)
+users ||..o{ admin_verification_codes : "verified_by (email)"
+users ||..o{ user_verification_codes : "verified_by (email)"
+
+' Chat system relationships
+chat_sessions ||--o{ chat_messages : "contains"
+
+' NADMA data relationships
+nadma_states ||--o{ nadma_districts : "contains"
+nadma_disasters }o--|| nadma_categories : "categorized_as"
+nadma_disasters }o--|| nadma_states : "located_in"
+nadma_disasters }o--|| nadma_districts : "affects"
+nadma_disasters ||--o{ nadma_disaster_cases : "has_cases"
+
+' ===================================
+' NOTES & LEGEND
+' ===================================
+
+note right of users
+  **Primary user table**
+  - Supports local & OAuth (Google)
+  - Email verification required
+  - Account suspension capability
+  - Admin & Public roles
+end note
+
+note right of chat_sessions
+  **AI Chat Sessions**
+  - Stores OpenAI thread_id in metadata
+  - Supports multiple AI providers
+  - Soft delete with is_active flag
+end note
+
+note right of disaster_reports
+  **User-submitted disaster reports**
+  - Reviewed by admin (reviewed_by FK)
+  - Severity levels: CRITICAL, HIGH, MEDIUM, LOW
+  - Status: PENDING, VERIFIED, REJECTED, UNDER_REVIEW
+end note
+
+note right of nadma_disasters
+  **External NADMA MyDIMS API data**
+  - Synced periodically
+  - raw_data stores original JSON
+  - Used for map visualization
+end note
+
+note right of faqs
+  **FAQ Management with Admin Tracking**
+  - created_by: Admin who created FAQ
+  - updated_by: Admin who last modified FAQ
+  - Soft delete (is_active flag)
+  - Full audit trail of changes
+end note
+
+note right of admin_verification_codes
+  **Admin Email Verification**
+  - Sent during admin registration
+  - 6-digit code expires in 10 minutes
+  - Matched by email (pre-account creation)
+  - Max 3 attempts before new code needed
+end note
+
+note right of user_verification_codes
+  **User Email Verification**
+  - Sent during user signup
+  - 6-digit code expires in 10 minutes
+  - Required before account activation
+  - Links to user via email matching
+end note
+
+legend right
+  |<#A9DCDF> Main Tables |
+  |<#F4D03F> Reference/Token Tables |
+  |<#E5E7E9> External/Static Data |
+endlegend
+
+@enduml
