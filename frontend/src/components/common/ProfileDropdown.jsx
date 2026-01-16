@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ProfileAvatar from './ProfileAvatar';
+import ExternalReferencesMenu from './ExternalReferencesMenu';
 
 const ProfileDropdown = ({
   isOpen,
@@ -30,7 +31,7 @@ const ProfileDropdown = ({
         </div>
       </button>
       {isOpen && (
-        <div className="profile-dropdown absolute right-0 top-full mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 z-30 overflow-hidden">
+        <div className="profile-dropdown absolute right-0 top-full mt-2 w-52 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] overflow-visible">
           <div className="py-1">
             <button
               className="block w-full text-left px-4 py-3 hover:bg-gray-50 text-gray-700 transition-colors duration-150"
@@ -126,6 +127,9 @@ const ProfileDropdown = ({
                 {t('report')}
               </div>
             </button>
+            <div className="border-t border-gray-100"></div>
+            {/* External Reference Links - Hover to Show */}
+            <ExternalReferencesMenu onLinkClick={onClose} />
             <div className="border-t border-gray-100"></div>
             <button
               className="block w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors duration-150"

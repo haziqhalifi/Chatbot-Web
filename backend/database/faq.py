@@ -16,10 +16,34 @@ def create_faq_table():
                     category NVARCHAR(100),
                     order_index INT DEFAULT 0,
                     is_active BIT DEFAULT 1,
+                    created_by INT NULL,
+                    updated_by INT NULL,
                     created_at DATETIME DEFAULT GETDATE(),
-                    updated_at DATETIME DEFAULT GETDATE()
+                    updated_at DATETIME DEFAULT GETDATE(),
+                    FOREIGN KEY (created_by) REFERENCES users(id),
+                    FOREIGN KEY (updated_by) REFERENCES users(id)
                 )
             """)
+            
+            # Add columns if table exists but columns don't
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                              WHERE TABLE_NAME = 'faqs' AND COLUMN_NAME = 'created_by')
+                BEGIN
+                    ALTER TABLE faqs ADD created_by INT NULL
+                    ALTER TABLE faqs ADD CONSTRAINT FK_faqs_created_by FOREIGN KEY (created_by) REFERENCES users(id)
+                END
+            """)
+            
+            cursor.execute("""
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                              WHERE TABLE_NAME = 'faqs' AND COLUMN_NAME = 'updated_by')
+                BEGIN
+                    ALTER TABLE faqs ADD updated_by INT NULL
+                    ALTER TABLE faqs ADD CONSTRAINT FK_faqs_updated_by FOREIGN KEY (updated_by) REFERENCES users(id)
+                END
+            """)
+            
             conn.commit()
             conn.autocommit = True
             cursor.close()
@@ -75,10 +99,15 @@ def get_all_faqs():
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, question, answer, category, order_index, created_at, updated_at
-                FROM faqs 
-                WHERE is_active = 1
-                ORDER BY order_index ASC, created_at ASC
+                SELECT f.id, f.question, f.answer, f.category, f.order_index, 
+                       f.created_at, f.updated_at, f.created_by, f.updated_by,
+                       u1.name as created_by_name, u1.email as created_by_email,
+                       u2.name as updated_by_name, u2.email as updated_by_email
+                FROM faqs f
+                LEFT JOIN users u1 ON f.created_by = u1.id
+                LEFT JOIN users u2 ON f.updated_by = u2.id
+                WHERE f.is_active = 1
+                ORDER BY f.order_index ASC, f.created_at ASC
             """)
             
             faqs = []
@@ -90,7 +119,13 @@ def get_all_faqs():
                     'category': row[3],
                     'order_index': row[4],
                     'created_at': format_timestamp(row[5]),
-                    'updated_at': format_timestamp(row[6])
+                    'updated_at': format_timestamp(row[6]),
+                    'created_by': row[7],
+                    'created_by_name': row[9],
+                    'created_by_email': row[10],
+                    'updated_by': row[8],
+                    'updated_by_name': row[11],
+                    'updated_by_email': row[12]
                 })
             
             cursor.close()
@@ -105,9 +140,14 @@ def get_faq_by_id(faq_id):
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT id, question, answer, category, order_index, created_at, updated_at
-                FROM faqs 
-                WHERE id = ? AND is_active = 1
+                SELECT f.id, f.question, f.answer, f.category, f.order_index, 
+                       f.created_at, f.updated_at, f.created_by, f.updated_by,
+                       u1.name as created_by_name, u1.email as created_by_email,
+                       u2.name as updated_by_name, u2.email as updated_by_email
+                FROM faqs f
+                LEFT JOIN users u1 ON f.created_by = u1.id
+                LEFT JOIN users u2 ON f.updated_by = u2.id
+                WHERE f.id = ? AND f.is_active = 1
             """, (faq_id,))
             
             row = cursor.fetchone()
@@ -121,23 +161,37 @@ def get_faq_by_id(faq_id):
                     'category': row[3],
                     'order_index': row[4],
                     'created_at': format_timestamp(row[5]),
-                    'updated_at': format_timestamp(row[6])
+                    'updated_at': format_timestamp(row[6]),
+                    'created_by': row[7],
+                    'created_by_name': row[9],
+                    'created_by_email': row[10],
+                    'updated_by': row[8],
+                    'updated_by_name': row[11],
+                    'updated_by_email': row[12]
                 }
             return None
     except Exception as e:
         print(f"Error getting FAQ by ID: {e}")
         return None
 
-def add_faq(question, answer, category=None, order_index=0):
-    """Add a new FAQ"""
+def add_faq(question, answer, category=None, order_index=0, created_by=None):
+    """Add a new FAQ
+    
+    Args:
+        question: FAQ question text
+        answer: FAQ answer text
+        category: Optional category for grouping
+        order_index: Display order (default 0)
+        created_by: User ID of admin who created this FAQ
+    """
     try:
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO faqs (question, answer, category, order_index, is_active)
+                INSERT INTO faqs (question, answer, category, order_index, is_active, created_by, updated_by)
                 OUTPUT INSERTED.id
-                VALUES (?, ?, ?, ?, 1)
-            """, (question, answer, category, order_index))
+                VALUES (?, ?, ?, ?, 1, ?, ?)
+            """, (question, answer, category, order_index, created_by, created_by))
             result = cursor.fetchone()
             if not conn.autocommit:
                 conn.commit()
@@ -150,8 +204,17 @@ def add_faq(question, answer, category=None, order_index=0):
         traceback.print_exc()
         return None
 
-def update_faq(faq_id, question=None, answer=None, category=None, order_index=None):
-    """Update an existing FAQ"""
+def update_faq(faq_id, question=None, answer=None, category=None, order_index=None, updated_by=None):
+    """Update an existing FAQ
+    
+    Args:
+        faq_id: ID of FAQ to update
+        question: Optional new question text
+        answer: Optional new answer text
+        category: Optional new category
+        order_index: Optional new order index
+        updated_by: User ID of admin who updated this FAQ
+    """
     try:
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
@@ -174,6 +237,9 @@ def update_faq(faq_id, question=None, answer=None, category=None, order_index=No
             
             if updates:
                 updates.append("updated_at = GETDATE()")
+                if updated_by is not None:
+                    updates.append("updated_by = ?")
+                    params.append(updated_by)
                 params.append(faq_id)
                 
                 query = f"UPDATE faqs SET {', '.join(updates)} WHERE id = ?"
@@ -190,12 +256,26 @@ def update_faq(faq_id, question=None, answer=None, category=None, order_index=No
         print(f"Error updating FAQ: {e}")
         return False
 
-def delete_faq(faq_id):
-    """Soft delete an FAQ by setting is_active to 0"""
+def delete_faq(faq_id, deleted_by=None):
+    """Soft delete an FAQ by setting is_active to 0
+    
+    Args:
+        faq_id: ID of FAQ to delete
+        deleted_by: User ID of admin who deleted this FAQ
+    """
     try:
         with DatabaseConnection() as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE faqs SET is_active = 0, updated_at = GETDATE() WHERE id = ?", (faq_id,))
+            if deleted_by is not None:
+                cursor.execute(
+                    "UPDATE faqs SET is_active = 0, updated_at = GETDATE(), updated_by = ? WHERE id = ?", 
+                    (deleted_by, faq_id)
+                )
+            else:
+                cursor.execute(
+                    "UPDATE faqs SET is_active = 0, updated_at = GETDATE() WHERE id = ?", 
+                    (faq_id,)
+                )
             if not conn.autocommit:
                 conn.commit()
             result = cursor.rowcount > 0

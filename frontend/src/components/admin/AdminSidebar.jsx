@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAdminSidebar } from '../../contexts/AdminSidebarContext';
+import ExternalReferencesMenuCompact from './ExternalReferencesMenuCompact';
 
 const AdminSidebar = () => {
   const { t } = useTranslation();
@@ -77,7 +78,7 @@ const AdminSidebar = () => {
         bg-white flex flex-col
         transition-all duration-300 ease-in-out
         border-r border-gray-200 shadow-sm
-        fixed left-0 top-16 bottom-0 overflow-hidden
+        fixed left-0 top-16 bottom-0 overflow-visible
       `}
     >
       {/* Menu Items */}
@@ -148,7 +149,10 @@ const AdminSidebar = () => {
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+              <div className="absolute bottom-full left-3 right-3 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-visible z-[9999]">
+                {/* External Reference Links - Hover to Show */}
+                <ExternalReferencesMenuCompact />
+                <div className="border-t border-gray-200"></div>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-200 text-sm font-medium"
@@ -171,7 +175,10 @@ const AdminSidebar = () => {
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden whitespace-nowrap">
+              <div className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-visible whitespace-nowrap z-[9999]">
+                {/* External Reference Links - Hover to Show */}
+                <ExternalReferencesMenuCompact />
+                <div className="border-t border-gray-200"></div>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-4 py-3 text-red-600 hover:bg-red-50 transition-all duration-200 text-sm font-medium"

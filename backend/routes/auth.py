@@ -133,6 +133,27 @@ def resend_code(request: EmailRequest):
 
 @router.post("/signin")
 def signin(request: AuthRequest):
+    """Regular user sign in - admins should use /admin/signin"""
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        
+        # Check if user is an admin
+        cursor.execute("SELECT role FROM users WHERE email = ?", (request.email,))
+        user_row = cursor.fetchone()
+        
+        if user_row and user_row[0] == 'admin':
+            raise HTTPException(
+                status_code=403, 
+                detail="Admin accounts must sign in through the admin portal"
+            )
+        
+        conn.close()
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Continue with normal signin if query fails
+    
     return verify_user(request.email, request.password)
 
 @router.post("/admin/send-verification-code")
@@ -243,11 +264,28 @@ def admin_signin(request: AdminAuthRequest):
             detail="Admin access requires government, education, or personal email address"
         )
     
-    # Verify user credentials (this will raise HTTPException if invalid)
+    # Verify user credentials (this will raise HTTPException if invalid or account is suspended/blocked)
     try:
         user_result = verify_user(request.email, request.password)
     except HTTPException as e:
-        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+        # Re-raise the exception with the original message (suspended/blocked/invalid credentials)
+        raise e
+    
+    # Check if user has admin role
+    try:
+        conn = get_db_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT role FROM users WHERE email = ?", (request.email,))
+        user_row = cursor.fetchone()
+        
+        if user_row and user_row[0] != 'admin':
+            # Promote user to admin role since they verified with admin code
+            cursor.execute("UPDATE users SET role = 'admin' WHERE email = ?", (request.email,))
+            conn.commit()
+        
+        conn.close()
+    except Exception as e:
+        print(f"Error updating admin role: {e}")
     
     # Add admin role to user data
     user_result["user"]["role"] = "admin"
