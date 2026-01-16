@@ -10,6 +10,7 @@ import {
   Button,
 } from '../../components/admin';
 import { adminNotificationAPI } from '../../api';
+import NotificationDetailModal from './NotificationDetailModal';
 
 const SimplifiedNotificationManagement = () => {
   const [notifications, setNotifications] = useState([]);
@@ -23,6 +24,7 @@ const SimplifiedNotificationManagement = () => {
     disaster_type: '',
   });
   const [sending, setSending] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   useEffect(() => {
     fetchNotifications();
@@ -126,7 +128,7 @@ const SimplifiedNotificationManagement = () => {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
           <StatsCard
             title="Total Sent"
             value={stats.total_notifications || 0}
@@ -134,18 +136,24 @@ const SimplifiedNotificationManagement = () => {
             color="blue"
           />
           <StatsCard
-            title="Total Recipients"
-            value={stats.total_recipients || 0}
-            icon={Users}
+            title="Unread"
+            value={stats.unread_notifications || 0}
+            icon={Bell}
+            color="yellow"
+          />
+          <StatsCard title="Read" value={stats.read_notifications || 0} icon={Bell} color="green" />
+          <StatsCard
+            title="Sent Last 24h"
+            value={stats.recent_24h || 0}
+            icon={Bell}
             color="purple"
           />
           <StatsCard
-            title="Read Rate"
-            value={`${stats.read_rate || 0}%`}
+            title="Sent Last 7d"
+            value={stats.recent_7days || 0}
             icon={Bell}
-            color="green"
+            color="orange"
           />
-          <StatsCard title="Unread" value={stats.unread_count || 0} icon={Bell} color="yellow" />
         </div>
       )}
 
@@ -180,7 +188,11 @@ const SimplifiedNotificationManagement = () => {
                 </Table.Header>
                 <Table.Body>
                   {notifications.map((notification) => (
-                    <Table.Row key={notification.id}>
+                    <Table.Row
+                      key={notification.id}
+                      className="cursor-pointer hover:bg-blue-50"
+                      onClick={() => setSelectedNotification(notification)}
+                    >
                       <Table.Cell className="font-medium max-w-xs truncate">
                         {notification.title}
                       </Table.Cell>
@@ -189,15 +201,25 @@ const SimplifiedNotificationManagement = () => {
                           {notification.type}
                         </Badge>
                       </Table.Cell>
-                      <Table.Cell>{notification.recipient_count || 0} users</Table.Cell>
-                      <Table.Cell className="text-gray-500">
-                        {formatDate(notification.created_at)}
-                      </Table.Cell>
                       <Table.Cell>
+                        {notification.user_count ?? notification.recipient_count ?? 0} users
+                      </Table.Cell>
+                      <Table.Cell className="text-gray-500">
+                        {notification.latest_created_at || notification.created_at
+                          ? new Date(
+                              notification.latest_created_at || notification.created_at
+                            ).toLocaleString()
+                          : 'N/A'}
+                      </Table.Cell>
+                      <Table.Cell
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(notification.id);
+                        }}
+                      >
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(notification.id)}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           Delete
@@ -280,6 +302,14 @@ const SimplifiedNotificationManagement = () => {
             </form>
           </Card.Content>
         </Card>
+      )}
+
+      {/* Notification Detail Modal */}
+      {selectedNotification && (
+        <NotificationDetailModal
+          notification={selectedNotification}
+          onClose={() => setSelectedNotification(null)}
+        />
       )}
     </AdminLayout>
   );
