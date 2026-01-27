@@ -1,0 +1,67 @@
+# Multi-stage build for FastAPI backend
+FROM python:3.11-slim as builder
+
+WORKDIR /app
+
+# Install system dependencies for build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    build-essential \
+    libpq-dev \
+    unixodbc-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY backend/requirements.txt .
+
+# Create venv and install dependencies
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PIP_DEFAULT_TIMEOUT=120
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --retries 5 --timeout 120 -r requirements.txt
+
+# Production stage
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install Microsoft ODBC Driver for SQL Server (Debian 12/bookworm)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    apt-transport-https \
+    && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
+    msodbcsql17 \
+    unixodbc \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy venv from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application code
+COPY backend/ ./backend/
+
+# Create app directory structure
+WORKDIR /app/backend
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"
+
+# Expose API port
+EXPOSE 8000
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

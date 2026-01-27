@@ -1,0 +1,78 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: chatbot-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Database Configuration (use 'host.docker.internal' for local Azure SQL on Windows)
+      - SQL_SERVER=${SQL_SERVER:-host.docker.internal}
+      - SQL_DATABASE=${SQL_DATABASE:-chatbot_db}
+      - SQL_USER=${SQL_USER:-sa}
+      - SQL_PASSWORD=${SQL_PASSWORD:-YourPassword123!}
+
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_ASSISTANT_ID=${OPENAI_ASSISTANT_ID}
+
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_change_in_production}
+      - ADMIN_CODE=${ADMIN_CODE}
+      - SUPER_ADMIN_CODE=${SUPER_ADMIN_CODE}
+
+      # API Configuration
+      - API_KEY=${API_KEY:-secretkey}
+
+      # Email Configuration
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+
+    volumes:
+      - ./backend:/app/backend
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: chatbot-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_API_KEY=${API_KEY:-secretkey}
+
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    ports:
+      - "6380:6379"
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  chatbot-network:
+    driver: bridge
+
+volumes:
+  redis_data:
