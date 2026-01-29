@@ -20,15 +20,11 @@ except ImportError:
 
 # Import chat utilities
 try:
-    from .chat import generate_response, verify_api_key
+    from .chat import verify_api_key
 except ImportError:
     pass
 
-# Import language utilities
-try:
-    from .language import detect_language, get_language_instruction
-except ImportError:
-    pass
+
 
 # Performance and RAG utilities removed
 
@@ -48,12 +44,7 @@ __all__ = [
     'secure_hasher',
     
     # Chat utilities (if available)
-    'generate_response',
     'verify_api_key',
-    
-    # Language utilities (if available)
-    'detect_language',
-    'get_language_instruction',
     
     # Development utilities (if available)
     'get_database_connection'
