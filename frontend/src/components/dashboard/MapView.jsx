@@ -201,10 +201,10 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
     const fetchNadmaDisasters = async () => {
       try {
-
         const response = await fetch('http://localhost:8000/map/nadma/disasters/db');
 
-        if (row new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
@@ -224,10 +224,10 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         };
 
         setLayers((prevLayers) => [...prevLayers, nadmaLayer]);
-
-      } catch (error) {
       } catch (error) {
         // Silent error handling
+      }
+    };
 
     fetchMapEndpoints();
     fetchNadmaDisasters();
@@ -252,10 +252,10 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       const json = await response.json();
-
       return json.token;
-    } return json.token;
     } catch (error) {
+      return null;
+    }
   };
 
   const initializeMap = async () => {
@@ -263,11 +263,10 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       setLoading(true);
       setLoadingMessage('Authenticating with ArcGIS...');
 
-
       // Generate token first
-      if (!token) {
+      const token = await generateArcGISToken();
 
-      }
+      setLoadingMessage('Loading map modules...');
 
       let ArcGISMapView, ArcGISMap, ArcGISBasemap, ArcGISWebMap, esriConfig;
 
