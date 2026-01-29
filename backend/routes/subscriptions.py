@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import List
 import jwt
-import os
+from services.user_service import JWT_SECRET, JWT_ALGORITHM
 from services.subscription_service import (
     get_user_subscription, create_or_update_subscription,
     delete_subscription, get_available_disaster_types, get_popular_locations,
@@ -10,10 +10,6 @@ from services.subscription_service import (
 )
 
 router = APIRouter()
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
 
 class SubscriptionRequest(BaseModel):
     disaster_types: List[str] = []  # List of disaster types to subscribe to

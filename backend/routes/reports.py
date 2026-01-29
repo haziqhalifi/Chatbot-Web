@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import jwt
-import os
+from services.user_service import JWT_SECRET, JWT_ALGORITHM
 from database import insert_report, get_all_reports, get_report_by_id, get_db_conn, insert_system_report, migrate_reports_tables, get_all_system_reports, update_report_status
 from utils.chat import verify_api_key
 from services.notification_service import create_report_confirmation_notification
@@ -20,10 +20,6 @@ from reportlab.lib.units import inch
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
 router = APIRouter()
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
 
 class ReportRequest(BaseModel):
     title: str

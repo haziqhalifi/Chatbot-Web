@@ -3,10 +3,7 @@ Shared utilities for route modules
 """
 import jwt
 import os
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
+from services.user_service import JWT_SECRET, JWT_ALGORITHM
 
 def get_user_id_from_token(authorization: str):
     """Helper function to extract user_id from JWT token"""

@@ -254,12 +254,8 @@ def update_last_login(user_id: int):
 
 
 def delete_user_account(user_id: int):
-    """Delete a user and related data.
-
-    Notes:
-    - Some tables reference users without ON DELETE CASCADE (e.g., notifications, chat_sessions).
-    - This function deletes dependent rows first, then deletes the user.
-    """
+    """Delete a user and related data."""
+    
     conn = None
     try:
         conn = get_db_conn()

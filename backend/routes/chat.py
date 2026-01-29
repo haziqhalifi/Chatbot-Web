@@ -2,16 +2,12 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional
 import jwt
-import os
 from services.chat_service import ChatService
+from services.user_service import JWT_SECRET, JWT_ALGORITHM
 from utils.chat import verify_api_key
 from config.settings import AI_PROVIDERS, DEFAULT_AI_PROVIDER, OPENAI_ASSISTANT_ENABLED
 
 router = APIRouter()
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
 
 # Chat-related models
 class ChatSessionRequest(BaseModel):
