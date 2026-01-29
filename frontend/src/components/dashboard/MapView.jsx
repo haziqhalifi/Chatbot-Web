@@ -17,10 +17,6 @@ import {
 
 const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
   const [mapView, setMapView] = useState(null);
-  const [showLayerList, setShowLayerList] = useState(false);
-  const [showLayerInfo, setShowLayerInfo] = useState(null);
-  const [showOpacityControl, setShowOpacityControl] = useState(null);
-  const [apiEndpoints, setApiEndpoints] = useState([]);
   const [layers, setLayers] = useState([]);
   const [layerGraphics, setLayerGraphics] = useState(new Map());
   const [loading, setLoading] = useState(false);
@@ -81,10 +77,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     },
   ];
 
-  // Icon mapping for layer types (used in layer list)
-  const iconMap = {
-    AlertTriangle,
-  };
+
 
   // Initialize map on component mount
   useEffect(() => {
@@ -93,7 +86,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     // Add a timeout to ensure loading doesn't get stuck
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.warn('Loading timeout reached, forcing loading to false');
         setLoading(false);
       }
     }, 30000); // 30 seconds timeout
@@ -131,7 +123,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
   useEffect(() => {
     const fetchMapEndpoints = async () => {
       try {
-        console.log('Fetching map endpoints from API...');
         const response = await fetch('http://localhost:8000/map/endpoints');
 
         if (!response.ok) {
@@ -139,9 +130,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         }
 
         const data = await response.json();
-        console.log('Map endpoints fetched:', data.endpoints);
-
-        setApiEndpoints(data.endpoints);
 
         // Map API endpoints to layer configuration
         const apiLayers = data.endpoints.map((endpoint) => {
@@ -207,24 +195,19 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           return [...staticLayers, ...apiLayers];
         });
 
-        console.log('Layers updated with API data');
       } catch (error) {
-        console.error('Error fetching map endpoints:', error);
-        // Continue with existing layers if API fails
       }
     };
 
     const fetchNadmaDisasters = async () => {
       try {
-        console.log('Fetching NADMA disasters from backend database...');
+
         const response = await fetch('http://localhost:8000/map/nadma/disasters/db');
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (row new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = await response.json();
-        console.log('NADMA DB disasters fetched:', result);
 
         // Add NADMA disasters as a layer
         const nadmaLayer = {
@@ -241,11 +224,10 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         };
 
         setLayers((prevLayers) => [...prevLayers, nadmaLayer]);
-        console.log('NADMA DB layer added to map');
+
       } catch (error) {
-        console.error('Error fetching NADMA DB disasters:', error);
-      }
-    };
+      } catch (error) {
+        // Silent error handling
 
     fetchMapEndpoints();
     fetchNadmaDisasters();
@@ -270,36 +252,30 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       const json = await response.json();
-      console.log('ArcGIS Token generated successfully');
+
       return json.token;
+    } return json.token;
     } catch (error) {
-      console.error('Failed to generate ArcGIS token:', error);
-      return null;
-    }
   };
 
   const initializeMap = async () => {
     try {
       setLoading(true);
       setLoadingMessage('Authenticating with ArcGIS...');
-      console.log('Initializing map...');
+
 
       // Generate token first
-      const token = await generateArcGISToken();
       if (!token) {
-        console.warn('Failed to generate token, continuing without authentication');
+
       }
 
-      setLoadingMessage('Loading map modules...');
-
-      // Import ArcGIS modules with different variable names to avoid conflicts
       let ArcGISMapView, ArcGISMap, ArcGISBasemap, ArcGISWebMap, esriConfig;
 
       // Import esriConfig first to set up token authentication
       try {
         const esriConfigModule = await import('@arcgis/core/config');
         esriConfig = esriConfigModule.default;
-        console.log('esriConfig imported successfully');
+
 
         // Configure token authentication if token is available
         if (token && esriConfig) {
@@ -310,29 +286,29 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
               params.requestOptions.query.token = token;
             },
           });
-          console.log('Token interceptor configured successfully');
+
         }
       } catch (configError) {
-        console.error('Failed to import esriConfig:', configError);
+
       }
 
       try {
         const mapViewModule = await import('@arcgis/core/views/MapView');
-        console.log('MapView module keys:', Object.keys(mapViewModule));
+
         ArcGISMapView = mapViewModule.default || mapViewModule.MapView;
-        console.log('MapView imported successfully:', ArcGISMapView);
+
       } catch (mapViewError) {
-        console.error('Failed to import MapView:', mapViewError);
+
         throw mapViewError;
       }
 
       try {
         const mapModule = await import('@arcgis/core/Map');
-        console.log('Map module keys:', Object.keys(mapModule));
+
         ArcGISMap = mapModule.default || mapModule.Map;
-        console.log('Map imported successfully:', ArcGISMap);
+
       } catch (mapError) {
-        console.error('Failed to import Map:', mapError);
+
         throw mapError;
       }
 
@@ -340,9 +316,9 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       try {
         const webMapModule = await import('@arcgis/core/WebMap');
         ArcGISWebMap = webMapModule.default || webMapModule.WebMap;
-        console.log('WebMap imported successfully');
+
       } catch (webMapError) {
-        console.log('Failed to import WebMap:', webMapError);
+
         ArcGISWebMap = null;
       }
 
@@ -350,19 +326,11 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       try {
         const basemapModule = await import('@arcgis/core/Basemap');
         ArcGISBasemap = basemapModule.default || basemapModule.Basemap;
-        console.log('Basemap imported successfully');
+
       } catch (basemapImportError) {
-        console.log('Failed to import Basemap:', basemapImportError);
+
         ArcGISBasemap = null;
       }
-
-      console.log('ArcGIS modules imported:', {
-        MapView: ArcGISMapView,
-        Map: ArcGISMap,
-        WebMap: ArcGISWebMap,
-        Basemap: ArcGISBasemap,
-        esriConfig: esriConfig,
-      });
 
       setLoadingMessage('Creating map...');
 
@@ -371,22 +339,19 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const useSecuredWebMap = true; // Using the WebMap from index.html by default
 
       if (useSecuredWebMap && ArcGISWebMap && token) {
-        console.log('Creating secured WebMap with ID: 84651c5dc3714cb1b9e89376a57b7c99');
+
         try {
           map = new ArcGISWebMap({
             portalItem: {
               id: '84651c5dc3714cb1b9e89376a57b7c99', // WebMap ID with disaster layers
             },
           });
-          console.log(
-            'Secured WebMap created successfully - all layers will be loaded from WebMap'
-          );
         } catch (webMapError) {
-          console.error('Failed to create WebMap, falling back to basic map:', webMapError);
+
           map = new ArcGISMap();
         }
       } else {
-        console.log('Token not available or WebMap module not loaded, using basic map');
+
 
         // Validate that we have the required constructors
         if (typeof ArcGISMap !== 'function') {
@@ -398,26 +363,26 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
         // Create a simple map without basemap to avoid import issues
         map = new ArcGISMap();
-        console.log('Basic map created successfully');
+
 
         // Add a basemap after creation
         try {
           if (ArcGISBasemap && ArcGISBasemap.fromId) {
             const basemap = ArcGISBasemap.fromId('streets-vector');
             map.basemap = basemap;
-            console.log('Basemap added successfully');
+
           } else {
-            console.log('Basemap.fromId not available, using default');
+
             // Try using a simple basemap string
             map.basemap = 'streets-vector';
           }
         } catch (basemapError) {
-          console.log('Failed to add basemap, using default:', basemapError);
+
           // Final fallback
           try {
             map.basemap = 'streets-vector';
           } catch (finalError) {
-            console.log('All basemap methods failed, continuing without basemap');
+
           }
         }
       }
@@ -436,24 +401,24 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         },
       });
 
-      console.log('Map view created successfully');
+
       setMapView(view);
       setLoadingMessage('Map view ready, loading layers...');
 
       // Wait for view to be ready
       await view.when();
-      console.log('View is ready');
+
 
       // Wait for map to load (especially important for WebMap)
       if (map.load) {
         await map.load();
-        console.log('Map loaded successfully');
+
 
         // Log all layers from the WebMap
         if (map.layers && map.layers.length > 0) {
-          console.log(`WebMap contains ${map.layers.length} layers:`);
+
           map.layers.forEach((layer, index) => {
-            console.log(`  Layer ${index + 1}: ${layer.title || layer.id} (${layer.type})`);
+
             // Hide all layers on startup
             layer.visible = false;
           });
@@ -464,7 +429,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       await initializeBasicWidgets(view);
 
       // Initialize custom API layers (NADMA, Plan Malaysia, etc.) even with WebMap
-      console.log('Initializing custom API layers...');
+
       await initializeLayers(view);
 
       // Initialize Bookmarks widget
@@ -485,19 +450,15 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Initialize coordinate display (like in index.html)
       initializeCoordinateDisplay(view);
     } catch (error) {
-      console.error('Failed to initialize map:', error);
+
       setLoading(false);
     }
   };
 
-  // Manual initialization function for debugging
-  const manualInitialize = async () => {
-    console.log('Manual initialization triggered');
-    await initializeMap();
-  };
+
 
   const initializeLayers = async (view) => {
-    console.log('Initializing layers...');
+
     setLoadingMessage('Loading Malaysia map layers...');
     const newLayerGraphics = new Map();
 
@@ -525,16 +486,16 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const rendererModule = await import('@arcgis/core/renderers/SimpleRenderer');
       const SimpleRenderer = rendererModule.default || rendererModule.SimpleRenderer;
 
-      console.log('ArcGIS modules imported successfully');
+
 
       for (const layer of layers) {
-        console.log(`Processing layer: ${layer.id}`);
+
         let graphicsLayer;
 
         switch (layer.id) {
           case 'nadma-disasters':
             // Handle NADMA disasters layer
-            console.log('Creating NADMA disasters layer...');
+
             graphicsLayer = new GraphicsLayer({
               title: layer.name,
               visible: layer.visible,
@@ -543,7 +504,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
             // Add disaster points from NADMA data
             if (layer.nadmaData && Array.isArray(layer.nadmaData)) {
-              console.log(`Adding ${layer.nadmaData.length} NADMA disaster points`);
+
 
               layer.nadmaData.forEach((disaster) => {
                 // Extract coordinates from NADMA API format
@@ -696,15 +657,15 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
                 }
               });
 
-              console.log(`Added ${graphicsLayer.graphics.length} disaster points to map`);
+
             }
             break;
 
           default:
             // Check if this is an API-based layer with a URL
             if (layer.type === 'api-feature' && layer.url) {
-              console.log(`Creating API-based FeatureLayer for: ${layer.name}`);
-              console.log(`Using URL: ${layer.url}`);
+
+
 
               // Create a FeatureLayer from the API endpoint URL
               const apiLayer = new FeatureLayer({
@@ -721,12 +682,12 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
               view.map.add(apiLayer);
               newLayerGraphics.set(layer.id, apiLayer);
-              console.log(`Added API layer: ${layer.name}`);
+
               break;
             }
 
             // Fallback: Create a generic placeholder polygon for other layers
-            console.log(`Creating generic placeholder for: ${layer.name}`);
+
             graphicsLayer = new GraphicsLayer({
               title: layer.name,
               visible: layer.visible,
@@ -774,19 +735,19 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       }
 
       setLayerGraphics(newLayerGraphics);
-      console.log('All layers initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize layers:', error);
+
     } finally {
       setLoading(false);
-      console.log('Layer initialization complete');
+
     }
   };
 
   // Initialize basic navigation widgets (Zoom, Home, Compass, ScaleBar)
   const initializeBasicWidgets = async (view) => {
     try {
-      console.log('Initializing basic navigation widgets...');
+
       setLoadingMessage('Setting up navigation tools...');
 
       // Import widget modules
@@ -815,16 +776,16 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const scaleBar = new ScaleBar({ view, unit: 'metric' });
       view.ui.add(scaleBar, 'bottom-left');
 
-      console.log('Basic navigation widgets initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize basic widgets:', error);
+
     }
   };
 
   // Initialize Search widget
   const initializeSearchWidget = async (view) => {
     try {
-      console.log('Initializing Search widget...');
+
 
       const searchModule = await import('@arcgis/core/widgets/Search');
       const Search = searchModule.default || searchModule.Search;
@@ -842,16 +803,16 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       view.ui.add(searchExpand, 'top-left');
-      console.log('Search widget initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize Search widget:', error);
+
     }
   };
 
   // Initialize coordinate display (like in index.html)
   const initializeCoordinateDisplay = (view) => {
     try {
-      console.log('Initializing coordinate display...');
+
 
       // Create coordinate display div
       const coordDiv = document.createElement('div');
@@ -873,15 +834,15 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         }
       });
 
-      console.log('Coordinate display initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize coordinate display:', error);
+
     }
   };
 
   const initializeBookmarks = async (view) => {
     try {
-      console.log('Initializing Bookmarks widget...');
+
       setLoadingMessage('Setting up bookmarks...');
 
       // Import Bookmarks and Expand widgets
@@ -906,18 +867,18 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add the widget to the top-left corner of the view
       view.ui.add(bkExpand, 'top-left');
 
-      console.log('Bookmarks widget initialized successfully');
+
 
       // Add custom Malaysia bookmarks to the widget
       await addCustomBookmarks(bookmarks);
     } catch (error) {
-      console.error('Failed to initialize Bookmarks widget:', error);
+
     }
   };
 
   const addCustomBookmarks = async (bookmarksWidget) => {
     try {
-      console.log('Adding custom Malaysia bookmarks...');
+
 
       // Create bookmark objects directly without importing Bookmark class
       const customBookmarks = malaysiaBookmarks.map((bookmark) => ({
@@ -944,27 +905,22 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add bookmarks to the widget's bookmarks collection
       if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.addMany) {
         await bookmarksWidget.bookmarks.addMany(customBookmarks);
-        console.log(`Added ${customBookmarks.length} custom bookmarks successfully`);
+
       } else if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.add) {
         // Alternative: add one by one
         for (const bookmark of customBookmarks) {
           await bookmarksWidget.bookmarks.add(bookmark);
         }
-        console.log(`Added ${customBookmarks.length} custom bookmarks successfully`);
-      } else {
-        console.warn(
-          'Bookmarks collection not available, bookmarks widget may not be fully initialized'
-        );
-        console.log('Available properties on bookmarksWidget:', Object.keys(bookmarksWidget));
+
       }
     } catch (error) {
-      console.error('Failed to add custom bookmarks:', error);
+
     }
   };
 
   const initializeLayerList = async (view) => {
     try {
-      console.log('Initializing LayerList widget...');
+
       setLoadingMessage('Setting up layer list...');
 
       // Import LayerList and Expand widgets
@@ -999,15 +955,15 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(layerListExpand, 'top-left');
 
-      console.log('LayerList widget initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize LayerList widget:', error);
+
     }
   };
 
   const initializeBasemapGallery = async (view) => {
     try {
-      console.log('Initializing BasemapGallery widget...');
+
       setLoadingMessage('Setting up basemap gallery...');
 
       // Import BasemapGallery and Expand widgets
@@ -1039,16 +995,16 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(basemapExpand, 'top-left');
 
-      console.log('BasemapGallery widget initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize BasemapGallery widget:', error);
+
     }
   };
 
   // Initialize Legend widget (from index.html)
   const initializeLegendWidget = async (view) => {
     try {
-      console.log('Initializing Legend widget...');
+
 
       const legendModule = await import('@arcgis/core/widgets/Legend');
       const Legend = legendModule.default || legendModule.Legend;
@@ -1068,61 +1024,13 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       view.ui.add(legendExpand, 'top-left');
-      console.log('Legend widget initialized successfully');
+
     } catch (error) {
-      console.error('Failed to initialize Legend widget:', error);
+
     }
   };
 
-  const toggleLayerVisibility = (layerId) => {
-    setLayers((prevLayers) =>
-      prevLayers.map((layer) =>
-        layer.id === layerId ? { ...layer, visible: !layer.visible } : layer
-      )
-    );
 
-    const layerObject = layerGraphics.get(layerId);
-    if (layerObject) {
-      layerObject.visible = !layerObject.visible;
-      console.log(`Toggled layer ${layerId} visibility to:`, layerObject.visible);
-    }
-  };
-
-  const setLayerOpacity = (layerId, opacity) => {
-    setLayers((prevLayers) =>
-      prevLayers.map((layer) => (layer.id === layerId ? { ...layer, opacity } : layer))
-    );
-
-    const layerObject = layerGraphics.get(layerId);
-    if (layerObject) {
-      layerObject.opacity = opacity;
-      console.log(`Set layer ${layerId} opacity to:`, opacity);
-    }
-  };
-
-  const getVisibleLayersCount = () => {
-    return layers.filter((layer) => layer.visible).length;
-  };
-
-  const toggleLayerList = () => {
-    setShowLayerList(!showLayerList);
-  };
-
-  const handleLayerToggle = (layerId) => {
-    toggleLayerVisibility(layerId);
-  };
-
-  const handleOpacityChange = (layerId, opacity) => {
-    setLayerOpacity(layerId, opacity);
-  };
-
-  const handleLayerInfo = (layerId) => {
-    setShowLayerInfo(showLayerInfo === layerId ? null : layerId);
-  };
-
-  const handleOpacityControl = (layerId) => {
-    setShowOpacityControl(showOpacityControl === layerId ? null : layerId);
-  };
 
   return (
     <div
@@ -1133,21 +1041,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     >
       {/* Main Map Container */}
       <div ref={mapRef} className="w-full h-full" id="real-map-container"></div>
-      {/* {/* Layer Status Indicator */}
-      {/* <div className="absolute bottom-4 left-4 z-10 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
-        <div className="text-sm text-gray-700">
-          <div className="flex items-center space-x-2">
-            <span
-              className={`w-2 h-2 rounded-full ${mapView ? 'bg-green-500' : 'bg-red-500'}`}
-            ></span>
-            <span>{mapView ? 'Map Ready' : 'Map Loading...'}</span>
-          </div>
-          <div className="text-xs text-gray-500 mt-1">
-            {getVisibleLayersCount()} of {layers.length} layers active
-          </div>
-          <div className="text-xs text-gray-500">Malaysia Disaster Management System</div>
-        </div>
-      </div>  */}
+
       {/* Loading Overlay */}
       {loading && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-20">
