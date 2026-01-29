@@ -42,11 +42,15 @@ describe('API Client Setup', () => {
     expect(config.headers.Authorization).toBeUndefined();
   });
 
-  it('should add API key to headers', () => {
+  it('should include JWT token in Authorization header', () => {
+    localStorage.setItem('token', 'test-token-123');
     const config = { headers: {} };
-    config.headers['x-api-key'] = 'secretkey';
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-    expect(config.headers['x-api-key']).toBe('secretkey');
+    expect(config.headers.Authorization).toBe('Bearer test-token-123');
   });
 });
 

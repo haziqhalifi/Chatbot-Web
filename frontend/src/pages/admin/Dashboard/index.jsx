@@ -172,7 +172,6 @@ const AdminDashboard = () => {
       const response = await fetch('http://localhost:8000/admin/dashboard/stats', {
         method: 'GET',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
@@ -207,7 +206,6 @@ const AdminDashboard = () => {
       const response = await fetch('http://localhost:8000/admin/system/status', {
         method: 'GET',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },

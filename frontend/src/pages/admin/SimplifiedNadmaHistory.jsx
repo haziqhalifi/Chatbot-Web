@@ -29,7 +29,6 @@ const SimplifiedNadmaHistory = () => {
 
       const response = await fetch('http://localhost:8000/map/admin/nadma/history?limit=1000', {
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });

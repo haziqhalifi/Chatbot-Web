@@ -33,9 +33,9 @@ const SimplifiedAdminDashboard = () => {
 
       const response = await fetch('http://localhost:8000/admin/dashboard/stats', {
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
+      });
       });
 
       if (response.ok) {

@@ -130,7 +130,6 @@ const ManageFAQ = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
@@ -175,7 +174,6 @@ const ManageFAQ = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
@@ -205,7 +203,6 @@ const ManageFAQ = () => {
       const response = await fetch(`http://localhost:8000/admin/faqs/${faqId}`, {
         method: 'DELETE',
         headers: {
-          'x-api-key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });

@@ -85,7 +85,6 @@ const AdminReports = () => {
       const response = await fetch('http://localhost:8000/admin/reports', {
         method: 'GET',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -134,7 +133,6 @@ const AdminReports = () => {
       const response = await fetch(`http://localhost:8000/admin/reports/${reportId}`, {
         method: 'GET',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -182,7 +180,6 @@ const AdminReports = () => {
       const response = await fetch('http://localhost:8000/admin/notifications/send', {
         method: 'POST',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
@@ -270,7 +267,6 @@ const AdminReports = () => {
         {
           method: 'PUT',
           headers: {
-            'X-API-Key': 'secretkey',
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
@@ -303,7 +299,6 @@ const AdminReports = () => {
       const response = await fetch(`http://localhost:8000/admin/reports/${reportId}/approve`, {
         method: 'POST',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -331,7 +326,6 @@ const AdminReports = () => {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });

@@ -103,7 +103,6 @@ const SimplifiedManageFAQ = () => {
         method: editingFaq ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(formData),
@@ -135,7 +134,6 @@ const SimplifiedManageFAQ = () => {
       const response = await fetch(`http://localhost:8000/admin/faqs/${faqId}`, {
         method: 'DELETE',
         headers: {
-          'x-api-key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
