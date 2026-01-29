@@ -173,8 +173,14 @@ frontend/.vite/
 frontend/.tailwind/
 
 # Local environment configs
+.env
+.env.*
+.env.local
+.env.*.local
 frontend/.env
 frontend/.env.*
+backend/.env
+backend/.env.*
 
 # Misc
 *.swp
