@@ -1,10 +1,10 @@
-from fastapi import APIRouter, HTTPException, Header, Depends, Query
+from fastapi import APIRouter, HTTPException, Header, Depends, Query, Response
 import jwt
 import os
 from datetime import datetime, timedelta, timezone
 
 # Import from new organized structure
-from services.user_service import create_user, verify_user, pwd_context
+from services.user_service import create_user, verify_user, pwd_context, JWT_SECRET, JWT_ALGORITHM
 from utils.auth import google_authenticate
 from services.notification_service import create_welcome_notification
 from database import get_db_conn
@@ -20,9 +20,7 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
+# Configuration (imported from user_service to ensure consistency)
 GOOGLE_CLIENT_ID = "845615957730-ldlb837mjkqtvigr8d6pt8ruq1qab2jo.apps.googleusercontent.com"
 
 
@@ -132,7 +130,7 @@ def resend_code(request: EmailRequest):
         raise HTTPException(status_code=500, detail=f"Failed to resend verification code: {str(e)}")
 
 @router.post("/signin")
-def signin(request: AuthRequest):
+def signin(request: AuthRequest, response: Response):
     """Regular user sign in - admins should use /admin/signin"""
     try:
         conn = get_db_conn()
@@ -154,7 +152,19 @@ def signin(request: AuthRequest):
     except Exception:
         pass  # Continue with normal signin if query fails
     
-    return verify_user(request.email, request.password)
+    result = verify_user(request.email, request.password)
+    
+    # Set refresh token in HTTP-only cookie (secure for production)
+    response.set_cookie(
+        key="refresh_token",
+        value=result.pop("refresh_token"),  # Remove from response body
+        max_age=7*24*60*60,  # 7 days
+        httponly=True,  # Not accessible to JavaScript
+        secure=True,   # HTTPS only in production
+        samesite="Lax"  # CSRF protection
+    )
+    
+    return result
 
 @router.post("/admin/send-verification-code")
 def admin_send_verification_code(request: EmailRequest):
@@ -222,7 +232,7 @@ def admin_send_verification_code(request: EmailRequest):
         raise HTTPException(status_code=500, detail=result["message"])
 
 @router.post("/admin/signin")
-def admin_signin(request: AdminAuthRequest):
+def admin_signin(request: AdminAuthRequest, response: Response):
     # Validate admin code from database
     verification_result = verify_admin_code(request.email, request.admin_code)
     
@@ -289,6 +299,16 @@ def admin_signin(request: AdminAuthRequest):
     
     # Add admin role to user data
     user_result["user"]["role"] = "admin"
+    
+    # Set refresh token in HTTP-only cookie (secure for production)
+    response.set_cookie(
+        key="refresh_token",
+        value=user_result.pop("refresh_token"),  # Remove from response body
+        max_age=7*24*60*60,  # 7 days
+        httponly=True,  # Not accessible to JavaScript
+        secure=True,   # HTTPS only in production
+        samesite="Lax"  # CSRF protection
+    )
     
     return user_result
 

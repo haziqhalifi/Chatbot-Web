@@ -7,6 +7,12 @@ from datetime import datetime, timedelta
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# Load JWT configuration at startup (fail fast if missing)
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET environment variable is required and must be set")
+JWT_ALGORITHM = "HS256"
+
 # --- User-related database logic ---
 def create_user(email: str, password: str):
     hashed_password = pwd_context.hash(password)
@@ -63,24 +69,32 @@ def verify_user(email: str, password: str):
         # Get user role
         user_role = row[3] or "Public"
         
-        # Generate JWT token
-        JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-        JWT_ALGORITHM = "HS256"
-        payload = {
+        # Generate JWT access token (short-lived: 15 minutes)
+        access_payload = {
             "user_id": row[0],
             "email": email,
             "name": row[2] or "",
             "role": user_role,
-            "exp": datetime.utcnow() + timedelta(days=7)
+            "exp": datetime.utcnow() + timedelta(minutes=15),
+            "type": "access"
         }
-        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        access_token = jwt.encode(access_payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+        
+        # Generate refresh token (7 days) - should be stored in HTTP-only cookie
+        refresh_payload = {
+            "user_id": row[0],
+            "exp": datetime.utcnow() + timedelta(days=7),
+            "type": "refresh"
+        }
+        refresh_token = jwt.encode(refresh_payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
         
         # Update last login time
         update_last_login(row[0])
         
         return {
             "message": "Login successful",
-            "token": token,
+            "access_token": access_token,
+            "refresh_token": refresh_token,  # Route should set this in HTTP-only cookie
             "user": {
                 "id": row[0],
                 "email": email,

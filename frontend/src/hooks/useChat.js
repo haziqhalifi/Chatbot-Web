@@ -307,7 +307,29 @@ export const useChat = () => {
         return aiResponse;
       } catch (err) {
         // Keep messages as is on error (user message already added)
-        setError(err.response?.data?.detail || 'Failed to send message');
+        const errorMessage =
+          err.response?.data?.detail || err.message || 'Failed to get AI response';
+
+        // Make error messages more user-friendly
+        let userFriendlyError = errorMessage;
+        if (errorMessage.includes('OpenAI') || errorMessage.includes('ChatGPT')) {
+          userFriendlyError =
+            'Unable to connect to ChatGPT. Please try again or contact support if the problem persists.';
+        } else if (
+          errorMessage.includes('API') ||
+          errorMessage.includes('503') ||
+          errorMessage.includes('502')
+        ) {
+          userFriendlyError =
+            'The AI service is temporarily unavailable. Please try again in a moment.';
+        } else if (errorMessage.includes('timeout')) {
+          userFriendlyError =
+            'Request timed out. The AI is taking too long to respond. Please try again.';
+        } else if (errorMessage.includes('network') || errorMessage.includes('Network')) {
+          userFriendlyError = 'Network error. Please check your internet connection and try again.';
+        }
+
+        setError(userFriendlyError);
         throw err;
       } finally {
         setIsSending(false);

@@ -15,7 +15,7 @@ const SecurityTab = ({
   setShowDeleteConfirm,
   onDeleteAccount,
 }) => {
-  const handleLogoutAll = () => {
+  const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('tiara_current_session');
@@ -32,20 +32,12 @@ const SecurityTab = ({
         passwordMessage={passwordMessage}
       />
 
-      <ToggleRow
-        label="Two-Factor Authentication"
-        description="Not available in this version."
-        checked={false}
-        onChange={() => {}}
-        disabled
-      />
-
       <div className="mb-4">
         <button
-          className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors mb-2"
-          onClick={handleLogoutAll}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mb-2"
+          onClick={handleLogout}
         >
-          Log out of all devices
+          Log Out
         </button>
         <ToggleRow
           label="Public Profile"
