@@ -251,17 +251,17 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     fetchNadmaDisasters();
   }, []); // Run once on mount
 
-  // Generate ArcGIS token for authentication
-  const generateArcGISToken = async () => {
-    try {
-      const params = new URLSearchParams({
-        username: 'kleos_dev',
-        password: 'Pass@1234',
-        client: 'referer',
-        referer: window.location.origin,
-        expiration: 120,
-        f: 'json',
-      });
+  // Generate ArcGIS token for authentication (Need to update with correct credentials)
+  // const generateArcGISToken = async () => {
+  //   try {
+  //     const params = new URLSearchParams({
+  //       username: 'kleos_dev',
+  //       password: 'Pass@1234',
+  //       client: 'referer',
+  //       referer: window.location.origin,
+  //       expiration: 120,
+  //       f: 'json',
+  //     });
 
       const response = await fetch('https://www.arcgis.com/sharing/rest/generateToken', {
         method: 'POST',
