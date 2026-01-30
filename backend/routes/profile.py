@@ -1,14 +1,15 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 import jwt
-import os
-from services.user_service import get_user_profile, update_user_profile, delete_user_account
+from services.user_service import (
+    get_user_profile,
+    update_user_profile,
+    delete_user_account,
+    JWT_SECRET,
+    JWT_ALGORITHM,
+)
 
 router = APIRouter()
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
 
 class UserProfileRequest(BaseModel):
     name: str

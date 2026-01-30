@@ -26,15 +26,6 @@ from services.subscription_service import create_subscriptions_table
 # Import route modules
 from routes import auth, ai, reports, profile, notifications, subscriptions, chat, admin, dev, health, map
 
-# --- RECOMMENDED MODELS FOR MALAY LANGUAGE ---
-# For better Malay language support, consider using these models with Ollama:
-# 1. qwen2.5:7b (Currently configured - Excellent for Malay and English)
-# 2. ollama pull aya:8b or aya:35b (Multilingual, excellent for Malay)
-# 3. ollama pull gemma2:9b (Better multilingual capabilities)
-# 
-# Current model: "qwen2.5:7b" (Excellent Malay and English support)
-# To change the model, update the model name in chat_utils.py generate_response function
-
 # Initialize database updates
 print("Updating database schema...")
 update_database_schema()

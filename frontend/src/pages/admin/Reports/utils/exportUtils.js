@@ -16,7 +16,6 @@ export const exportReportsCSV = async (token) => {
     const response = await fetch('http://localhost:8000/admin/reports/export/csv', {
       method: 'GET',
       headers: {
-        'X-API-Key': 'secretkey',
         Authorization: `Bearer ${token}`,
       },
     });
@@ -45,7 +44,6 @@ export const exportReportsPDF = async (token) => {
     const response = await fetch('http://localhost:8000/admin/reports/export/pdf', {
       method: 'GET',
       headers: {
-        'X-API-Key': 'secretkey',
         Authorization: `Bearer ${token}`,
       },
     });

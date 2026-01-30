@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import Optional, List
 import jwt
-import os
+from services.user_service import JWT_SECRET, JWT_ALGORITHM
 from services.notification_service import (
     create_notification, get_user_notifications, get_unread_count,
     mark_notification_as_read, mark_all_notifications_as_read,
@@ -12,10 +12,6 @@ from services.subscription_service import create_targeted_disaster_notification
 from utils.chat import verify_api_key
 
 router = APIRouter()
-
-# Configuration
-JWT_SECRET = os.getenv("JWT_SECRET", "your_jwt_secret")
-JWT_ALGORITHM = "HS256"
 
 class NotificationRequest(BaseModel):
     title: str

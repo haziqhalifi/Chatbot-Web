@@ -162,7 +162,12 @@ class ChatService:
                     )
                 except Exception as exc:
                     logger.error(f"OpenAI Assistant response error: {exc}")
-                    raise HTTPException(status_code=502, detail="Failed to generate response using OpenAI Assistant.")
+                    error_message = str(exc)
+                    # Pass through user-friendly error messages from the service
+                    if 'ChatGPT' in error_message or 'rate limit' in error_message.lower():
+                        raise HTTPException(status_code=502, detail=error_message)
+                    else:
+                        raise HTTPException(status_code=502, detail="Failed to generate response using ChatGPT. Please try again or contact support if the problem persists.")
 
                 if not openai_thread_id and ai_response_data.get('thread_id'):
                     from database.chat import update_session_metadata

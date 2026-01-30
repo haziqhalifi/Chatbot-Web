@@ -54,7 +54,6 @@ const SimplifiedAdminReports = () => {
 
       const response = await fetch('http://localhost:8000/admin/reports', {
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -134,7 +133,6 @@ const SimplifiedAdminReports = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'X-API-Key': 'secretkey',
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
@@ -171,7 +169,6 @@ const SimplifiedAdminReports = () => {
       const response = await fetch(`http://localhost:8000/admin/reports/${reportId}/approve`, {
         method: 'POST',
         headers: {
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
       });
@@ -197,7 +194,6 @@ const SimplifiedAdminReports = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': 'secretkey',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ reason }),

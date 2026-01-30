@@ -139,7 +139,18 @@ class OpenAIAssistantService:
                 
         except Exception as e:
             logger.error(f"Error getting OpenAI Assistant response: {e}")
-            raise
+            # Provide more specific error messages
+            error_msg = str(e)
+            if 'rate_limit' in error_msg.lower():
+                raise Exception("ChatGPT rate limit exceeded. Please try again in a few moments.")
+            elif 'timeout' in error_msg.lower():
+                raise Exception("ChatGPT request timed out. Please try again.")
+            elif 'authentication' in error_msg.lower() or 'api_key' in error_msg.lower():
+                raise Exception("ChatGPT authentication failed. Please contact the administrator.")
+            elif 'connection' in error_msg.lower() or 'network' in error_msg.lower():
+                raise Exception("Unable to connect to ChatGPT service. Please try again.")
+            else:
+                raise Exception(f"ChatGPT error: {error_msg}")
 
     def seed_thread_messages(self, thread_id: str, history: List[Dict[str, str]]) -> None:
         """Populate a thread with existing chat history before sending a new message"""

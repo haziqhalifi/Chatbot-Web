@@ -39,11 +39,10 @@ const ManageUsers = () => {
     setError(null);
 
     try {
-      // Use the API key from environment or default development key
-      const apiKey = 'secretkey'; // In production, this should come from secure config
+      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:8000/admin/users', {
         headers: {
-          'X-API-KEY': apiKey,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -71,11 +70,11 @@ const ManageUsers = () => {
     setSuccessMessage('');
 
     try {
-      const apiKey = 'secretkey'; // In production, this should come from secure config
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/admin/users/${userId}/promote`, {
         method: 'POST',
         headers: {
-          'X-API-KEY': apiKey,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -109,11 +108,11 @@ const ManageUsers = () => {
     setSuccessMessage('');
 
     try {
-      const apiKey = 'secretkey'; // In production, this should come from secure config
+      const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:8000/admin/users/${userId}/demote`, {
         method: 'POST',
         headers: {
-          'X-API-KEY': apiKey,
+          Authorization: `Bearer ${token}`,
         },
       });
 

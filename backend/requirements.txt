@@ -19,12 +19,8 @@ reportlab>=4.0.0
 pandas>=2.0.0
 
 # AI/ML
-openai>=1.3.0
-openai-whisper>=20231117  # For local speech-to-text (supports Malay & English)
-ollama>=0.1.7
+openai>=1.3.0  # For OpenAI Assistant API
 sentence-transformers>=2.2.2
-torch>=2.0.0  # Required for openai-whisper
-numba>=0.57.0  # Required for openai-whisper
 
 # Performance & Monitoring
 redis>=5.0.0

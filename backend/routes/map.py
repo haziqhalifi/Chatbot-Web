@@ -139,12 +139,6 @@ async def get_nadma_disasters(filters: Optional[Dict[str, Any]] = None):
         "Accept": "application/json"
     }
     
-    # Log the request for debugging
-    print(f"NADMA API Request:")
-    print(f"URL: {nadma_url}")
-    print(f"Token: {nadma_token}")
-    print(f"Auth Header: Bearer {nadma_token}")
-    
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             # POST request with optional filters in the body
@@ -153,9 +147,6 @@ async def get_nadma_disasters(filters: Optional[Dict[str, Any]] = None):
                 headers=headers,
                 json=filters if filters else {}
             )
-            
-            print(f"Response Status: {response.status_code}")
-            print(f"Response Headers: {response.headers}")
             
             response.raise_for_status()
             data = response.json()

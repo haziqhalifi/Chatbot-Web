@@ -4,7 +4,6 @@ import Header from '../../components/common/Header';
 import { AlertTriangle } from 'lucide-react';
 import {
   AnalyticsGrid,
-  TypeDistributionChart,
   SearchAndFilters,
   DisasterTable,
   MyReportsTable,
@@ -203,13 +202,6 @@ const DisasterDashboard = () => {
     return 0;
   });
 
-  // Get user report types distribution
-  const myReportTypeDistribution = myReports.reduce((acc, report) => {
-    const type = report.type || 'Unknown';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {});
-
   // Export to CSV
   const exportToCSV = () => {
     const headers = [
@@ -276,15 +268,6 @@ const DisasterDashboard = () => {
           activeTab={activeTab}
           analytics={analytics}
           myReportsAnalytics={myReportsAnalytics}
-        />
-
-        {/* Type Distribution Chart */}
-        <TypeDistributionChart
-          activeTab={activeTab}
-          typeDistribution={typeDistribution}
-          myReportTypeDistribution={myReportTypeDistribution}
-          myReports={myReports}
-          onNavigateToReport={() => navigate('/report-disaster')}
         />
 
         {/* Filters and Actions */}

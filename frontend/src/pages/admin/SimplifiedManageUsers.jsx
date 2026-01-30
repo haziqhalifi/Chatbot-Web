@@ -41,7 +41,7 @@ const SimplifiedManageUsers = () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost:8000/admin/users', {
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 
       if (response.ok) {
@@ -62,7 +62,7 @@ const SimplifiedManageUsers = () => {
       setProcessing(userId);
       const response = await fetch(`http://localhost:8000/admin/users/${userId}/promote`, {
         method: 'POST',
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 
       if (response.ok) {
@@ -82,7 +82,7 @@ const SimplifiedManageUsers = () => {
       setProcessing(userId);
       const response = await fetch(`http://localhost:8000/admin/users/${userId}/demote`, {
         method: 'POST',
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 
       if (response.ok) {
@@ -107,12 +107,8 @@ const SimplifiedManageUsers = () => {
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-
-      if (response.ok) {
-        await fetchUsers();
-        alert('User suspended successfully');
       }
     } catch (error) {
       console.error('Error suspending user:', error);
@@ -134,7 +130,7 @@ const SimplifiedManageUsers = () => {
 
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 
       if (response.ok) {
@@ -157,7 +153,7 @@ const SimplifiedManageUsers = () => {
       setProcessing(userId);
       const response = await fetch(`http://localhost:8000/admin/users/${userId}/unblock`, {
         method: 'POST',
-        headers: { 'X-API-KEY': 'secretkey' },
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
 
       if (response.ok) {

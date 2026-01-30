@@ -12,6 +12,8 @@ const ChatMessages = forwardRef(
       isListening,
       isTranscribing,
       isSending,
+      error,
+      onClearError,
       chatEndRef,
       height,
       width,
@@ -251,8 +253,48 @@ const ChatMessages = forwardRef(
           </div>
         )}
 
+        {/* Error Message */}
+        {error && (
+          <div className="flex justify-start items-end space-x-2">
+            <div className="flex-shrink-0">
+              <img
+                src="/images/tiara.png"
+                alt="Tiara Bot Avatar"
+                className="w-[43px] h-[43px] rounded-full object-cover bg-[#0a4974]"
+              />
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+              <div className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-red-800">Failed to get response</p>
+                  <p className="text-sm text-red-700 mt-1">{error}</p>
+                  {onClearError && (
+                    <button
+                      onClick={onClearError}
+                      className="text-xs text-red-600 hover:text-red-800 underline mt-2"
+                    >
+                      Dismiss
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tiara typing indicator */}
-        {isSending && (
+        {isSending && !error && (
           <div className="flex justify-start items-end space-x-2">
             <div className="flex-shrink-0">
               <img
