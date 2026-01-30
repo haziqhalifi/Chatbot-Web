@@ -1,12 +1,27 @@
 # Chatbot Web
 
-A full-stack web application featuring a chatbot with a FastAPI backend and a modern JavaScript frontend.
+A full-stack web application featuring a disaster management chatbot with a FastAPI backend and a modern JavaScript frontend.
 
 ## Project Structure
 
-- `backend/` — FastAPI backend (Python)
-- `frontend/` — Frontend (JavaScript, Vite, React)
-- `env/` — Python virtual environment
+```
+├── backend/         # FastAPI backend (Python)
+│   ├── config/      # Configuration settings
+│   ├── database/    # Database connection and queries
+│   ├── docs/        # Backend documentation
+│   ├── middleware/  # FastAPI middleware
+│   ├── models/      # Pydantic models
+│   ├── repositories/# Data access layer
+│   ├── routes/      # API endpoints
+│   ├── scripts/     # Maintenance scripts
+│   ├── services/    # Business logic
+│   ├── tests/       # Backend tests
+│   └── utils/       # Utility functions
+├── frontend/        # React frontend (Vite)
+│   ├── public/      # Static assets
+│   └── src/         # React source code
+└── .venv/           # Python virtual environment
+```
 
 ## Backend Setup
 
@@ -57,7 +72,6 @@ The chatbot now supports voice input with **Malay (Bahasa Melayu)** and **Englis
 ### Quick Setup:
 
 1. **For best Malay support (Recommended):**
-
    - Add OpenAI API key to `.env`:
      ```env
      OPENAI_API_KEY=sk-your-api-key-here
