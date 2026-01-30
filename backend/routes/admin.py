@@ -6,9 +6,8 @@ from database import (
     get_admin_dashboard_stats, get_system_status, get_all_faqs, 
     get_faq_by_id, add_faq, update_faq, delete_faq
 )
-from utils.chat import verify_api_key
 from utils.performance import get_performance_stats
-from routes.utils import get_user_id_from_token
+from middleware.auth_middleware import verify_admin_token
 
 router = APIRouter()
 
@@ -34,10 +33,10 @@ class AdminNotificationRequest(BaseModel):
 
 # Dashboard endpoints
 @router.get("/admin/dashboard/stats")
-def get_dashboard_stats(x_api_key: str = Header(None)):
+def get_dashboard_stats(authorization: str = Header(None)):
     """Get dashboard statistics for admin dashboard"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         stats = get_admin_dashboard_stats()
@@ -46,10 +45,10 @@ def get_dashboard_stats(x_api_key: str = Header(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/admin/system/status")
-def get_admin_system_status(x_api_key: str = Header(None)):
+def get_admin_system_status(authorization: str = Header(None)):
     """Get system status for admin dashboard"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         status = get_system_status()
@@ -60,10 +59,10 @@ def get_admin_system_status(x_api_key: str = Header(None)):
 # RAG endpoints removed - RAG feature has been deprecated
 
 @router.get("/performance")
-def get_performance_metrics(x_api_key: str = Header(None)):
-    """Get performance metrics (requires API key)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def get_performance_metrics(authorization: str = Header(None)):
+    """Get performance metrics (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     return get_performance_stats()
 
@@ -89,13 +88,11 @@ def get_faq(faq_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/admin/faqs")
-def create_faq(faq: FAQCreate, x_api_key: str = Header(None), authorization: str = Header(None)):
+def create_faq(faq: FAQCreate, authorization: str = Header(None)):
     """Create a new FAQ (Admin only)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
-    
-    # Get admin user ID from JWT token
-    admin_user_id = get_user_id_from_token(authorization)
+    # Verify admin role and get user data
+    admin_user = verify_admin_token(authorization)
+    admin_user_id = admin_user["user_id"]
     
     try:
         faq_id = add_faq(
@@ -113,13 +110,11 @@ def create_faq(faq: FAQCreate, x_api_key: str = Header(None), authorization: str
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/admin/faqs/{faq_id}")
-def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(None), authorization: str = Header(None)):
+def update_faq_endpoint(faq_id: int, faq: FAQUpdate, authorization: str = Header(None)):
     """Update an existing FAQ (Admin only)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
-    
-    # Get admin user ID from JWT token
-    admin_user_id = get_user_id_from_token(authorization)
+    # Verify admin role and get user data
+    admin_user = verify_admin_token(authorization)
+    admin_user_id = admin_user["user_id"]
     
     try:
         success = update_faq(
@@ -138,13 +133,11 @@ def update_faq_endpoint(faq_id: int, faq: FAQUpdate, x_api_key: str = Header(Non
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/admin/faqs/{faq_id}")
-def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None), authorization: str = Header(None)):
+def delete_faq_endpoint(faq_id: int, authorization: str = Header(None)):
     """Delete an FAQ (Admin only)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
-    
-    # Get admin user ID from JWT token
-    admin_user_id = get_user_id_from_token(authorization)
+    # Verify admin role and get user data
+    admin_user = verify_admin_token(authorization)
+    admin_user_id = admin_user["user_id"]
     
     try:
         success = delete_faq(faq_id, deleted_by=admin_user_id)
@@ -157,10 +150,10 @@ def delete_faq_endpoint(faq_id: int, x_api_key: str = Header(None), authorizatio
 
 # User management endpoints
 @router.get("/admin/users")
-def get_all_users(x_api_key: str = Header(None)):
+def get_all_users(authorization: str = Header(None)):
     """Get all users for admin management"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -198,10 +191,10 @@ def get_all_users(x_api_key: str = Header(None)):
         raise HTTPException(status_code=500, detail=f"Failed to fetch users: {str(e)}")
 
 @router.post("/admin/users/{user_id}/promote")
-def promote_user_to_admin(user_id: int, x_api_key: str = Header(None)):
-    """Promote a user to admin role"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def promote_user_to_admin(user_id: int, authorization: str = Header(None)):
+    """Promote a user to admin role (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -231,10 +224,10 @@ def promote_user_to_admin(user_id: int, x_api_key: str = Header(None)):
         raise HTTPException(status_code=500, detail=f"Failed to promote user: {str(e)}")
 
 @router.post("/admin/users/{user_id}/demote")
-def demote_admin_to_user(user_id: int, x_api_key: str = Header(None)):
-    """Demote an admin back to regular user"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def demote_admin_to_user(user_id: int, authorization: str = Header(None)):
+    """Demote an admin back to regular user (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -264,10 +257,10 @@ def demote_admin_to_user(user_id: int, x_api_key: str = Header(None)):
         raise HTTPException(status_code=500, detail=f"Failed to demote user: {str(e)}")
 
 @router.post("/admin/users/{user_id}/suspend")
-def suspend_user(user_id: int, x_api_key: str = Header(None), reason: Optional[str] = Query(None)):
-    """Suspend a user account"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def suspend_user(user_id: int, authorization: str = Header(None), reason: Optional[str] = Query(None)):
+    """Suspend a user account (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -304,10 +297,10 @@ def suspend_user(user_id: int, x_api_key: str = Header(None), reason: Optional[s
         raise HTTPException(status_code=500, detail=f"Failed to suspend user: {str(e)}")
 
 @router.post("/admin/users/{user_id}/block")
-def block_user(user_id: int, x_api_key: str = Header(None), reason: Optional[str] = Query(None)):
-    """Block a user account"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def block_user(user_id: int, authorization: str = Header(None), reason: Optional[str] = Query(None)):
+    """Block a user account (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -344,10 +337,10 @@ def block_user(user_id: int, x_api_key: str = Header(None), reason: Optional[str
         raise HTTPException(status_code=500, detail=f"Failed to block user: {str(e)}")
 
 @router.post("/admin/users/{user_id}/unblock")
-def unblock_user(user_id: int, x_api_key: str = Header(None)):
-    """Unblock/reactivate a user account"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+def unblock_user(user_id: int, authorization: str = Header(None)):
+    """Unblock/reactivate a user account (Admin only)"""
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         from database.connection import DatabaseConnection
@@ -385,10 +378,10 @@ def unblock_user(user_id: int, x_api_key: str = Header(None)):
 
 # Admin notification endpoint
 @router.post("/admin/notifications/send")
-def send_admin_notification(notification: AdminNotificationRequest, x_api_key: str = Header(None)):
+def send_admin_notification(notification: AdminNotificationRequest, authorization: str = Header(None)):
     """Send custom notification to users (Admin only)"""
-    from config.settings import API_KEY_CREDITS
-    x_api_key = verify_api_key(x_api_key, API_KEY_CREDITS)
+    # Verify admin role
+    admin_user = verify_admin_token(authorization)
     
     try:
         # Import notification services
