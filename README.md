@@ -1,154 +1,243 @@
 # Chatbot Web
 
-A full-stack web application featuring a disaster management chatbot with a FastAPI backend and a modern JavaScript frontend.
+A full-stack **Disaster Management Chatbot** with AI-powered chat using OpenAI Assistant API, ArcGIS map integration with 15 map tools, email verification, admin/user roles, and disaster reporting.
+
+## Features
+
+- 🤖 **AI-Powered Chat** - OpenAI Assistant API with thread-based conversations
+- 🗺️ **Interactive Map** - ArcGIS JavaScript API 4.34 with 15 AI-controllable map tools
+- 🌍 **Multi-Language** - Malay (Bahasa Melayu) and English support
+- 🎤 **Voice Input** - Speech-to-text with OpenAI Whisper
+- 📊 **Admin Dashboard** - User management, analytics, and system monitoring
+- 🔔 **Notifications** - Real-time alerts and email notifications
+- 📱 **Responsive Design** - React 19 + Tailwind CSS
+
+## Tech Stack
+
+| Component | Technology                     |
+| --------- | ------------------------------ |
+| Backend   | FastAPI (Python 3.12+)         |
+| Frontend  | React 19 + Vite + Tailwind CSS |
+| Database  | Azure SQL Server               |
+| AI        | OpenAI Assistant API           |
+| Maps      | ArcGIS JavaScript API 4.34     |
+| Voice     | OpenAI Whisper (cloud/local)   |
 
 ## Project Structure
 
 ```
-├── backend/         # FastAPI backend (Python)
-│   ├── config/      # Configuration settings
-│   ├── database/    # Database connection and queries
-│   ├── docs/        # Backend documentation
-│   ├── middleware/  # FastAPI middleware
-│   ├── models/      # Pydantic models
-│   ├── repositories/# Data access layer
-│   ├── routes/      # API endpoints
-│   ├── scripts/     # Maintenance scripts
-│   ├── services/    # Business logic
-│   ├── tests/       # Backend tests
-│   └── utils/       # Utility functions
-├── frontend/        # React frontend (Vite)
-│   ├── public/      # Static assets
-│   └── src/         # React source code
-└── .venv/           # Python virtual environment
+├── backend/              # FastAPI backend (Python)
+│   ├── config/           # Configuration settings (settings.py, database.py)
+│   ├── database/         # Database modules (connection pool, CRUD operations)
+│   ├── middleware/       # FastAPI middleware (rate limiting, error handling)
+│   ├── models/           # Pydantic schemas for request/response validation
+│   ├── repositories/     # Data access layer (BaseRepository pattern)
+│   ├── routes/           # API endpoints (auth, chat, admin, map, etc.)
+│   ├── scripts/          # Maintenance and migration scripts
+│   ├── services/         # Business logic (chat, AI, notifications, map tools)
+│   ├── tests/            # Test suite (543 tests: unit, integration, API, security)
+│   └── utils/            # Utility functions (auth, email, security)
+├── frontend/             # React frontend (Vite)
+│   ├── public/           # Static assets and manifest
+│   └── src/              # React source code
+│       ├── api/          # API client configuration
+│       ├── components/   # Reusable UI components
+│       ├── contexts/     # React Context (Auth, Chat, Layer, Notification)
+│       ├── hooks/        # Custom React hooks
+│       ├── locales/      # i18n translations (en.json, ms.json)
+│       ├── pages/        # Route components (user, admin, auth)
+│       └── services/     # API service modules
+└── .venv/                # Python virtual environment
 ```
 
-## Backend Setup
+## Quick Start
 
-1. **Install dependencies**
+### Prerequisites
 
-   In the `backend` directory, install required Python packages:
+- Python 3.12+
+- Node.js 18+
+- Azure SQL Server (or local SQL Server)
+- OpenAI API Key + Assistant ID
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Start the backend server**
-
-   ```bash
-   cd "C:\Users\user\Desktop\Chatbot Web\backend" & "..\\.venv\Scripts\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8000
-
-
-   cd "C:\Users\user\Desktop\Chatbot Web"
-   .venv\Scripts\Activate.ps1
-   cd backend
-   uvicorn main:app --host 127.0.0.1 --port 8000
-   ```
-
-The backend will be available at `http://127.0.0.1:8000` by default.
-
-## Frontend Setup
-
-1. **Install dependencies**
-
-In the `frontend` directory:
+### Backend Setup
 
 ```bash
+# Create and activate virtual environment
+cd "C:\Users\user\Desktop\Chatbot Web"
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# Install dependencies
+cd backend
+pip install -r requirements.txt
+
+# Configure environment variables (see Environment Variables section)
+# Start the server
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+The backend will be available at `http://127.0.0.1:8000`. API docs at `/docs`.
+
+### Frontend Setup
+
+```bash
+cd frontend
 npm install
+npm run dev
 ```
 
-2. **Start the frontend development server**
+The frontend will be available at `http://localhost:5173`.
 
-   ```bash
-   npm run dev
-   ```
+## Environment Variables
 
-   The frontend will be available at the address shown in the terminal (usually `http://localhost:5173`).
+Create a `.env` file in the project root:
 
-## Voice Chat Feature (Malay & English Support) 🎤
+```env
+# Database (Azure SQL)
+SQL_SERVER=your-server.database.windows.net
+SQL_DATABASE=chatbot_db
+SQL_USER=your_username
+SQL_PASSWORD=your_password
 
-The chatbot now supports voice input with **Malay (Bahasa Melayu)** and **English** languages!
+# OpenAI Assistant API
+OPENAI_API_KEY=sk-your-api-key
+OPENAI_ASSISTANT_ID=asst_your-assistant-id
 
-### Quick Setup:
+# JWT Authentication
+JWT_SECRET=your-secure-secret
+ADMIN_CODE=admin-registration-code
+SUPER_ADMIN_CODE=super-admin-code
 
-1. **For best Malay support (Recommended):**
-   - Add OpenAI API key to `.env`:
-     ```env
-     OPENAI_API_KEY=sk-your-api-key-here
-     ```
-   - Restart backend server
+# API Security
+API_KEY=secretkey
 
-2. **Free alternative (Local):**
-   - Already configured! Uses local Whisper model
-   - No API key needed, but slower and less accurate for Malay
+# Email (SMTP)
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=noreply@yourdomain.com
+SMTP_TLS=true
 
-### User Guide:
-
-- Click microphone icon 🎤 to record voice
-- Go to Settings → Interaction to select language:
-  - **Auto-detect** (recommended)
-  - **Bahasa Melayu** (Malay only)
-  - **English** (English only)
-
-📖 **Full documentation:** See [VOICE_CHAT_GUIDE.md](VOICE_CHAT_GUIDE.md)
-
-## Usage
-
-- Open the frontend in your browser.
-- Interact with the chatbot UI. Messages are sent to the FastAPI backend for processing.
-
-## Map Data API
-
-The application includes a Map Data API that provides ArcGIS Feature Server endpoints for disaster management mapping.
-
-### Available Endpoints
-
-- **GET /map/endpoints** — Get all available map data endpoints
-- **GET /map/endpoints/{type}** — Get a specific endpoint by type (landslide, flood, poi, population)
-- **GET /map/types** — Get all available map data types
-
-### Data Sources
-
-The API provides access to these geospatial datasets:
-
-1. **Land Slide Risk Area** — Areas prone to landslides and slope failures
-2. **Flood Prone Area** — Areas at risk of flooding during monsoon seasons
-3. **Place of Interest** — Points of interest including emergency services
-4. **Population** — Population density data for evacuation planning
-
-For detailed API documentation, see `backend/routes/MAP_API.md` or visit `http://localhost:8000/docs` when the backend is running.
-
-### Frontend Integration Example
-
-```javascript
-// Fetch map endpoints
-const response = await fetch("http://localhost:8000/map/endpoints");
-const data = await response.json();
-
-// Use with ArcGIS to create layers
-import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
-
-data.endpoints.forEach((endpoint) => {
-  const layer = new FeatureLayer({
-    url: endpoint.url,
-    title: endpoint.name,
-  });
-  map.add(layer);
-});
+# Frontend URL (for email links)
+FRONTEND_BASE_URL=http://localhost:5173
 ```
 
-See `frontend/src/examples/MapDataAPIExample.jsx` for complete usage examples.
+## Voice Chat Feature (Malay & English) 🎤
+
+The chatbot supports voice input with **Malay (Bahasa Melayu)** and **English** languages.
+
+### Setup Options
+
+1. **OpenAI Whisper API (Recommended)**
+   - Add `OPENAI_API_KEY` to `.env`
+   - Best accuracy for Malay
+
+2. **Local Whisper (Free)**
+   - No API key needed
+   - Slower, less accurate for Malay
+
+### Usage
+
+- Click microphone icon 🎤 to record
+- Go to **Settings → Interaction** to select language:
+  - Auto-detect (recommended)
+  - Bahasa Melayu
+  - English
+
+## Map Integration & AI Tools
+
+The AI assistant can control the map using **15 map tools** via function calling:
+
+| Tool            | Description                            |
+| --------------- | -------------------------------------- |
+| `Zoom`          | Zoom in/out or reset to default        |
+| `Pan`           | Pan map in 8 directions                |
+| `Search`        | Search and center on a place           |
+| `ToggleLayer`   | Show/hide map layers                   |
+| `ToggleBasemap` | Change basemap style                   |
+| `IdentifyAll`   | Identify features at coordinates       |
+| `IdentifyLayer` | Identify features on specific layer    |
+| `Find`          | Find features within radius            |
+| `FindNearest`   | Find nearest features to point         |
+| `FindNearestIn` | Find nearest features to a named place |
+| `Query`         | SQL-like query on layer                |
+| `DrawBuffer`    | Draw buffer circle around point        |
+| `QueryBuffer`   | Query features within buffer           |
+| `DescribeMap`   | Get current map state                  |
+| `Clear`         | Clear graphics and selections          |
+
+### Available Map Layers
+
+| Type         | Description                             |
+| ------------ | --------------------------------------- |
+| `landslide`  | Land Slide Risk Areas                   |
+| `flood`      | Flood Prone Areas                       |
+| `poi`        | Points of Interest (emergency services) |
+| `population` | Population density data                 |
+
+### Map API Endpoints
+
+- `GET /map/endpoints` — All available map data endpoints
+- `GET /map/endpoints/{type}` — Specific endpoint by type
+- `GET /map/types` — Available map data types
+
+See [backend/routes/MAP_API.md](backend/routes/MAP_API.md) for detailed API documentation.
+
+## Testing
+
+The backend has a comprehensive test suite with **543 tests** across four layers:
+
+| Category    | Tests | Description                  |
+| ----------- | ----- | ---------------------------- |
+| Unit        | 136   | Isolated function testing    |
+| Integration | 84    | End-to-end workflows         |
+| API         | 179   | HTTP endpoint validation     |
+| Security    | 144   | Security vulnerability tests |
+
+```bash
+# Run all unit tests
+cd backend
+pytest tests/unit/ -v
+
+# Run integration tests
+.\run_integration_tests.bat  # Windows
+./run_integration_tests.sh   # Linux/Mac
+
+# Run with coverage
+pytest tests/unit/ --cov=. --cov-report=html
+```
+
+## API Authentication
+
+- **User Auth**: JWT tokens in `Authorization: Bearer <token>` header
+- **API Key**: `x-api-key: secretkey` header required for all requests
+- **Admin**: Requires admin code during registration + email verification
+
+## Architecture
+
+The backend follows a layered architecture:
+
+```
+Routes (HTTP) → Services (Business Logic) → Database (SQL) → Repositories (Data Access)
+```
+
+**Key Patterns:**
+
+- Connection pooling with `DatabaseConnection` context manager
+- Thread-safe database operations
+- LayerContext for frontend z-index management
+- OpenAI Assistant with function calling for map tools
 
 ## Notes
 
-- Ensure the backend is running before using the frontend.
-- Update API endpoints in the frontend if the backend address/port changes.
+- Ensure the backend is running before using the frontend
+- Email verification required for new user accounts
+- Admin users need the `ADMIN_CODE` during registration
 
-## Password Reset Email (SMTP)
+## License
 
-The backend endpoint `POST /forgot-password` can send a real password reset email when SMTP is configured.
-
-Set these environment variables before starting the backend:
+This project is for educational purposes.
 
 - `FRONTEND_BASE_URL` (example: `http://localhost:4028` or your deployed site)
 - `SMTP_HOST` (required to send email)
