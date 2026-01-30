@@ -6,8 +6,21 @@ __pycache__/
 # C extensions
 *.so
 
-# Virtual environment
+# Virtual environments
 env/
+.venv/
+venv/
+
+# Backend generated files
+backend/embeddings.pkl
+backend/htmlcov/
+backend/.coverage
+backend/auth_token.txt
+backend/$env
+
+# Mock/test data
+frontend/public/Mock/
+frontend/public/file/
 
 # Distribution / packaging
 .Python
