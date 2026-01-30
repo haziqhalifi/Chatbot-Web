@@ -77,8 +77,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
     },
   ];
 
-
-
   // Initialize map on component mount
   useEffect(() => {
     initializeMap();
@@ -194,9 +192,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           const staticLayers = prevLayers.filter((layer) => layer.isStatic);
           return [...staticLayers, ...apiLayers];
         });
-
-      } catch (error) {
-      }
+      } catch (error) {}
     };
 
     const fetchNadmaDisasters = async () => {
@@ -275,7 +271,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         const esriConfigModule = await import('@arcgis/core/config');
         esriConfig = esriConfigModule.default;
 
-
         // Configure token authentication if token is available
         if (token && esriConfig) {
           esriConfig.request.interceptors.push({
@@ -285,19 +280,14 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
               params.requestOptions.query.token = token;
             },
           });
-
         }
-      } catch (configError) {
-
-      }
+      } catch (configError) {}
 
       try {
         const mapViewModule = await import('@arcgis/core/views/MapView');
 
         ArcGISMapView = mapViewModule.default || mapViewModule.MapView;
-
       } catch (mapViewError) {
-
         throw mapViewError;
       }
 
@@ -305,9 +295,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         const mapModule = await import('@arcgis/core/Map');
 
         ArcGISMap = mapModule.default || mapModule.Map;
-
       } catch (mapError) {
-
         throw mapError;
       }
 
@@ -315,9 +303,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       try {
         const webMapModule = await import('@arcgis/core/WebMap');
         ArcGISWebMap = webMapModule.default || webMapModule.WebMap;
-
       } catch (webMapError) {
-
         ArcGISWebMap = null;
       }
 
@@ -325,9 +311,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       try {
         const basemapModule = await import('@arcgis/core/Basemap');
         ArcGISBasemap = basemapModule.default || basemapModule.Basemap;
-
       } catch (basemapImportError) {
-
         ArcGISBasemap = null;
       }
 
@@ -338,7 +322,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const useSecuredWebMap = true; // Using the WebMap from index.html by default
 
       if (useSecuredWebMap && ArcGISWebMap && token) {
-
         try {
           map = new ArcGISWebMap({
             portalItem: {
@@ -346,12 +329,9 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
             },
           });
         } catch (webMapError) {
-
           map = new ArcGISMap();
         }
       } else {
-
-
         // Validate that we have the required constructors
         if (typeof ArcGISMap !== 'function') {
           throw new Error(`ArcGISMap is not a constructor. Got: ${typeof ArcGISMap}`);
@@ -363,26 +343,20 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         // Create a simple map without basemap to avoid import issues
         map = new ArcGISMap();
 
-
         // Add a basemap after creation
         try {
           if (ArcGISBasemap && ArcGISBasemap.fromId) {
             const basemap = ArcGISBasemap.fromId('streets-vector');
             map.basemap = basemap;
-
           } else {
-
             // Try using a simple basemap string
             map.basemap = 'streets-vector';
           }
         } catch (basemapError) {
-
           // Final fallback
           try {
             map.basemap = 'streets-vector';
-          } catch (finalError) {
-
-          }
+          } catch (finalError) {}
         }
       }
 
@@ -400,24 +374,19 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
         },
       });
 
-
       setMapView(view);
       setLoadingMessage('Map view ready, loading layers...');
 
       // Wait for view to be ready
       await view.when();
 
-
       // Wait for map to load (especially important for WebMap)
       if (map.load) {
         await map.load();
 
-
         // Log all layers from the WebMap
         if (map.layers && map.layers.length > 0) {
-
           map.layers.forEach((layer, index) => {
-
             // Hide all layers on startup
             layer.visible = false;
           });
@@ -449,15 +418,11 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Initialize coordinate display (like in index.html)
       initializeCoordinateDisplay(view);
     } catch (error) {
-
       setLoading(false);
     }
   };
 
-
-
   const initializeLayers = async (view) => {
-
     setLoadingMessage('Loading Malaysia map layers...');
     const newLayerGraphics = new Map();
 
@@ -485,10 +450,7 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       const rendererModule = await import('@arcgis/core/renderers/SimpleRenderer');
       const SimpleRenderer = rendererModule.default || rendererModule.SimpleRenderer;
 
-
-
       for (const layer of layers) {
-
         let graphicsLayer;
 
         switch (layer.id) {
@@ -503,8 +465,6 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
             // Add disaster points from NADMA data
             if (layer.nadmaData && Array.isArray(layer.nadmaData)) {
-
-
               layer.nadmaData.forEach((disaster) => {
                 // Extract coordinates from NADMA API format
                 const lat = parseFloat(disaster.latitude);
@@ -655,17 +615,12 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
                   graphicsLayer.add(graphic);
                 }
               });
-
-
             }
             break;
 
           default:
             // Check if this is an API-based layer with a URL
             if (layer.type === 'api-feature' && layer.url) {
-
-
-
               // Create a FeatureLayer from the API endpoint URL
               const apiLayer = new FeatureLayer({
                 url: layer.url,
@@ -734,19 +689,15 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       }
 
       setLayerGraphics(newLayerGraphics);
-
     } catch (error) {
-
     } finally {
       setLoading(false);
-
     }
   };
 
   // Initialize basic navigation widgets (Zoom, Home, Compass, ScaleBar)
   const initializeBasicWidgets = async (view) => {
     try {
-
       setLoadingMessage('Setting up navigation tools...');
 
       // Import widget modules
@@ -774,18 +725,12 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add ScaleBar widget
       const scaleBar = new ScaleBar({ view, unit: 'metric' });
       view.ui.add(scaleBar, 'bottom-left');
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   // Initialize Search widget
   const initializeSearchWidget = async (view) => {
     try {
-
-
       const searchModule = await import('@arcgis/core/widgets/Search');
       const Search = searchModule.default || searchModule.Search;
 
@@ -802,17 +747,12 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       view.ui.add(searchExpand, 'top-left');
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   // Initialize coordinate display (like in index.html)
   const initializeCoordinateDisplay = (view) => {
     try {
-
-
       // Create coordinate display div
       const coordDiv = document.createElement('div');
       coordDiv.style.background = 'white';
@@ -832,16 +772,11 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
           coordDiv.innerHTML = `Lon: ${point.longitude.toFixed(5)}<br>Lat: ${point.latitude.toFixed(5)}`;
         }
       });
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const initializeBookmarks = async (view) => {
     try {
-
       setLoadingMessage('Setting up bookmarks...');
 
       // Import Bookmarks and Expand widgets
@@ -866,19 +801,13 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add the widget to the top-left corner of the view
       view.ui.add(bkExpand, 'top-left');
 
-
-
       // Add custom Malaysia bookmarks to the widget
       await addCustomBookmarks(bookmarks);
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const addCustomBookmarks = async (bookmarksWidget) => {
     try {
-
-
       // Create bookmark objects directly without importing Bookmark class
       const customBookmarks = malaysiaBookmarks.map((bookmark) => ({
         name: bookmark.name,
@@ -904,22 +833,17 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       // Add bookmarks to the widget's bookmarks collection
       if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.addMany) {
         await bookmarksWidget.bookmarks.addMany(customBookmarks);
-
       } else if (bookmarksWidget.bookmarks && bookmarksWidget.bookmarks.add) {
         // Alternative: add one by one
         for (const bookmark of customBookmarks) {
           await bookmarksWidget.bookmarks.add(bookmark);
         }
-
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const initializeLayerList = async (view) => {
     try {
-
       setLoadingMessage('Setting up layer list...');
 
       // Import LayerList and Expand widgets
@@ -953,16 +877,11 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(layerListExpand, 'top-left');
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   const initializeBasemapGallery = async (view) => {
     try {
-
       setLoadingMessage('Setting up basemap gallery...');
 
       // Import BasemapGallery and Expand widgets
@@ -993,18 +912,12 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
 
       // Add the widget to the top-left corner (moved to avoid chatbot overlap)
       view.ui.add(basemapExpand, 'top-left');
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
 
   // Initialize Legend widget (from index.html)
   const initializeLegendWidget = async (view) => {
     try {
-
-
       const legendModule = await import('@arcgis/core/widgets/Legend');
       const Legend = legendModule.default || legendModule.Legend;
 
@@ -1023,13 +936,8 @@ const MapView = ({ onMapViewReady, chatSidebarWidth = 0 }) => {
       });
 
       view.ui.add(legendExpand, 'top-left');
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   };
-
-
 
   return (
     <div
